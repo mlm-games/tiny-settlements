@@ -1,33 +1,29 @@
-extends CanvasLayer
+class_name UI extends CanvasLayer
 
-@onready var day_label: Label = %DayLabel 
-@onready var time_label: Label = %TimeLabel
-@onready var hunger_label: Label = %HungerLabel
+@onready var crystal_energy_label: Label = %CrystalEnergyLabel
+@onready var gardener_energy_label: Label = %GardenerEnergyLabel
 @onready var status_label: Label = %StatusLabel
 
-func update_day(day: int):
-	day_label.text = "Day: %d" % day
+func update_crystal_energy(energy: float):
+	crystal_energy_label.text = "Crystal Energy: %d" % int(energy)
 
-func update_time(time_left: float):
-	time_label.text = "Time: %d" % int(time_left)
-
-func update_hunger(hunger: float, max_hunger: float):
-	if max_hunger > 0:
-		hunger_label.text = "Villager Hunger: %d%%" % int(hunger / max_hunger * 100.0)
+func update_gardener_energy(energy: float, max_energy: float):
+	if max_energy > 0:
+		gardener_energy_label.text = "Gardener Energy: %d%%" % int(energy / max_energy * 100.0)
 	else:
-		hunger_label.text = "Villager Hunger: N/A"
+		gardener_energy_label.text = "Gardener Energy: N/A"
 
 func show_status(message: String):
 	status_label.text = message
-	status_label.modulate = Color.WHITE # Fixes it appearing invisible sometimes
+	status_label.modulate = Color.WHITE
 
 func show_win_message():
-	show_status("YOU BUILT THE HUT! YOU WIN!")
-	status_label.modulate = Color.GOLD
+	show_status("AEVUM BLOOM CULTIVATED! The Garden is Saved!")
+	status_label.modulate = Color.LIGHT_GREEN
 
 func show_lose_message(reason: String):
 	show_status("GAME OVER: %s" % reason)
-	status_label.modulate = Color.CRIMSON
+	status_label.modulate = Color.ORANGE_RED
 
 func clear_status():
 	status_label.text = ""

@@ -19,12 +19,19 @@ mouse_filter = 2
 [node name="UI" parent="." instance=ExtResource("2_sugp2")]
 unique_name_in_owner = true
 
-[node name="DayTimer" type="Timer" parent="."]
+[node name="CrystalDrainTimer" type="Timer" parent="."]
 unique_name_in_owner = true
-wait_time = 30.0
 autostart = true
 
-[node name="HungerTimer" type="Timer" parent="."]
+[node name="GardenerRechargeTimer" type="Timer" parent="."]
 unique_name_in_owner = true
-wait_time = 10.0
+wait_time = 2.0
+autostart = true
+
+[node name="EnergySpawnTimer" type="Timer" parent="."]
+wait_time = 15.0
+autostart = true
+
+[node name="AnomalyCheckTimer" type="Timer" parent="."]
+wait_time = 20.0
 autostart = true
