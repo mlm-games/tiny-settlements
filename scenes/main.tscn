@@ -1,0 +1,30 @@
+[gd_scene load_steps=3 format=3 uid="uid://vr7ltktyftwu"]
+
+[ext_resource type="Script" uid="uid://c2f4272aeyy6j" path="res://scenes/main.gd" id="1_0wfyh"]
+[ext_resource type="PackedScene" uid="uid://dsj6kj5vycuc0" path="res://scenes/ui.tscn" id="2_sugp2"]
+
+[node name="Main" type="Node2D"]
+script = ExtResource("1_0wfyh")
+
+[node name="GameBoard" type="Node2D" parent="."]
+unique_name_in_owner = true
+
+[node name="GameBoardPanel" type="Panel" parent="GameBoard"]
+offset_left = 50.0
+offset_top = 100.0
+offset_right = 850.0
+offset_bottom = 600.0
+mouse_filter = 2
+
+[node name="UI" parent="." instance=ExtResource("2_sugp2")]
+unique_name_in_owner = true
+
+[node name="DayTimer" type="Timer" parent="."]
+unique_name_in_owner = true
+wait_time = 30.0
+autostart = true
+
+[node name="HungerTimer" type="Timer" parent="."]
+unique_name_in_owner = true
+wait_time = 10.0
+autostart = true

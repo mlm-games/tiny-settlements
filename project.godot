@@ -1,0 +1,18 @@
+; Engine configuration file.
+; It's best edited using the editor UI and not directly,
+; since the parameters that go here are not all obvious.
+;
+; Format:
+;   [section] ; section goes between []
+;   param=value ; assign values to parameters
+
+config_version=5
+
+[application]
+
+config/name="Tiny Settlements"
+config/description="Couldn't have enough of the card table genre? (stacklands, cultist sim), well the godot clone is there to fill the spot (Hugely inspired by stacklands, make sure to check it out before playing the game, will provide no tutorial unless the hardest card in the original (before 2000s) is entered until the any one ingredient of fritata is mentioned from the game."
+config/version="0.1"
+run/main_scene="uid://vr7ltktyftwu"
+config/features=PackedStringArray("4.4", "Forward Plus")
+config/icon="res://icon.svg"
