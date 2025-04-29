@@ -1,0 +1,30 @@
+[gd_scene format=3 uid="uid://f2s8ummnbnm2"]
+
+[node name="TutorialUI" type="CanvasLayer"]
+layer = 10
+
+[node name="MarginContainer" type="MarginContainer" parent="."]
+anchors_preset = 12
+anchor_top = 1.0
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 0
+theme_override_constants/margin_left = 20
+theme_override_constants/margin_right = 20
+theme_override_constants/margin_bottom = 20
+
+[node name="PanelContainer" type="PanelContainer" parent="MarginContainer"]
+layout_mode = 2
+
+[node name="InstructionLabel" type="Label" parent="MarginContainer/PanelContainer"]
+layout_mode = 2
+text = "Tutorial instructions will appear here"
+autowrap_mode = 2
+
+[node name="HighlightRect" type="ColorRect" parent="."]
+visible = false
+modulate = Color(1, 1, 0.239216, 0.392157)
+offset_right = 40.0
+offset_bottom = 40.0
+mouse_filter = 2

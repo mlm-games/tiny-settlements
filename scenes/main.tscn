@@ -1,7 +1,8 @@
-[gd_scene load_steps=3 format=3 uid="uid://vr7ltktyftwu"]
+[gd_scene load_steps=4 format=3 uid="uid://vr7ltktyftwu"]
 
 [ext_resource type="Script" uid="uid://c2f4272aeyy6j" path="res://scenes/main.gd" id="1_0wfyh"]
 [ext_resource type="PackedScene" uid="uid://dsj6kj5vycuc0" path="res://scenes/ui.tscn" id="2_sugp2"]
+[ext_resource type="PackedScene" uid="uid://ligvvwlrfmt3" path="res://scenes/tutorial/tutorial_manager.tscn" id="3_sugp2"]
 
 [node name="Main" type="Node2D"]
 script = ExtResource("1_0wfyh")
@@ -19,19 +20,33 @@ mouse_filter = 2
 [node name="UI" parent="." instance=ExtResource("2_sugp2")]
 unique_name_in_owner = true
 
-[node name="CrystalDrainTimer" type="Timer" parent="."]
+[node name="FocusRechargeTimer" type="Timer" parent="."]
 unique_name_in_owner = true
+wait_time = 1.5
 autostart = true
 
-[node name="GardenerRechargeTimer" type="Timer" parent="."]
+[node name="NutrientSpawnTimer" type="Timer" parent="."]
 unique_name_in_owner = true
-wait_time = 2.0
-autostart = true
-
-[node name="EnergySpawnTimer" type="Timer" parent="."]
-wait_time = 15.0
+wait_time = 30.0
 autostart = true
 
 [node name="AnomalyCheckTimer" type="Timer" parent="."]
+unique_name_in_owner = true
 wait_time = 20.0
 autostart = true
+
+[node name="PassiveProcessTimer" type="Timer" parent="."]
+unique_name_in_owner = true
+autostart = true
+
+[node name="WasteCheckTimer" type="Timer" parent="."]
+unique_name_in_owner = true
+wait_time = 25.0
+autostart = true
+
+[node name="TutorialManager" parent="." instance=ExtResource("3_sugp2")]
+unique_name_in_owner = true
+
+[connection signal="tutorial_action_complete" from="." to="TutorialManager" method="on_main_gardener_action_complete"]
+[connection signal="tutorial_card_spawned" from="." to="TutorialManager" method="on_main_card_spawned"]
+[connection signal="tutorial_drag_ended" from="." to="TutorialManager" method="on_main_drag_ended"]
