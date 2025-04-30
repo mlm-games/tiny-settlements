@@ -10,6 +10,11 @@ attribution_file_path = "res://ATTRIBUTION.md"
 [node name="CreditsLabel" parent="ScrollContainer/VBoxContainer" index="1"]
 text = "[center][font_size=48]Collaborators[/font_size]
 
+[font_size=32]Role[/font_size]
+Others: Me
+Music: holiznacc0
+[url=https://freemusicarchive.org/music/holiznacc0/]Link to holizaCC0's page[/url]  
+
 [font_size=32]Godot Game Template[/font_size]
 Author: [url=https://github.com/Maaack/Godot-Game-Template/graphs/contributors]Marek Belski and contributors[/url]  
 Source: [url=https://github.com/Maaack/Godot-Game-Template]github: Godot-Game-Template[/url]  

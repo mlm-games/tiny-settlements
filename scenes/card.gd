@@ -19,15 +19,19 @@ var is_dragging: bool = false
 var is_working: bool = false
 var drag_offset: Vector2 = Vector2.ZERO
 
+var stacked_on: Card = null
+var stacked_cards: Array[Card] = []
+
+var light_effect: PointLight2D = null
 var card_image: Texture2D = null
+var interaction_indicator: Node2D = null
+
 @onready var image_rect: TextureRect = $ImageRect
 @onready var title_label: Label = $TitleLabel
 @onready var status_label: Label = $StatusLabel
 
-
-
 @onready var sprite: Sprite2D = $Sprite2D
-@onready var label: Label = $Label
+@onready var label: Label = $TitleLabel
 @onready var collision_shape: CollisionShape2D = $CollisionShape2D
 @onready var animation_player: AnimationPlayer = $AnimationPlayer
 @onready var action_timer: Timer = $ActionTimer
@@ -46,6 +50,32 @@ func _ready():
 
 	set_card_type(card_type)
 	setup_card_visuals()
+	
+	if card_type in [CardDefs.CardType.LUMINA_CRYSTAL, 
+					CardDefs.CardType.MATURE_FLUTTERWING, 
+					CardDefs.CardType.GENESIS_BLOOM]:
+		add_light_effect()
+	
+	setup_interaction_indicator()
+
+func add_light_effect():
+	light_effect = PointLight2D.new()
+	light_effect.texture = preload("res://assets/soft_light.png")
+	light_effect.energy = 0.7
+	light_effect.texture_scale = 0.5
+	
+	# Different colors for different card types
+	match card_type:
+		CardDefs.CardType.LUMINA_CRYSTAL:
+			light_effect.color = Color(0.5, 0.8, 1.0, 0.7)
+		CardDefs.CardType.MATURE_FLUTTERWING:
+			light_effect.color = Color(0.8, 0.6, 1.0, 0.5)
+		CardDefs.CardType.GENESIS_BLOOM:
+			light_effect.color = Color(0.7, 1.0, 0.8, 0.8)
+			light_effect.energy = 1.0
+			light_effect.texture_scale = 1.0
+	
+	add_child(light_effect)
 
 func set_card_type(new_type: CardDefs.CardType):
 	card_type = new_type
@@ -128,6 +158,29 @@ func _input_event(viewport, event, shape_idx):
 func _process(delta):
 	if is_dragging:
 		global_position = get_global_mouse_position() - drag_offset
+	
+	if not is_dragging and not is_working:
+		update_stacking_relationships()
+
+func update_stacking_relationships():
+	# Clear previous relationships
+	if stacked_on != null:
+		stacked_on.stacked_cards.erase(self)
+		stacked_on = null
+	
+	# Check for cards below this one
+	var overlaps = get_overlapping_cards()
+	for card in overlaps:
+		if not is_instance_valid(card):
+			continue
+			
+		# Check if this card is visually on top of another card
+		if global_position.y < card.global_position.y + 10 and \
+		   global_position.y > card.global_position.y - 30:
+			stacked_on = card
+			if not card.stacked_cards.has(self):
+				card.stacked_cards.append(self)
+			break
 
 func start_gardener_action(duration: float):
 	if not is_working:
@@ -255,3 +308,61 @@ func reset_interaction_state():
 	# Clear any temporary action data
 	if card_properties.has("gardener_action_data"):
 		card_properties.erase("gardener_action_data")
+
+
+func setup_interaction_indicator():
+	interaction_indicator = Node2D.new()
+	interaction_indicator.name = "InteractionIndicator"
+	add_child(interaction_indicator)
+	
+	# Create the indicator visuals
+	var indicator_sprite = Sprite2D.new()
+	indicator_sprite.texture = preload("res://assets/interaction_indicator.png")
+	indicator_sprite.position = Vector2(0, -50)
+	indicator_sprite.scale = Vector2(0.5, 0.5)
+	indicator_sprite.visible = false
+	interaction_indicator.add_child(indicator_sprite)
+
+func show_interaction_hint(hint_type: String):
+	var indicator_sprite = interaction_indicator.get_node("Sprite2D")
+	if not indicator_sprite:
+		return
+	
+	indicator_sprite.visible = true
+	
+	# Different colors/animations based on hint type
+	match hint_type:
+		"needs_gardener":
+			indicator_sprite.modulate = Color(0.9, 0.8, 0.3)
+			_animate_indicator_pulse(indicator_sprite)
+		"needs_nutrient":
+			indicator_sprite.modulate = Color(0.3, 0.9, 0.5)
+			_animate_indicator_pulse(indicator_sprite)
+		"needs_pollination":
+			indicator_sprite.modulate = Color(0.8, 0.5, 0.9)
+			_animate_indicator_pulse(indicator_sprite)
+		"error":
+			indicator_sprite.modulate = Color(0.9, 0.3, 0.3)
+			_animate_indicator_shake(indicator_sprite)
+	
+	# Auto-hide after a few seconds
+	await get_tree().create_timer(2.0).timeout
+	hide_interaction_hint()
+
+func hide_interaction_hint():
+	var indicator_sprite = interaction_indicator.get_node("Sprite2D")
+	if indicator_sprite:
+		indicator_sprite.visible = false
+
+func _animate_indicator_pulse(sprite: Sprite2D):
+	var tween = create_tween()
+	tween.tween_property(sprite, "scale", Vector2(0.6, 0.6), 0.5)
+	tween.tween_property(sprite, "scale", Vector2(0.5, 0.5), 0.5)
+	tween.set_loops(2)
+
+func _animate_indicator_shake(sprite: Sprite2D):
+	var tween = create_tween()
+	tween.tween_property(sprite, "position", Vector2(5, -50), 0.1)
+	tween.tween_property(sprite, "position", Vector2(-5, -50), 0.1)
+	tween.tween_property(sprite, "position", Vector2(0, -50), 0.1)
+	tween.set_loops(2)

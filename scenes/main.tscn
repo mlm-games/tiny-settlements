@@ -1,12 +1,35 @@
-[gd_scene load_steps=5 format=3 uid="uid://vr7ltktyftwu"]
+[gd_scene load_steps=8 format=3 uid="uid://vr7ltktyftwu"]
 
 [ext_resource type="Script" uid="uid://c2f4272aeyy6j" path="res://scenes/main.gd" id="1_0wfyh"]
 [ext_resource type="PackedScene" uid="uid://dsj6kj5vycuc0" path="res://scenes/ui.tscn" id="2_sugp2"]
 [ext_resource type="PackedScene" uid="uid://ligvvwlrfmt3" path="res://scenes/tutorial/tutorial_manager.tscn" id="3_sugp2"]
 [ext_resource type="AudioStream" uid="uid://dpxi32b0apbip" path="res://assets/HoliznaCC0 - Lofi And Chill - 06 Glad To Be Stuck Inside.ogg" id="4_jyhfs"]
+[ext_resource type="Texture2D" uid="uid://c0sbjavlwcioi" path="res://assets/organic_pattern.png" id="4_tbgi4"]
+
+[sub_resource type="Gradient" id="Gradient_jyhfs"]
+
+[sub_resource type="GradientTexture2D" id="GradientTexture2D_tbgi4"]
+gradient = SubResource("Gradient_jyhfs")
+fill_to = Vector2(0.533019, 0.509434)
 
 [node name="Main" type="Node2D"]
 script = ExtResource("1_0wfyh")
+
+[node name="Background2" type="Control" parent="."]
+z_index = -10
+layout_mode = 3
+anchors_preset = 0
+offset_right = 1281.0
+offset_bottom = 719.0
+
+[node name="PatternOverlay" type="TextureRect" parent="Background2"]
+modulate = Color(1, 1, 1, 0.05)
+layout_mode = 0
+offset_right = 1281.0
+offset_bottom = 718.0
+mouse_filter = 2
+texture = ExtResource("4_tbgi4")
+stretch_mode = 1
 
 [node name="GameBoard" type="Node2D" parent="."]
 unique_name_in_owner = true
@@ -20,6 +43,39 @@ mouse_filter = 2
 
 [node name="UI" parent="." instance=ExtResource("2_sugp2")]
 unique_name_in_owner = true
+
+[node name="HintPanel" type="Panel" parent="UI"]
+unique_name_in_owner = true
+visible = false
+anchors_preset = -1
+anchor_left = 0.5
+anchor_top = 0.9
+anchor_right = 0.5
+anchor_bottom = 0.9
+offset_left = -200.0
+offset_top = -40.0
+offset_right = 200.0
+grow_horizontal = 2
+grow_vertical = 0
+
+[node name="HintLabel" type="Label" parent="UI/HintPanel"]
+unique_name_in_owner = true
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_colors/font_color = Color(0.9, 0.95, 0.9, 1)
+theme_override_font_sizes/font_size = 16
+text = "Hint text appears here"
+horizontal_alignment = 1
+vertical_alignment = 1
+autowrap_mode = 2
+
+[node name="HintTimer" type="Timer" parent="UI"]
+unique_name_in_owner = true
+one_shot = true
 
 [node name="FocusRechargeTimer" type="Timer" parent="."]
 unique_name_in_owner = true
@@ -48,12 +104,45 @@ autostart = true
 [node name="TutorialManager" parent="." instance=ExtResource("3_sugp2")]
 unique_name_in_owner = true
 
+[node name="Background" type="Control" parent="."]
+visible = false
+z_index = -10
+layout_mode = 3
+anchors_preset = 0
+offset_right = 1281.0
+offset_bottom = 719.0
+
+[node name="ColorRect" type="ColorRect" parent="Background"]
+layout_mode = 1
+anchors_preset = -1
+anchor_left = -0.00156128
+anchor_right = 1.00234
+anchor_bottom = 1.00139
+color = Color(0.08, 0.12, 0.18, 1)
+metadata/_edit_use_anchors_ = true
+
+[node name="PatternOverlay" type="TextureRect" parent="Background"]
+modulate = Color(1, 1, 1, 0.05)
+layout_mode = 0
+offset_right = 1281.0
+offset_bottom = 718.0
+texture = ExtResource("4_tbgi4")
+stretch_mode = 1
+
+[node name="Lighting" type="CanvasModulate" parent="."]
+color = Color(0.9, 0.95, 0.9, 1)
+
+[node name="AmbientLight" type="PointLight2D" parent="Lighting"]
+position = Vector2(640.5, 363.5)
+scale = Vector2(4.00313, 2.24687)
+energy = 0.5
+texture = SubResource("GradientTexture2D_tbgi4")
+texture_scale = 5.0
+
+[node name="DynamicLights" type="Node2D" parent="Lighting"]
+
 [node name="AudioStreamPlayer2D" type="AudioStreamPlayer2D" parent="."]
 stream = ExtResource("4_jyhfs")
 volume_db = -5.0
 autoplay = true
 bus = &"Music"
-
-[connection signal="tutorial_action_complete" from="." to="TutorialManager" method="on_main_gardener_action_complete"]
-[connection signal="tutorial_card_spawned" from="." to="TutorialManager" method="on_main_card_spawned"]
-[connection signal="tutorial_drag_ended" from="." to="TutorialManager" method="on_main_drag_ended"]

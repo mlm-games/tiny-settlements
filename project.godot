@@ -15,7 +15,7 @@ config/description="A game similar to stacklands in visuals but more chill?"
 config/version="0.1"
 run/main_scene="res://scenes/opening/opening_with_logo.tscn"
 config/features=PackedStringArray("4.4")
-config/icon="res://icon.png"
+config/icon="uid://c5pdo423aq3i4"
 
 [autoload]
 
@@ -28,6 +28,8 @@ ProjectUISoundController="*res://addons/maaacks_game_template/base/scenes/autolo
 
 window/size/viewport_width=1280
 window/size/viewport_height=720
+window/size/mode=3
+window/stretch/mode="canvas_items"
 
 [editor_plugins]
 
@@ -90,5 +92,8 @@ common/enable_pause_aware_picking=true
 renderer/rendering_method="gl_compatibility"
 renderer/rendering_method.mobile="gl_compatibility"
 textures/vram_compression/import_etc2_astc=true
+anti_aliasing/quality/msaa_2d=3
+anti_aliasing/quality/msaa_3d=3
 environment/defaults/default_clear_color=Color(0.200456, 0.297065, 0.476979, 1)
+anti_aliasing/quality/screen_space_aa=1
 environment/defaults/default_environment="res://default_env.tres"

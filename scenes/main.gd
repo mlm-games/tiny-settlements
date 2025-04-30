@@ -33,6 +33,11 @@ var active_cards: Array[Card] = []
 @export var board_size = Rect2(50, 50, 900, 600)
 @export var max_slugs_before_waste: int = 5
 
+@onready var hint_label: Label = %HintLabel
+@onready var hint_panel: Panel = %HintPanel
+@onready var hint_timer: Timer = %HintTimer
+
+
 # --- Signals ---
 signal tutorial_card_spawned(card)
 signal tutorial_drag_ended(card_a, card_b)
@@ -45,7 +50,22 @@ func _ready():
 	passive_process_timer.timeout.connect(_on_passive_process_timer_timeout)
 	waste_check_timer.timeout.connect(_on_waste_check_timer_timeout)
 	
+	hint_timer.timeout.connect(_on_hint_timer_timeout)
+	hide_hint()
+
 	start_game()
+
+func show_hint(message: String, duration: float = 3.0):
+	hint_label.text = message
+	hint_panel.show()
+	hint_timer.start(duration)
+
+func hide_hint():
+	hint_panel.hide()
+	hint_timer.stop()
+
+func _on_hint_timer_timeout():
+	hide_hint()
 
 func start_game():
 	# Clear existing cards
@@ -219,9 +239,13 @@ func handle_card_interaction(card_a: Card, card_b: Card):
 		if type_a == needed_nutrient:
 			print(CardDefs.get_label(type_a), " placed on ", CardDefs.get_label(type_b), ". Needs Gardener action.")
 			card_a.global_position = card_b.global_position + Vector2(randf_range(-10,10), -10)
+			show_hint("Use Gardener to apply " + CardDefs.get_label(type_a) + " to " + CardDefs.get_label(type_b))
 		else:
 			print(CardDefs.get_label(type_b), " doesn't need this nutrient type now.")
-		return
+			if needed_nutrient != CardDefs.CardType.NONE:
+				show_hint(CardDefs.get_label(type_b) + " needs " + CardDefs.get_label(needed_nutrient))
+			else:
+				show_hint(CardDefs.get_label(type_b) + " doesn't need nutrients right now")
 		
 	# --- MULCH + SUBSTRATE ---
 	if type_a == CardDefs.CardType.RICH_MULCH and type_b == CardDefs.CardType.BIO_SUBSTRATE:
@@ -255,8 +279,10 @@ func handle_gardener_interaction(gardener: Card, target: Card):
 				gardener.global_position = target.global_position + Vector2(0, -40)
 			else:
 				print("Not enough focus to plant!")
+				show_hint("Not enough Gardener Focus to plant!")
 		else:
 			print("No substrate found nearby for planting")
+			show_hint(CardDefs.get_label(target_type) + " needs to be on a substrate")
 			
 	# --- APPLYING NUTRIENTS ---
 	elif CardDefs.is_nutrient(target_type):
@@ -691,21 +717,56 @@ func find_nearby_card_type(source_card: Card, types_to_find: Array, max_distance
 	if not is_instance_valid(source_card):
 		return null
 		
-	# First try direct overlaps
+	# First check if source card is stacked on something
+	if source_card.stacked_on != null:
+		var base_card = source_card.stacked_on
+		
+		# Check if base card matches the type
+		var base_matches = false
+		if types_to_find.size() == 1 and typeof(types_to_find[0]) == TYPE_CALLABLE:
+			base_matches = types_to_find[0].call(base_card.card_type)
+		else:
+			base_matches = base_card.card_type in types_to_find
+			
+		if base_matches:
+			return base_card
+	
+	# Then check for cards stacked on this card
+	for card in source_card.stacked_cards:
+		if not is_instance_valid(card):
+			continue
+			
+		# Check if stacked card matches the type
+		var matches = false
+		if types_to_find.size() == 1 and typeof(types_to_find[0]) == TYPE_CALLABLE:
+			matches = types_to_find[0].call(card.card_type)
+		else:
+			matches = card.card_type in types_to_find
+			
+		if matches:
+			return card
+	
+	# Then check overlapping cards
 	var overlaps = source_card.get_overlapping_cards()
+	
+	# Sort overlaps by z-index (higher z-index = visually on top)
+	overlaps.sort_custom(func(a, b): return a.z_index > b.z_index)
 	
 	for card in overlaps:
 		if not is_instance_valid(card):
 			continue
 			
-		# Check for function reference
+		# Check if card matches the type
+		var matches = false
 		if types_to_find.size() == 1 and typeof(types_to_find[0]) == TYPE_CALLABLE:
-			if types_to_find[0].call(card.card_type):
-				return card
-		elif card.card_type in types_to_find:
+			matches = types_to_find[0].call(card.card_type)
+		else:
+			matches = card.card_type in types_to_find
+			
+		if matches:
 			return card
 	
-	# If no direct overlap, try distance-based approach
+	# Finally, check nearby cards by distance
 	var closest_card = null
 	var closest_distance = max_distance
 	
@@ -713,15 +774,14 @@ func find_nearby_card_type(source_card: Card, types_to_find: Array, max_distance
 		if not is_instance_valid(other_card) or other_card == source_card:
 			continue
 			
-		# Check if card is of the right type
-		var type_matches = false
+		# Check if card matches the type
+		var matches = false
 		if types_to_find.size() == 1 and typeof(types_to_find[0]) == TYPE_CALLABLE:
-			type_matches = types_to_find[0].call(other_card.card_type)
+			matches = types_to_find[0].call(other_card.card_type)
 		else:
-			type_matches = other_card.card_type in types_to_find
+			matches = other_card.card_type in types_to_find
 			
-		if type_matches:
-			# Check distance
+		if matches:
 			var distance = source_card.global_position.distance_to(other_card.global_position)
 			if distance < closest_distance:
 				closest_card = other_card

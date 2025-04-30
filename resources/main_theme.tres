@@ -1,220 +1,309 @@
-[gd_resource type="Theme" load_steps=33 format=3 uid="uid://dpf1f1wdxgduj"]
+[gd_resource type="Theme" load_steps=36 format=3 uid="uid://bxnvs4u8j7lqd"]
 
-[sub_resource type="StyleBoxFlat" id="ButtonDisabled_Organic"]
+[sub_resource type="StyleBoxFlat" id="ButtonDisabled"]
 content_margin_left = 10.0
 content_margin_top = 6.0
 content_margin_right = 10.0
 content_margin_bottom = 6.0
-bg_color = Color(0.15, 0.2, 0.22, 0.6)
-border_color = Color(0.25, 0.3, 0.35, 0.6)
-corner_radius_top_left = 8
-corner_radius_top_right = 8
-corner_radius_bottom_right = 8
-corner_radius_bottom_left = 8
-expand_margin_top = 1.0
-expand_margin_bottom = 1.0
+bg_color = Color(0.15, 0.2, 0.18, 0.6)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(0.25, 0.35, 0.3, 0.6)
+corner_radius_top_left = 6
+corner_radius_top_right = 6
+corner_radius_bottom_right = 6
+corner_radius_bottom_left = 6
 
-[sub_resource type="StyleBoxFlat" id="ButtonFocus_Organic"]
+[sub_resource type="StyleBoxFlat" id="ButtonFocus"]
 content_margin_left = 10.0
 content_margin_top = 6.0
 content_margin_right = 10.0
 content_margin_bottom = 6.0
 draw_center = false
-border_color = Color(0.5, 1, 0.3, 1)
-corner_radius_top_left = 9
-corner_radius_top_right = 9
-corner_radius_bottom_right = 9
-corner_radius_bottom_left = 9
-expand_margin_left = -1.0
-expand_margin_top = -1.0
-expand_margin_right = -1.0
-expand_margin_bottom = -1.0
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(0.6, 0.9, 0.7, 1)
+corner_radius_top_left = 7
+corner_radius_top_right = 7
+corner_radius_bottom_right = 7
+corner_radius_bottom_left = 7
+expand_margin_left = 1.0
+expand_margin_top = 1.0
+expand_margin_right = 1.0
+expand_margin_bottom = 1.0
 
-[sub_resource type="StyleBoxFlat" id="ButtonHover_Organic"]
+[sub_resource type="StyleBoxFlat" id="ButtonHover"]
 content_margin_left = 10.0
 content_margin_top = 6.0
 content_margin_right = 10.0
 content_margin_bottom = 6.0
-bg_color = Color(0.2, 0.35, 0.4, 1)
-border_color = Color(0.2, 0.8, 0.9, 1)
-corner_radius_top_left = 8
-corner_radius_top_right = 8
-corner_radius_bottom_right = 8
-corner_radius_bottom_left = 8
-expand_margin_top = 1.0
-expand_margin_bottom = 1.0
-shadow_color = Color(0.2, 0.8, 0.9, 0.3)
-shadow_size = 4
-
-[sub_resource type="StyleBoxFlat" id="ButtonNormal_Organic"]
-content_margin_left = 10.0
-content_margin_top = 6.0
-content_margin_right = 10.0
-content_margin_bottom = 6.0
-bg_color = Color(0.15, 0.25, 0.3, 1)
-border_color = Color(0.25, 0.4, 0.5, 1)
-corner_radius_top_left = 8
-corner_radius_top_right = 8
-corner_radius_bottom_right = 8
-corner_radius_bottom_left = 8
-expand_margin_top = 1.0
-expand_margin_bottom = 1.0
-
-[sub_resource type="StyleBoxFlat" id="ButtonPressed_Organic"]
-content_margin_left = 10.0
-content_margin_top = 7.0
-content_margin_right = 10.0
-content_margin_bottom = 5.0
-bg_color = Color(0.1, 0.18, 0.22, 1)
-border_color = Color(0.2, 0.8, 0.9, 1)
-corner_radius_top_left = 8
-corner_radius_top_right = 8
-corner_radius_bottom_right = 8
-corner_radius_bottom_left = 8
-expand_margin_top = 1.0
-expand_margin_bottom = 1.0
-
-[sub_resource type="StyleBoxFlat" id="CardBg_Organic"]
-content_margin_left = 8.0
-content_margin_top = 8.0
-content_margin_right = 8.0
-content_margin_bottom = 8.0
-bg_color = Color(0.12, 0.2, 0.25, 0.95)
-border_color = Color(0.3, 0.5, 0.6, 0.8)
+bg_color = Color(0.22, 0.35, 0.28, 1)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(0.4, 0.7, 0.5, 1)
 corner_radius_top_left = 6
 corner_radius_top_right = 6
 corner_radius_bottom_right = 6
 corner_radius_bottom_left = 6
-shadow_color = Color(0.08, 0.15, 0.18, 0.6)
+shadow_color = Color(0.4, 0.7, 0.5, 0.3)
+shadow_size = 3
+
+[sub_resource type="StyleBoxFlat" id="ButtonNormal"]
+content_margin_left = 10.0
+content_margin_top = 6.0
+content_margin_right = 10.0
+content_margin_bottom = 6.0
+bg_color = Color(0.18, 0.28, 0.22, 1)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(0.35, 0.55, 0.45, 1)
+corner_radius_top_left = 6
+corner_radius_top_right = 6
+corner_radius_bottom_right = 6
+corner_radius_bottom_left = 6
+
+[sub_resource type="StyleBoxFlat" id="ButtonPressed"]
+content_margin_left = 10.0
+content_margin_top = 7.0
+content_margin_right = 10.0
+content_margin_bottom = 5.0
+bg_color = Color(0.12, 0.2, 0.16, 1)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(0.4, 0.7, 0.5, 1)
+corner_radius_top_left = 6
+corner_radius_top_right = 6
+corner_radius_bottom_right = 6
+corner_radius_bottom_left = 6
+
+[sub_resource type="StyleBoxFlat" id="CardBackground"]
+content_margin_left = 8.0
+content_margin_top = 8.0
+content_margin_right = 8.0
+content_margin_bottom = 8.0
+bg_color = Color(0.12, 0.18, 0.14, 0.95)
+border_width_left = 2
+border_width_top = 2
+border_width_right = 2
+border_width_bottom = 2
+border_color = Color(0.3, 0.5, 0.4, 0.8)
+corner_radius_top_left = 8
+corner_radius_top_right = 8
+corner_radius_bottom_right = 8
+corner_radius_bottom_left = 8
+shadow_color = Color(0.08, 0.12, 0.1, 0.6)
 shadow_size = 4
+
+[sub_resource type="StyleBoxFlat" id="CardImageArea"]
+content_margin_left = 4.0
+content_margin_top = 4.0
+content_margin_right = 4.0
+content_margin_bottom = 4.0
+bg_color = Color(0.18, 0.25, 0.2, 1)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(0.35, 0.6, 0.45, 0.7)
+corner_radius_top_left = 6
+corner_radius_top_right = 6
+corner_radius_bottom_right = 6
+corner_radius_bottom_left = 6
+
+[sub_resource type="StyleBoxFlat" id="CardStatusArea"]
+content_margin_left = 6.0
+content_margin_top = 4.0
+content_margin_right = 6.0
+content_margin_bottom = 4.0
+bg_color = Color(0.15, 0.22, 0.18, 1)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(0.3, 0.5, 0.4, 0.7)
+corner_radius_top_left = 4
+corner_radius_top_right = 4
+corner_radius_bottom_right = 4
+corner_radius_bottom_left = 4
+
+[sub_resource type="StyleBoxFlat" id="CardTitleArea"]
+content_margin_left = 6.0
+content_margin_top = 4.0
+content_margin_right = 6.0
+content_margin_bottom = 4.0
+bg_color = Color(0.22, 0.32, 0.25, 1)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(0.4, 0.65, 0.5, 0.7)
+corner_radius_top_left = 4
+corner_radius_top_right = 4
+corner_radius_bottom_right = 4
+corner_radius_bottom_left = 4
 
 [sub_resource type="StyleBoxEmpty" id="CheckButton_Empty"]
 
-[sub_resource type="StyleBoxFlat" id="CheckFocus_Organic"]
+[sub_resource type="StyleBoxFlat" id="CheckFocus"]
 content_margin_left = 4.0
 content_margin_top = 4.0
 content_margin_right = 4.0
 content_margin_bottom = 4.0
 draw_center = false
-border_color = Color(0.5, 1, 0.3, 0.8)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(0.5, 0.8, 0.6, 0.8)
 corner_radius_top_left = 4
 corner_radius_top_right = 4
 corner_radius_bottom_right = 4
 corner_radius_bottom_left = 4
 
-[sub_resource type="StyleBoxFlat" id="ScrollBarGrabber_Organic"]
-bg_color = Color(0.25, 0.4, 0.5, 0.8)
+[sub_resource type="StyleBoxFlat" id="ScrollBarGrabber"]
+bg_color = Color(0.25, 0.4, 0.3, 0.8)
 corner_radius_top_left = 4
 corner_radius_top_right = 4
 corner_radius_bottom_right = 4
 corner_radius_bottom_left = 4
 
-[sub_resource type="StyleBoxFlat" id="ScrollBarGrabberHighlight_Organic"]
-bg_color = Color(0.2, 0.8, 0.9, 0.9)
+[sub_resource type="StyleBoxFlat" id="ScrollBarGrabberHighlight"]
+bg_color = Color(0.4, 0.7, 0.5, 0.9)
 corner_radius_top_left = 4
 corner_radius_top_right = 4
 corner_radius_bottom_right = 4
 corner_radius_bottom_left = 4
 
-[sub_resource type="StyleBoxFlat" id="ScrollBarGrabberPressed_Organic"]
-bg_color = Color(0.5, 1, 0.3, 1)
+[sub_resource type="StyleBoxFlat" id="ScrollBarGrabberPressed"]
+bg_color = Color(0.5, 0.8, 0.6, 1)
 corner_radius_top_left = 4
 corner_radius_top_right = 4
 corner_radius_bottom_right = 4
 corner_radius_bottom_left = 4
 
-[sub_resource type="StyleBoxFlat" id="ScrollBarBg_Organic"]
-bg_color = Color(0.08, 0.1, 0.12, 0.7)
+[sub_resource type="StyleBoxFlat" id="ScrollBarBg"]
+bg_color = Color(0.08, 0.12, 0.1, 0.7)
 corner_radius_top_left = 4
 corner_radius_top_right = 4
 corner_radius_bottom_right = 4
 corner_radius_bottom_left = 4
-expand_margin_left = 2.0
-expand_margin_top = 2.0
-expand_margin_right = 2.0
-expand_margin_bottom = 2.0
 
-[sub_resource type="StyleBoxLine" id="Separator_Organic"]
-color = Color(0.2, 0.8, 0.9, 0.5)
+[sub_resource type="StyleBoxLine" id="Separator"]
+color = Color(0.4, 0.7, 0.5, 0.5)
 thickness = 2
 
-[sub_resource type="StyleBoxFlat" id="SliderTrack_Organic"]
-bg_color = Color(0.1, 0.15, 0.18, 1)
-corner_radius_top_left = 5
-corner_radius_top_right = 5
-corner_radius_bottom_right = 5
-corner_radius_bottom_left = 5
+[sub_resource type="StyleBoxFlat" id="SliderTrack"]
+bg_color = Color(0.12, 0.16, 0.14, 1)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(0.2, 0.3, 0.25, 0.7)
+corner_radius_top_left = 4
+corner_radius_top_right = 4
+corner_radius_bottom_right = 4
+corner_radius_bottom_left = 4
 expand_margin_top = 4.0
 expand_margin_bottom = 4.0
 
 [sub_resource type="StyleBoxEmpty" id="Label_Empty"]
 
-[sub_resource type="StyleBoxFlat" id="LineEditFocus_Organic"]
+[sub_resource type="StyleBoxFlat" id="LineEditFocus"]
 content_margin_left = 8.0
 content_margin_top = 5.0
 content_margin_right = 8.0
 content_margin_bottom = 5.0
-bg_color = Color(0.1, 0.15, 0.18, 1)
-border_color = Color(0.5, 1, 0.3, 1)
-corner_radius_top_left = 6
-corner_radius_top_right = 6
-corner_radius_bottom_right = 6
-corner_radius_bottom_left = 6
-shadow_color = Color(0.5, 1, 0.3, 0.3)
+bg_color = Color(0.12, 0.18, 0.15, 1)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(0.5, 0.8, 0.6, 1)
+corner_radius_top_left = 5
+corner_radius_top_right = 5
+corner_radius_bottom_right = 5
+corner_radius_bottom_left = 5
+shadow_color = Color(0.5, 0.8, 0.6, 0.3)
 shadow_size = 3
 
-[sub_resource type="StyleBoxFlat" id="LineEdit_Organic"]
+[sub_resource type="StyleBoxFlat" id="LineEdit"]
 content_margin_left = 8.0
 content_margin_top = 5.0
 content_margin_right = 8.0
 content_margin_bottom = 5.0
-bg_color = Color(0.1, 0.15, 0.18, 1)
-border_color = Color(0.25, 0.4, 0.5, 0.8)
-corner_radius_top_left = 6
-corner_radius_top_right = 6
-corner_radius_bottom_right = 6
-corner_radius_bottom_left = 6
+bg_color = Color(0.12, 0.18, 0.15, 1)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(0.3, 0.5, 0.4, 0.8)
+corner_radius_top_left = 5
+corner_radius_top_right = 5
+corner_radius_bottom_right = 5
+corner_radius_bottom_left = 5
 
-[sub_resource type="StyleBoxFlat" id="LineEditReadonly_Organic"]
+[sub_resource type="StyleBoxFlat" id="LineEditReadonly"]
 content_margin_left = 8.0
 content_margin_top = 5.0
 content_margin_right = 8.0
 content_margin_bottom = 5.0
-bg_color = Color(0.12, 0.18, 0.2, 0.8)
-border_color = Color(0.2, 0.3, 0.35, 0.7)
-corner_radius_top_left = 6
-corner_radius_top_right = 6
-corner_radius_bottom_right = 6
-corner_radius_bottom_left = 6
+bg_color = Color(0.12, 0.16, 0.14, 0.8)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(0.2, 0.3, 0.25, 0.7)
+corner_radius_top_left = 5
+corner_radius_top_right = 5
+corner_radius_bottom_right = 5
+corner_radius_bottom_left = 5
 
-[sub_resource type="StyleBoxFlat" id="PanelBg_Biome"]
+[sub_resource type="StyleBoxFlat" id="PanelBg"]
 content_margin_left = 12.0
 content_margin_top = 12.0
 content_margin_right = 12.0
 content_margin_bottom = 12.0
-bg_color = Color(0.1, 0.15, 0.2, 0.9)
-border_color = Color(0.2, 0.3, 0.4, 0.7)
-corner_radius_top_left = 10
-corner_radius_top_right = 10
-corner_radius_bottom_right = 10
-corner_radius_bottom_left = 10
-shadow_color = Color(0.05, 0.08, 0.1, 0.5)
+bg_color = Color(0.1, 0.15, 0.12, 0.9)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(0.25, 0.4, 0.3, 0.7)
+corner_radius_top_left = 8
+corner_radius_top_right = 8
+corner_radius_bottom_right = 8
+corner_radius_bottom_left = 8
+shadow_color = Color(0.05, 0.08, 0.06, 0.5)
 shadow_size = 3
 
-[sub_resource type="StyleBoxFlat" id="PopupHover_Organic"]
-bg_color = Color(0.2, 0.8, 0.9, 0.4)
+[sub_resource type="StyleBoxFlat" id="PopupHover"]
+bg_color = Color(0.4, 0.7, 0.5, 0.4)
 corner_radius_top_left = 4
 corner_radius_top_right = 4
 corner_radius_bottom_right = 4
 corner_radius_bottom_left = 4
 
-[sub_resource type="StyleBoxFlat" id="PopupBg_Organic"]
-content_margin_left = 8.0
-content_margin_top = 8.0
-content_margin_right = 8.0
-content_margin_bottom = 8.0
-bg_color = Color(0.08, 0.12, 0.15, 0.98)
-border_color = Color(0.3, 0.5, 0.6, 0.9)
+[sub_resource type="StyleBoxFlat" id="PopupBg"]
+content_margin_left = 10.0
+content_margin_top = 10.0
+content_margin_right = 10.0
+content_margin_bottom = 10.0
+bg_color = Color(0.08, 0.12, 0.1, 0.98)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(0.3, 0.5, 0.4, 0.9)
 corner_radius_top_left = 6
 corner_radius_top_right = 6
 corner_radius_bottom_right = 6
@@ -222,253 +311,262 @@ corner_radius_bottom_left = 6
 shadow_color = Color(0, 0, 0, 0.4)
 shadow_size = 5
 
-[sub_resource type="StyleBoxFlat" id="ProgressBarBg_Organic"]
-bg_color = Color(0.1, 0.12, 0.15, 1)
-corner_radius_top_left = 5
-corner_radius_top_right = 5
-corner_radius_bottom_right = 5
-corner_radius_bottom_left = 5
-expand_margin_top = 2.0
-expand_margin_bottom = 2.0
+[sub_resource type="StyleBoxFlat" id="ProgressBarBg"]
+bg_color = Color(0.1, 0.14, 0.12, 1)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(0.2, 0.3, 0.25, 0.7)
+corner_radius_top_left = 4
+corner_radius_top_right = 4
+corner_radius_bottom_right = 4
+corner_radius_bottom_left = 4
 
-[sub_resource type="StyleBoxFlat" id="ProgressBarFill_Cyan"]
-bg_color = Color(0.2, 0.8, 0.9, 1)
-corner_radius_top_left = 5
-corner_radius_top_right = 5
-corner_radius_bottom_right = 5
-corner_radius_bottom_left = 5
+[sub_resource type="StyleBoxFlat" id="ProgressBarFillGreen"]
+bg_color = Color(0.4, 0.7, 0.5, 1)
+corner_radius_top_left = 4
+corner_radius_top_right = 4
+corner_radius_bottom_right = 4
+corner_radius_bottom_left = 4
 
-[sub_resource type="StyleBoxFlat" id="ProgressBarFill_Lime"]
-bg_color = Color(0.5, 1, 0.3, 1)
-corner_radius_top_left = 5
-corner_radius_top_right = 5
-corner_radius_bottom_right = 5
-corner_radius_bottom_left = 5
+[sub_resource type="StyleBoxFlat" id="ProgressBarFillBlue"]
+bg_color = Color(0.3, 0.6, 0.7, 1)
+corner_radius_top_left = 4
+corner_radius_top_right = 4
+corner_radius_bottom_right = 4
+corner_radius_bottom_left = 4
 
-[sub_resource type="StyleBoxFlat" id="ProgressBarFill_Magenta"]
-bg_color = Color(0.9, 0.3, 0.8, 1)
-corner_radius_top_left = 5
-corner_radius_top_right = 5
-corner_radius_bottom_right = 5
-corner_radius_bottom_left = 5
+[sub_resource type="StyleBoxFlat" id="ProgressBarFillAmber"]
+bg_color = Color(0.8, 0.6, 0.2, 1)
+corner_radius_top_left = 4
+corner_radius_top_right = 4
+corner_radius_bottom_right = 4
+corner_radius_bottom_left = 4
 
 [sub_resource type="StyleBoxEmpty" id="ScrollContainer_Empty"]
 
-[sub_resource type="StyleBoxFlat" id="TabPanel_Organic"]
+[sub_resource type="StyleBoxFlat" id="TabPanel"]
 content_margin_left = 10.0
 content_margin_top = 10.0
 content_margin_right = 10.0
 content_margin_bottom = 10.0
-bg_color = Color(0.1, 0.15, 0.2, 0.9)
+bg_color = Color(0.12, 0.18, 0.15, 0.9)
 border_width_left = 1
 border_width_right = 1
 border_width_bottom = 1
-border_color = Color(0.2, 0.3, 0.4, 0.7)
-corner_radius_bottom_right = 10
-corner_radius_bottom_left = 10
+border_color = Color(0.25, 0.4, 0.3, 0.7)
+corner_radius_bottom_right = 6
+corner_radius_bottom_left = 6
 
-[sub_resource type="StyleBoxFlat" id="TabDisabled_Organic"]
+[sub_resource type="StyleBoxFlat" id="TabDisabled"]
 content_margin_left = 10.0
 content_margin_top = 6.0
 content_margin_right = 10.0
 content_margin_bottom = 6.0
-bg_color = Color(0.1, 0.12, 0.15, 0.7)
+bg_color = Color(0.12, 0.16, 0.14, 0.7)
 border_width_left = 1
 border_width_top = 1
 border_width_right = 1
-border_color = Color(0.15, 0.2, 0.25, 0.7)
-corner_radius_top_left = 8
-corner_radius_top_right = 8
+border_color = Color(0.2, 0.3, 0.25, 0.7)
+corner_radius_top_left = 6
+corner_radius_top_right = 6
 
-[sub_resource type="StyleBoxFlat" id="TabHovered_Organic"]
+[sub_resource type="StyleBoxFlat" id="TabHovered"]
 content_margin_left = 10.0
 content_margin_top = 6.0
 content_margin_right = 10.0
 content_margin_bottom = 6.0
-bg_color = Color(0.15, 0.25, 0.3, 1)
+bg_color = Color(0.18, 0.28, 0.22, 1)
 border_width_left = 1
 border_width_top = 1
 border_width_right = 1
-border_color = Color(0.2, 0.8, 0.9, 0.8)
-corner_radius_top_left = 8
-corner_radius_top_right = 8
+border_color = Color(0.4, 0.7, 0.5, 0.8)
+corner_radius_top_left = 6
+corner_radius_top_right = 6
 
-[sub_resource type="StyleBoxFlat" id="TabSelected_Organic"]
+[sub_resource type="StyleBoxFlat" id="TabSelected"]
 content_margin_left = 10.0
 content_margin_top = 6.0
 content_margin_right = 10.0
 content_margin_bottom = 6.0
-bg_color = Color(0.2, 0.35, 0.4, 1)
+bg_color = Color(0.22, 0.35, 0.28, 1)
 border_width_left = 1
 border_width_top = 1
 border_width_right = 1
-border_color = Color(0.2, 0.8, 0.9, 1)
-corner_radius_top_left = 8
-corner_radius_top_right = 8
+border_color = Color(0.4, 0.7, 0.5, 1)
+corner_radius_top_left = 6
+corner_radius_top_right = 6
 
-[sub_resource type="StyleBoxFlat" id="TabUnselected_Organic"]
+[sub_resource type="StyleBoxFlat" id="TabUnselected"]
 content_margin_left = 10.0
 content_margin_top = 6.0
 content_margin_right = 10.0
 content_margin_bottom = 6.0
-bg_color = Color(0.1, 0.15, 0.2, 1)
+bg_color = Color(0.15, 0.22, 0.18, 1)
 border_width_left = 1
 border_width_top = 1
 border_width_right = 1
-border_color = Color(0.2, 0.3, 0.4, 0.7)
-corner_radius_top_left = 8
-corner_radius_top_right = 8
+border_color = Color(0.25, 0.4, 0.3, 0.7)
+corner_radius_top_left = 6
+corner_radius_top_right = 6
 
-[sub_resource type="StyleBoxLine" id="Separator_Organic_V"]
-color = Color(0.2, 0.8, 0.9, 0.5)
+[sub_resource type="StyleBoxLine" id="SeparatorVertical"]
+color = Color(0.4, 0.7, 0.5, 0.5)
 thickness = 2
 vertical = true
 
 [resource]
 default_font_size = 16
-Button/colors/font_color = Color(0.85, 0.95, 1, 1)
-Button/colors/font_disabled_color = Color(0.5, 0.6, 0.65, 0.7)
+Button/colors/font_color = Color(0.85, 1, 0.9, 1)
+Button/colors/font_disabled_color = Color(0.6, 0.7, 0.65, 0.7)
 Button/colors/font_focus_color = Color(1, 1, 1, 1)
 Button/colors/font_hover_color = Color(1, 1, 1, 1)
 Button/colors/font_hover_pressed_color = Color(1, 1, 1, 1)
 Button/colors/font_pressed_color = Color(1, 1, 1, 1)
-Button/colors/icon_disabled_color = Color(0.5, 0.6, 0.65, 0.7)
+Button/colors/icon_disabled_color = Color(0.6, 0.7, 0.65, 0.7)
 Button/colors/icon_hover_color = Color(1, 1, 1, 1)
-Button/colors/icon_normal_color = Color(0.85, 0.95, 1, 1)
+Button/colors/icon_normal_color = Color(0.85, 1, 0.9, 1)
 Button/colors/icon_pressed_color = Color(1, 1, 1, 1)
-Button/styles/disabled = SubResource("ButtonDisabled_Organic")
-Button/styles/focus = SubResource("ButtonFocus_Organic")
-Button/styles/hover = SubResource("ButtonHover_Organic")
-Button/styles/normal = SubResource("ButtonNormal_Organic")
-Button/styles/pressed = SubResource("ButtonPressed_Organic")
+Button/styles/disabled = SubResource("ButtonDisabled")
+Button/styles/focus = SubResource("ButtonFocus")
+Button/styles/hover = SubResource("ButtonHover")
+Button/styles/normal = SubResource("ButtonNormal")
+Button/styles/pressed = SubResource("ButtonPressed")
 CardBackground/base_type = &"PanelContainer"
-CardBackground/styles/panel = SubResource("CardBg_Organic")
-CheckBox/colors/font_color = Color(0.85, 0.95, 1, 1)
+CardBackground/styles/panel = SubResource("CardBackground")
+CardImageArea/base_type = &"PanelContainer"
+CardImageArea/styles/panel = SubResource("CardImageArea")
+CardStatusArea/base_type = &"PanelContainer"
+CardStatusArea/styles/panel = SubResource("CardStatusArea")
+CardTitleArea/base_type = &"PanelContainer"
+CardTitleArea/styles/panel = SubResource("CardTitleArea")
+CheckBox/colors/font_color = Color(0.85, 1, 0.9, 1)
 CheckBox/icons/checked = null
 CheckBox/icons/radio_checked = null
 CheckBox/icons/radio_unchecked = null
 CheckBox/icons/unchecked = null
 CheckBox/styles/disabled = SubResource("CheckButton_Empty")
-CheckBox/styles/focus = SubResource("CheckFocus_Organic")
+CheckBox/styles/focus = SubResource("CheckFocus")
 CheckBox/styles/hover = SubResource("CheckButton_Empty")
 CheckBox/styles/hover_pressed = SubResource("CheckButton_Empty")
 CheckBox/styles/normal = SubResource("CheckButton_Empty")
 CheckBox/styles/pressed = SubResource("CheckButton_Empty")
-CheckButton/colors/font_color = Color(0.85, 0.95, 1, 1)
+CheckButton/colors/font_color = Color(0.85, 1, 0.9, 1)
 CheckButton/icons/checked = null
 CheckButton/icons/unchecked = null
 CheckButton/styles/disabled = SubResource("CheckButton_Empty")
-CheckButton/styles/focus = SubResource("CheckFocus_Organic")
+CheckButton/styles/focus = SubResource("CheckFocus")
 CheckButton/styles/hover = SubResource("CheckButton_Empty")
 CheckButton/styles/hover_pressed = SubResource("CheckButton_Empty")
 CheckButton/styles/normal = SubResource("CheckButton_Empty")
 CheckButton/styles/pressed = SubResource("CheckButton_Empty")
-HScrollBar/styles/grabber = SubResource("ScrollBarGrabber_Organic")
-HScrollBar/styles/grabber_highlight = SubResource("ScrollBarGrabberHighlight_Organic")
-HScrollBar/styles/grabber_pressed = SubResource("ScrollBarGrabberPressed_Organic")
-HScrollBar/styles/scroll = SubResource("ScrollBarBg_Organic")
+HScrollBar/styles/grabber = SubResource("ScrollBarGrabber")
+HScrollBar/styles/grabber_highlight = SubResource("ScrollBarGrabberHighlight")
+HScrollBar/styles/grabber_pressed = SubResource("ScrollBarGrabberPressed")
+HScrollBar/styles/scroll = SubResource("ScrollBarBg")
 HSeparator/constants/separation = 8
-HSeparator/styles/separator = SubResource("Separator_Organic")
+HSeparator/styles/separator = SubResource("Separator")
 HSlider/icons/grabber = null
 HSlider/icons/grabber_disabled = null
 HSlider/icons/grabber_highlight = null
 HSlider/icons/tick = null
-HSlider/styles/grabber_area = SubResource("SliderTrack_Organic")
-HSlider/styles/grabber_area_highlight = SubResource("SliderTrack_Organic")
-HSlider/styles/slider = SubResource("SliderTrack_Organic")
-Label/colors/font_color = Color(0.85, 0.95, 1, 1)
+HSlider/styles/grabber_area = SubResource("SliderTrack")
+HSlider/styles/grabber_area_highlight = SubResource("SliderTrack")
+HSlider/styles/slider = SubResource("SliderTrack")
+Label/colors/font_color = Color(0.85, 1, 0.9, 1)
 Label/colors/font_outline_color = Color(0, 0, 0, 1)
-Label/colors/font_shadow_color = Color(0.05, 0.08, 0.1, 0.6)
+Label/colors/font_shadow_color = Color(0.05, 0.08, 0.06, 0.6)
 Label/constants/line_spacing = 3
 Label/constants/outline_size = 0
 Label/constants/shadow_offset_x = 1
 Label/constants/shadow_offset_y = 1
 Label/styles/normal = SubResource("Label_Empty")
-LineEdit/colors/caret_color = Color(0.5, 1, 0.3, 1)
-LineEdit/colors/font_color = Color(0.85, 0.95, 1, 1)
-LineEdit/colors/font_placeholder_color = Color(0.5, 0.6, 0.65, 0.7)
-LineEdit/colors/font_readonly_color = Color(0.7, 0.8, 0.85, 0.9)
-LineEdit/colors/font_selected_color = Color(0.1, 0.15, 0.18, 1)
-LineEdit/colors/selection_color = Color(0.2, 0.8, 0.9, 0.7)
+LineEdit/colors/caret_color = Color(0.5, 0.8, 0.6, 1)
+LineEdit/colors/font_color = Color(0.85, 1, 0.9, 1)
+LineEdit/colors/font_placeholder_color = Color(0.6, 0.7, 0.65, 0.7)
+LineEdit/colors/font_readonly_color = Color(0.75, 0.85, 0.8, 0.9)
+LineEdit/colors/font_selected_color = Color(0.12, 0.18, 0.15, 1)
+LineEdit/colors/selection_color = Color(0.4, 0.7, 0.5, 0.7)
 LineEdit/constants/caret_width = 2
-LineEdit/styles/focus = SubResource("LineEditFocus_Organic")
-LineEdit/styles/normal = SubResource("LineEdit_Organic")
-LineEdit/styles/read_only = SubResource("LineEditReadonly_Organic")
-Panel/styles/panel = SubResource("PanelBg_Biome")
-PanelContainer/styles/panel = SubResource("PanelBg_Biome")
-PopupMenu/colors/font_accelerator_color = Color(0.6, 0.7, 0.8, 0.8)
-PopupMenu/colors/font_color = Color(0.85, 0.95, 1, 1)
-PopupMenu/colors/font_disabled_color = Color(0.5, 0.6, 0.65, 0.7)
+LineEdit/styles/focus = SubResource("LineEditFocus")
+LineEdit/styles/normal = SubResource("LineEdit")
+LineEdit/styles/read_only = SubResource("LineEditReadonly")
+Panel/styles/panel = SubResource("PanelBg")
+PanelContainer/styles/panel = SubResource("PanelBg")
+PopupMenu/colors/font_accelerator_color = Color(0.7, 0.8, 0.75, 0.8)
+PopupMenu/colors/font_color = Color(0.85, 1, 0.9, 1)
+PopupMenu/colors/font_disabled_color = Color(0.6, 0.7, 0.65, 0.7)
 PopupMenu/colors/font_hover_color = Color(1, 1, 1, 1)
 PopupMenu/icons/checked = null
 PopupMenu/icons/radio_checked = null
 PopupMenu/icons/radio_unchecked = null
 PopupMenu/icons/unchecked = null
-PopupMenu/styles/hover = SubResource("PopupHover_Organic")
-PopupMenu/styles/panel = SubResource("PopupBg_Organic")
-PopupMenu/styles/separator = SubResource("Separator_Organic")
-PopupPanel/styles/panel = SubResource("PopupBg_Organic")
-ProgressBar/colors/font_color = Color(0.1, 0.15, 0.18, 1)
+PopupMenu/styles/hover = SubResource("PopupHover")
+PopupMenu/styles/panel = SubResource("PopupBg")
+PopupMenu/styles/separator = SubResource("Separator")
+PopupPanel/styles/panel = SubResource("PopupBg")
+ProgressBar/colors/font_color = Color(0.12, 0.18, 0.15, 1)
 ProgressBar/colors/font_outline_color = Color(0, 0, 0, 1)
-ProgressBar/styles/background = SubResource("ProgressBarBg_Organic")
-ProgressBar/styles/fill = SubResource("ProgressBarFill_Cyan")
+ProgressBar/styles/background = SubResource("ProgressBarBg")
+ProgressBar/styles/fill = SubResource("ProgressBarFillGreen")
 ProgressBarEnergy/base_type = &"ProgressBar"
-ProgressBarEnergy/styles/fill = SubResource("ProgressBarFill_Cyan")
+ProgressBarEnergy/styles/fill = SubResource("ProgressBarFillBlue")
 ProgressBarGrowth/base_type = &"ProgressBar"
-ProgressBarGrowth/styles/fill = SubResource("ProgressBarFill_Lime")
+ProgressBarGrowth/styles/fill = SubResource("ProgressBarFillGreen")
 ProgressBarWarning/base_type = &"ProgressBar"
-ProgressBarWarning/styles/fill = SubResource("ProgressBarFill_Magenta")
+ProgressBarWarning/styles/fill = SubResource("ProgressBarFillAmber")
 ScrollContainer/styles/panel = SubResource("ScrollContainer_Empty")
-TabContainer/colors/font_disabled_color = Color(0.5, 0.6, 0.65, 0.7)
-TabContainer/colors/font_hovered_color = Color(0.9, 0.95, 1, 1)
+TabContainer/colors/font_disabled_color = Color(0.6, 0.7, 0.65, 0.7)
+TabContainer/colors/font_hovered_color = Color(0.9, 1, 0.95, 1)
 TabContainer/colors/font_selected_color = Color(1, 1, 1, 1)
-TabContainer/colors/font_unselected_color = Color(0.7, 0.8, 0.85, 1)
-TabContainer/styles/panel = SubResource("TabPanel_Organic")
-TabContainer/styles/tab_disabled = SubResource("TabDisabled_Organic")
-TabContainer/styles/tab_focus = SubResource("TabHovered_Organic")
-TabContainer/styles/tab_hovered = SubResource("TabHovered_Organic")
-TabContainer/styles/tab_selected = SubResource("TabSelected_Organic")
-TabContainer/styles/tab_unselected = SubResource("TabUnselected_Organic")
-TextEdit/colors/background_color = Color(0.1, 0.12, 0.15, 1)
-TextEdit/colors/caret_color = Color(0.5, 1, 0.3, 1)
-TextEdit/colors/font_color = Color(0.85, 0.95, 1, 1)
-TextEdit/colors/selection_color = Color(0.2, 0.8, 0.9, 0.7)
-TextEdit/styles/focus = SubResource("LineEditFocus_Organic")
-TextEdit/styles/normal = SubResource("LineEdit_Organic")
-TextEdit/styles/read_only = SubResource("LineEditReadonly_Organic")
-TooltipLabel/colors/font_color = Color(0.85, 0.95, 1, 1)
-TooltipPanel/styles/panel = SubResource("PopupBg_Organic")
+TabContainer/colors/font_unselected_color = Color(0.75, 0.85, 0.8, 1)
+TabContainer/styles/panel = SubResource("TabPanel")
+TabContainer/styles/tab_disabled = SubResource("TabDisabled")
+TabContainer/styles/tab_focus = SubResource("TabHovered")
+TabContainer/styles/tab_hovered = SubResource("TabHovered")
+TabContainer/styles/tab_selected = SubResource("TabSelected")
+TabContainer/styles/tab_unselected = SubResource("TabUnselected")
+TextEdit/colors/background_color = Color(0.12, 0.16, 0.14, 1)
+TextEdit/colors/caret_color = Color(0.5, 0.8, 0.6, 1)
+TextEdit/colors/font_color = Color(0.85, 1, 0.9, 1)
+TextEdit/colors/selection_color = Color(0.4, 0.7, 0.5, 0.7)
+TextEdit/styles/focus = SubResource("LineEditFocus")
+TextEdit/styles/normal = SubResource("LineEdit")
+TextEdit/styles/read_only = SubResource("LineEditReadonly")
+TooltipLabel/colors/font_color = Color(0.85, 1, 0.9, 1)
+TooltipPanel/styles/panel = SubResource("PopupBg")
 Tree/colors/custom_button_font_highlight = Color(1, 1, 1, 1)
-Tree/colors/font_color = Color(0.85, 0.95, 1, 1)
+Tree/colors/font_color = Color(0.85, 1, 0.9, 1)
 Tree/colors/font_selected_color = Color(1, 1, 1, 1)
-Tree/colors/guide_color = Color(0.2, 0.8, 0.9, 0.2)
-Tree/colors/relationship_line_color = Color(0.5, 1, 0.3, 0.3)
+Tree/colors/guide_color = Color(0.4, 0.7, 0.5, 0.2)
+Tree/colors/relationship_line_color = Color(0.5, 0.8, 0.6, 0.3)
 Tree/icons/arrow = null
 Tree/icons/arrow_collapsed = null
 Tree/icons/checked = null
 Tree/icons/select_arrow = null
 Tree/icons/unchecked = null
-Tree/styles/button_pressed = SubResource("ButtonPressed_Organic")
-Tree/styles/cursor = SubResource("PopupHover_Organic")
-Tree/styles/custom_button = SubResource("ButtonNormal_Organic")
-Tree/styles/custom_button_hover = SubResource("ButtonHover_Organic")
-Tree/styles/focus = SubResource("ButtonFocus_Organic")
-Tree/styles/panel = SubResource("PanelBg_Biome")
-Tree/styles/selected = SubResource("PopupHover_Organic")
-Tree/styles/selected_focus = SubResource("PopupHover_Organic")
-Tree/styles/title_button_hover = SubResource("ButtonHover_Organic")
-Tree/styles/title_button_normal = SubResource("ButtonNormal_Organic")
-Tree/styles/title_button_pressed = SubResource("ButtonPressed_Organic")
-VScrollBar/styles/grabber = SubResource("ScrollBarGrabber_Organic")
-VScrollBar/styles/grabber_highlight = SubResource("ScrollBarGrabberHighlight_Organic")
-VScrollBar/styles/grabber_pressed = SubResource("ScrollBarGrabberPressed_Organic")
-VScrollBar/styles/scroll = SubResource("ScrollBarBg_Organic")
+Tree/styles/button_pressed = SubResource("ButtonPressed")
+Tree/styles/cursor = SubResource("PopupHover")
+Tree/styles/custom_button = SubResource("ButtonNormal")
+Tree/styles/custom_button_hover = SubResource("ButtonHover")
+Tree/styles/focus = SubResource("ButtonFocus")
+Tree/styles/panel = SubResource("PanelBg")
+Tree/styles/selected = SubResource("PopupHover")
+Tree/styles/selected_focus = SubResource("PopupHover")
+Tree/styles/title_button_hover = SubResource("ButtonHover")
+Tree/styles/title_button_normal = SubResource("ButtonNormal")
+Tree/styles/title_button_pressed = SubResource("ButtonPressed")
+VScrollBar/styles/grabber = SubResource("ScrollBarGrabber")
+VScrollBar/styles/grabber_highlight = SubResource("ScrollBarGrabberHighlight")
+VScrollBar/styles/grabber_pressed = SubResource("ScrollBarGrabberPressed")
+VScrollBar/styles/scroll = SubResource("ScrollBarBg")
 VSeparator/constants/separation = 8
-VSeparator/styles/separator = SubResource("Separator_Organic_V")
+VSeparator/styles/separator = SubResource("SeparatorVertical")
 VSlider/icons/grabber = null
 VSlider/icons/grabber_disabled = null
 VSlider/icons/grabber_highlight = null
 VSlider/icons/tick = null
-VSlider/styles/grabber_area = SubResource("SliderTrack_Organic")
-VSlider/styles/grabber_area_highlight = SubResource("SliderTrack_Organic")
-VSlider/styles/slider = SubResource("SliderTrack_Organic")
+VSlider/styles/grabber_area = SubResource("SliderTrack")
+VSlider/styles/grabber_area_highlight = SubResource("SliderTrack")
+VSlider/styles/slider = SubResource("SliderTrack")
