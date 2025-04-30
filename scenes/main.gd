@@ -264,6 +264,10 @@ func handle_gardener_interaction(gardener: Card, target: Card):
 	var cost = gardener_action_cost
 	var target_type = target.card_type
 	
+	if not target.stacked_cards.is_empty():
+		# Use the top card instead
+		target = target.stacked_cards.back()
+	
 	# --- PLANTING SEEDS ---
 	if CardDefs.is_seed_or_spore(target_type) and not target.is_planted:
 		var substrate = find_nearby_card_type(target, [CardDefs.is_substrate])
