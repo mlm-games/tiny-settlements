@@ -1,4 +1,3 @@
-# Card.gd - Complete rewrite
 class_name Card extends Area2D
 
 signal drag_started(card)
@@ -20,6 +19,13 @@ var is_dragging: bool = false
 var is_working: bool = false
 var drag_offset: Vector2 = Vector2.ZERO
 
+var card_image: Texture2D = null
+@onready var image_rect: TextureRect = $ImageRect
+@onready var title_label: Label = $TitleLabel
+@onready var status_label: Label = $StatusLabel
+
+
+
 @onready var sprite: Sprite2D = $Sprite2D
 @onready var label: Label = $Label
 @onready var collision_shape: CollisionShape2D = $CollisionShape2D
@@ -39,6 +45,68 @@ func _ready():
 	tween.tween_property(self, "scale", Vector2.ONE, 0.2).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
 
 	set_card_type(card_type)
+	setup_card_visuals()
+
+func set_card_type(new_type: CardDefs.CardType):
+	card_type = new_type
+	if CardDefs.CARD_PROPERTIES.has(card_type):
+		card_properties = CardDefs.CARD_PROPERTIES[card_type].duplicate()
+	
+	# Load the card image if specified
+	if card_properties.has("image"):
+		var image_path = card_properties.get("image", "")
+		if image_path != "":
+			card_image = load(image_path)
+	
+	var passive_interval = CardDefs.get_property(card_type, "passive_interval", 0.0)
+	if passive_interval > 0.0:
+		current_passive_action_interval = passive_interval
+
+	if card_type == CardDefs.CardType.MATURE_VINE:
+		needs_pollination = true
+
+	if image_rect and title_label and status_label:
+		setup_card_visuals()
+
+func setup_card_visuals():
+	if image_rect and card_image:
+		image_rect.texture = card_image
+	
+	if title_label:
+		title_label.text = CardDefs.get_label(card_type)
+	
+	update_label()
+
+func update_label():
+	if not status_label: return
+	var status_text = ""
+
+	match card_type:
+		CardDefs.CardType.GARDENER:
+			if card_properties.has("focus"):
+				status_text = "Focus: %d%%" % int(card_properties.focus / card_properties.max_focus * 100.0)
+		CardDefs.CardType.MATURE_VINE:
+			if needs_pollination and not is_pollinated: 
+				status_text = "(Needs Pollination)"
+			elif is_pollinated: 
+				status_text = "(Pollinated)"
+		CardDefs.CardType.BASIC_FUNGI, CardDefs.CardType.SYMBIOTIC_ALGAE, CardDefs.CardType.GRAZING_SLUG:
+			if not passive_action_timer.is_stopped():
+				status_text = "(%.1fs)" % passive_action_timer.time_left
+	
+	status_label.text = status_text
+	
+	# Auto-adjust font size if text doesn't fit
+	var original_size = 14 # Default font size
+	status_label.add_theme_font_size_override("font_size", original_size)
+	
+	# Wait for the label to update its size
+	await get_tree().process_frame
+	
+	# Check if text is too large and adjust if needed
+	if status_label.get_line_count() > 2:
+		var new_size = original_size * 0.8
+		status_label.add_theme_font_size_override("font_size", new_size)
 
 func _input_event(viewport, event, shape_idx):
 	if event is InputEventMouseButton and event.button_index == MOUSE_BUTTON_LEFT:
@@ -60,43 +128,6 @@ func _input_event(viewport, event, shape_idx):
 func _process(delta):
 	if is_dragging:
 		global_position = get_global_mouse_position() - drag_offset
-
-func set_card_type(new_type: CardDefs.CardType):
-	card_type = new_type
-	if CardDefs.CARD_PROPERTIES.has(card_type):
-		card_properties = CardDefs.CARD_PROPERTIES[card_type].duplicate()
-
-	# Setup based on type
-	var passive_interval = CardDefs.get_property(card_type, "passive_interval", 0.0)
-	if passive_interval > 0.0:
-		current_passive_action_interval = passive_interval
-
-	if card_type == CardDefs.CardType.MATURE_VINE:
-		needs_pollination = true
-
-	if label:
-		update_label()
-
-func update_label():
-	if not label: return
-	var base_label = CardDefs.get_label(card_type)
-	var extra_info = ""
-
-	# Add dynamic info based on state
-	match card_type:
-		CardDefs.CardType.GARDENER:
-			if card_properties.has("focus"):
-				extra_info = "\nFocus: %d%%" % int(card_properties.focus / card_properties.max_focus * 100.0)
-		CardDefs.CardType.MATURE_VINE:
-			if needs_pollination and not is_pollinated: 
-				extra_info = "\n(Needs Pollination)"
-			elif is_pollinated: 
-				extra_info = "\n(Pollinated)"
-		CardDefs.CardType.BASIC_FUNGI, CardDefs.CardType.SYMBIOTIC_ALGAE, CardDefs.CardType.GRAZING_SLUG:
-			if not passive_action_timer.is_stopped():
-				extra_info = "\n(%.1fs)" % passive_action_timer.time_left
-
-	label.text = base_label + extra_info
 
 func start_gardener_action(duration: float):
 	if not is_working:

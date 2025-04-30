@@ -1,4 +1,3 @@
-# Modular/Components/card_definitions.gd
 class_name CardDefs extends RefCounted
 
 enum CardType {
@@ -42,40 +41,40 @@ enum CardType {
 
 # Note: Properties defining interactions (eats, produces, needs) added for clarity
 const CARD_PROPERTIES = {
-	CardType.GARDENER: {"label": "Gardener", "initial_focus": 100.0, "max_focus": 100.0, "action_cost": 5.0},
-	CardType.BIO_SUBSTRATE: {"label": "Bio-Substrate"},
+	CardType.GARDENER: {"label": "Gardener", "initial_focus": 100.0, "max_focus": 100.0, "action_cost": 50.0, "image": "uid://ca64qvofktjhs"},
+	CardType.BIO_SUBSTRATE: {"label": "Bio-Substrate", "image": "uid://dnurxipxp2byb"},
 
 	# Tier 0
-	CardType.SPORE_POD: {"label": "Spore Pod"},
-	CardType.NUTRIENT_SLIME: {"label": "Nutrient Slime", "nutrient_value": 1.0},
+	CardType.SPORE_POD: {"label": "Spore Pod", "image": "uid://rl5gjdj5o0gs"},
+	CardType.NUTRIENT_SLIME: {"label": "Nutrient Slime", "nutrient_value": 1.0, "image": "res://assets/cards/nutrient_slime.svg"},
 
 	# Tier 1
-	CardType.BASIC_FUNGI: {"label": "Basic Fungi", "produces_passively": CardType.PROCESSED_NUTRIENTS, "passive_interval": 15.0},
-	CardType.PROCESSED_NUTRIENTS: {"label": "Processed Nutrients", "nutrient_value": 2.0},
+	CardType.BASIC_FUNGI: {"label": "Basic Fungi", "produces_passively": CardType.PROCESSED_NUTRIENTS, "passive_interval": 15.0, "image": "uid://c8vji67aunfu8"},
+	CardType.PROCESSED_NUTRIENTS: {"label": "Processed Nutrients", "nutrient_value": 2.0, "image": "uid://btbyi712xkcgx"},
 
 	# Tier 2
-	CardType.VINE_SEED: {"label": "Vine Seed", "needs_nutrient": CardType.PROCESSED_NUTRIENTS},
-	CardType.YOUNG_VINE: {"label": "Young Vine", "needs_nutrient": CardType.PROCESSED_NUTRIENTS}, # Needs more nutrients to mature
-	CardType.MATURE_VINE: {"label": "Mature Vine", "can_be_pollinated": true, "yields_on_harvest": CardType.NONE}, # Maybe yields basic fiber if harvested?
-	CardType.FLUTTERWING_SPORE: {"label": "Flutterwing Spore", "needs_nutrient": CardType.NUTRIENT_SLIME}, # Basic needs
-	CardType.FLUTTERWING_LARVA: {"label": "Flutterwing Larva"}, # Simple timed growth
-	CardType.MATURE_FLUTTERWING: {"label": "Mature Flutterwing", "is_pollinator": true},
+	CardType.VINE_SEED: {"label": "Vine Seed", "needs_nutrient": CardType.PROCESSED_NUTRIENTS, "image": "uid://s33ls1nykkpw"},
+	CardType.YOUNG_VINE: {"label": "Young Vine", "needs_nutrient": CardType.PROCESSED_NUTRIENTS, "image": "uid://dkkliydu6w2vh"}, # Needs more nutrients to mature
+	CardType.MATURE_VINE: {"label": "Mature Vine", "can_be_pollinated": true, "yields_on_harvest": CardType.NONE, "image": "uid://k4dmtvr1oswe"}, # Maybe yields basic fiber if harvested?
+	CardType.FLUTTERWING_SPORE: {"label": "Flutterwing Spore", "needs_nutrient": CardType.NUTRIENT_SLIME, "image": "uid://brf6c82qdpayd"}, # Basic needs
+	CardType.FLUTTERWING_LARVA: {"label": "Flutterwing Larva", "image": "uid://bleylu31aj6ut"}, # Simple timed growth
+	CardType.MATURE_FLUTTERWING: {"label": "Mature Flutterwing", "is_pollinator": true, "image": "uid://b6y5nt6uucg4u"},
 
 	# Tier 3
-	CardType.FERTILIZED_VINE_POD: {"label": "Fertilized Pod", "grows_into": CardType.SYMBIOTIC_ALGAE},
-	CardType.SYMBIOTIC_ALGAE: {"label": "Symbiotic Algae", "produces_passively": CardType.LUMINA_CRYSTAL, "passive_interval": 20.0, "needs_substrate": CardType.FERTILE_SUBSTRATE}, # Needs better soil bonus
-	CardType.LUMINA_CRYSTAL: {"label": "Lumina Crystal", "nutrient_value": 5.0}, # High energy
-	CardType.GRAZING_SLUG_EGG: {"label": "Slug Egg", "needs_nearby": CardType.BASIC_FUNGI}, # Hatch condition
-	CardType.GRAZING_SLUG: {"label": "Grazing Slug", "eats": CardType.BASIC_FUNGI, "produces_passively": CardType.RICH_MULCH, "passive_interval": 10.0},
-	CardType.RICH_MULCH: {"label": "Rich Mulch"},
-	CardType.FERTILE_SUBSTRATE: {"label": "Fertile Substrate"},
+	CardType.FERTILIZED_VINE_POD: {"label": "Fertilized Pod", "grows_into": CardType.SYMBIOTIC_ALGAE, "image": "uid://d3858wciwhfeq"},
+	CardType.SYMBIOTIC_ALGAE: {"label": "Symbiotic Algae", "produces_passively": CardType.LUMINA_CRYSTAL, "passive_interval": 20.0, "needs_substrate": CardType.FERTILE_SUBSTRATE, "image": "uid://dw2jjnb07cr5k"}, # Needs better soil bonus
+	CardType.LUMINA_CRYSTAL: {"label": "Lumina Crystal", "nutrient_value": 5.0, "image": "uid://b060h11gec53l"}, # High energy
+	CardType.GRAZING_SLUG_EGG: {"label": "Slug Egg", "needs_nearby": CardType.BASIC_FUNGI, "image": "uid://cce5ok26op7pv"}, # Hatch condition
+	CardType.GRAZING_SLUG: {"label": "Grazing Slug", "eats": CardType.BASIC_FUNGI, "produces_passively": CardType.RICH_MULCH, "passive_interval": 10.0, "image": "uid://dbvpmyuo6xwn6"},
+	CardType.RICH_MULCH: {"label": "Rich Mulch", "image": "uid://dauqf2l7x2o8r"},
+	CardType.FERTILE_SUBSTRATE: {"label": "Fertile Substrate", "image": "uid://cnylnctybitla"},
 
 	# Hazard
-	CardType.WASTE_TOXIN: {"label": "Waste Toxin", "inhibits_nearby": true}, # Simple negative effect
+	CardType.WASTE_TOXIN: {"label": "Waste Toxin", "inhibits_nearby": true, "image": ""}, # Simple negative effect
 
 	# Tier 4
-	CardType.APEX_SPORE: {"label": "Apex Spore", "needs_substrate": CardType.FERTILE_SUBSTRATE, "needs_nutrient": CardType.LUMINA_CRYSTAL},
-	CardType.GROWING_APEX: {"label": "Growing Apex"},
+	CardType.APEX_SPORE: {"label": "Apex Spore", "needs_substrate": CardType.FERTILE_SUBSTRATE, "needs_nutrient": CardType.LUMINA_CRYSTAL, "image": ""},
+	CardType.GROWING_APEX: {"label": "Growing Apex", "image": ""},
 	CardType.GENESIS_BLOOM: {"label": "Genesis Bloom\n(Ecosystem Thrives!)"}
 }
 

@@ -1,8 +1,7 @@
-# Scenes/UI.gd
 extends CanvasLayer
 
-@onready var biodiversity_label: Label = %BiodiversityLabel # Use unique name
-@onready var gardener_focus_label: Label = %GardenerEnergyLabel # Rename var for clarity
+@onready var biodiversity_label: Label = %BiodiversityLabel 
+@onready var gardener_focus_label: Label = %GardenerEnergyLabel
 @onready var status_label: Label = %StatusLabel
 
 func update_biodiversity(score: int):

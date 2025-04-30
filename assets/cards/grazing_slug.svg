@@ -1,0 +1,74 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<svg
+   width="100"
+   height="100"
+   version="1.1"
+   id="svg5"
+   sodipodi:docname="grazing_slug.svg"
+   inkscape:version="1.4.1 (93de688d07, 2025-03-30)"
+   xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
+   xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
+   xmlns="http://www.w3.org/2000/svg"
+   xmlns:svg="http://www.w3.org/2000/svg">
+  <defs
+     id="defs5" />
+  <sodipodi:namedview
+     id="namedview5"
+     pagecolor="#ffffff"
+     bordercolor="#000000"
+     borderopacity="0.25"
+     inkscape:showpageshadow="2"
+     inkscape:pageopacity="0.0"
+     inkscape:pagecheckerboard="0"
+     inkscape:deskcolor="#d1d1d1"
+     inkscape:zoom="6.51"
+     inkscape:cx="50.076805"
+     inkscape:cy="50"
+     inkscape:window-width="1536"
+     inkscape:window-height="902"
+     inkscape:window-x="0"
+     inkscape:window-y="0"
+     inkscape:window-maximized="1"
+     inkscape:current-layer="svg5" />
+  <path
+     d="M30 60 Q30 40 50 40 Q70 40 70 60 Q70 75 50 75 Q30 75 30 60"
+     fill="#db9"
+     id="path1" />
+  <path
+     d="M25 60 L30 60"
+     stroke="#db9"
+     stroke-width="5"
+     fill="none"
+     id="path2" />
+  <path
+     d="m 70,60 h 5"
+     stroke="#ddbb99"
+     stroke-width="5"
+     fill="none"
+     id="path3"
+     sodipodi:nodetypes="cc" />
+  <circle
+     cx="40"
+     cy="50"
+     r="5"
+     fill="#ca8"
+     id="circle3" />
+  <circle
+     cx="60"
+     cy="50"
+     r="5"
+     fill="#ca8"
+     id="circle4" />
+  <path
+     d="M40 50 L40 45 M60 50 L60 45"
+     stroke="#ca8"
+     stroke-width="2"
+     fill="none"
+     id="path4" />
+  <path
+     d="M45 65 Q50 70 55 65"
+     stroke="#ca8"
+     stroke-width="2"
+     fill="none"
+     id="path5" />
+</svg>

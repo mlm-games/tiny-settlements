@@ -1,4 +1,3 @@
-# Main.gd - Complete rewrite
 extends Node
 
 const CardScene = preload("uid://din71ct0bjm3d")
@@ -108,7 +107,7 @@ func start_game():
 func spawn_card(type: CardDefs.CardType, position: Vector2) -> Card:
 	if game_over and type != CardDefs.CardType.GENESIS_BLOOM: return null
 
-	var new_card = CardScene.instantiate() as Card
+	var new_card : Card = CardScene.instantiate()
 	new_card.card_type = type
 
 	# Special handling for Gardener
