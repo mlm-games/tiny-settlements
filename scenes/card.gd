@@ -126,8 +126,8 @@ func update_label():
 	
 	status_label.text = status_text
 	
-	# Auto-adjust font size if text doesn't fit
-	var original_size = 14 # Default font size
+	#TODO: Auto-adjust font size if text doesn't fit
+	var original_size = 10 # Default font size
 	status_label.add_theme_font_size_override("font_size", original_size)
 	
 	# Wait for the label to update its size
@@ -135,13 +135,12 @@ func update_label():
 	
 	# Check if text is too large and adjust if needed
 	if status_label.get_line_count() > 2:
-		var new_size = original_size * 0.8
+		var new_size = original_size * 0.6
 		status_label.add_theme_font_size_override("font_size", new_size)
 
 func _input_event(viewport, event, shape_idx):
 	if event is InputEventMouseButton and event.button_index == MOUSE_BUTTON_LEFT:
 		if event.pressed and not is_working:
-			# Allow dragging any card that isn't busy
 			is_dragging = true
 			drag_offset = get_global_mouse_position() - global_position
 			z_index = 10
@@ -275,7 +274,7 @@ func play_feedback_animation(anim_name: String):
 				anim.track_insert_key(0, 0.0, Color.WHITE)
 				anim.track_insert_key(0, 0.1, Color(1.0, 0.5, 0.5, 1.0))
 				anim.track_insert_key(0, 0.4, Color.WHITE)
-				animation_player.add_animation("error_pulse", anim)
+				animation_player.get_animation_library("").add_animation("error_pulse", anim)
 			animation_player.play("error_pulse")
 
 # Helper to create simple animations

@@ -30,6 +30,7 @@ window/size/viewport_width=1280
 window/size/viewport_height=720
 window/size/mode=3
 window/stretch/mode="canvas_items"
+window/stretch/aspect="keep_width"
 
 [editor_plugins]
 
@@ -37,7 +38,7 @@ enabled=PackedStringArray("res://addons/maaacks_game_template/plugin.cfg")
 
 [gui]
 
-theme/custom="uid://dpf1f1wdxgduj"
+theme/custom="uid://bxnvs4u8j7lqd"
 common/drop_mouse_on_gui_input_disabled=true
 
 [input]

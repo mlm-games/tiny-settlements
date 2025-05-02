@@ -220,6 +220,9 @@ func handle_card_interaction(card_a: Card, card_b: Card):
 	var type_a = card_a.card_type
 	var type_b = card_b.card_type
 	
+	if not card_b.stacked_cards.is_empty():
+		if card_b.stacked_cards.back(): card_b = card_b.stacked_cards.back()
+	
 	print("Processing interaction: ", CardDefs.get_label(type_a), " + ", CardDefs.get_label(type_b))
 	
 	# --- GARDENER INTERACTIONS ---
@@ -264,9 +267,9 @@ func handle_gardener_interaction(gardener: Card, target: Card):
 	var cost = gardener_action_cost
 	var target_type = target.card_type
 	
-	if not target.stacked_cards.is_empty():
-		# Use the top card instead
-		target = target.stacked_cards.back()
+	#if not target.stacked_cards.is_empty():
+		 ##Use the top card instead
+		#target = target.stacked_cards.back()
 	
 	# --- PLANTING SEEDS ---
 	if CardDefs.is_seed_or_spore(target_type) and not target.is_planted:
@@ -358,6 +361,21 @@ func handle_recipe_combination(card_a: Card, card_b: Card):
 	var type_b = card_b.card_type
 	var spawn_pos = (card_a.global_position + card_b.global_position) / 2
 	
+	# --- EXTRA SPORE RECIPE ---
+	if (type_a == CardDefs.CardType.PROCESSED_NUTRIENTS and type_b == CardDefs.CardType.PROCESSED_NUTRIENTS) or \
+	   (type_b == CardDefs.CardType.NUTRIENT_SLIME and type_a == CardDefs.CardType.NUTRIENT_SLIME):
+		spawn_card(CardDefs.CardType.SPORE_POD, spawn_pos)
+		card_a.consume(false)
+		card_b.consume(false)
+		return true
+		
+	# --- SYMBOITC ALGAE RECIPE ---
+	if (type_a == CardDefs.CardType.BASIC_FUNGI and type_b == CardDefs.CardType.FERTILIZED_VINE_POD):
+		spawn_card(CardDefs.CardType.SYMBIOTIC_ALGAE, spawn_pos)
+		card_a.consume(false)
+		card_b.consume(false)
+		return true
+	
 	# --- VINE SEED RECIPE ---
 	if (type_a == CardDefs.CardType.NUTRIENT_SLIME and type_b == CardDefs.CardType.PROCESSED_NUTRIENTS) or \
 	   (type_b == CardDefs.CardType.NUTRIENT_SLIME and type_a == CardDefs.CardType.PROCESSED_NUTRIENTS):
@@ -375,16 +393,16 @@ func handle_recipe_combination(card_a: Card, card_b: Card):
 		return true
 	
 	# --- GRAZING SLUG EGG RECIPE ---
-	if (type_a == CardDefs.CardType.RICH_MULCH and type_b == CardDefs.CardType.BASIC_FUNGI) or\
-	   (type_b == CardDefs.CardType.RICH_MULCH and type_a == CardDefs.CardType.BASIC_FUNGI):
+	if (type_a == CardDefs.CardType.FERTILIZED_VINE_POD and type_b == CardDefs.CardType.FLUTTERWING_SPORE) or\
+	   (type_b == CardDefs.CardType.FLUTTERWING_SPORE and type_a == CardDefs.CardType.FERTILIZED_VINE_POD):
 		spawn_card(CardDefs.CardType.GRAZING_SLUG_EGG, spawn_pos)
 		card_a.consume(false)
 		card_b.consume(false)
 		return true
 	
 	# --- APEX SPORE RECIPE ---
-	if (type_a == CardDefs.CardType.LUMINA_CRYSTAL and type_b == CardDefs.CardType.SYMBIOTIC_ALGAE) or \
-	   (type_b == CardDefs.CardType.LUMINA_CRYSTAL and type_a == CardDefs.CardType.SYMBIOTIC_ALGAE):
+	if (type_a == CardDefs.CardType.LUMINA_CRYSTAL and type_b == CardDefs.CardType.FERTILIZED_VINE_POD) or \
+	   (type_b == CardDefs.CardType.FERTILIZED_VINE_POD and type_a == CardDefs.CardType.LUMINA_CRYSTAL):
 		spawn_card(CardDefs.CardType.APEX_SPORE, spawn_pos)
 		card_a.consume(false)
 		card_b.consume(false)
