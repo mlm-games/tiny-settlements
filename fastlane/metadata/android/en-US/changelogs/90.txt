@@ -1,0 +1,4 @@
+v0.5.3
+
+- Since the jam got extended, fix few bugs and some end content
+
