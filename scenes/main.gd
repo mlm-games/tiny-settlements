@@ -336,7 +336,6 @@ func handle_gardener_interaction(gardener: Card, target: Card):
 			target.card_properties.gardener_action_data = {"action": "clean"}
 			gardener.global_position = target.global_position + Vector2(0, -40)
 		
-# --- Continue from handle_gardener_interaction function ---
 
 	# --- APPLYING MULCH ---
 	elif target_type == CardDefs.CardType.RICH_MULCH:

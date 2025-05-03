@@ -1,3 +1,7 @@
+## v0.5.4
+
+- Missed art for last few cards
+
 ## v0.5.3
 
 - Since the jam got extended, fix few bugs and some end content

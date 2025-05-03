@@ -73,9 +73,9 @@ const CARD_PROPERTIES = {
 	CardType.WASTE_TOXIN: {"label": "Waste Toxin", "inhibits_nearby": true, "image": ""}, # Simple negative effect
 
 	# Tier 4
-	CardType.APEX_SPORE: {"label": "Apex Spore", "needs_substrate": CardType.FERTILE_SUBSTRATE, "needs_nutrient": CardType.LUMINA_CRYSTAL, "image": ""},
-	CardType.GROWING_APEX: {"label": "Growing Apex", "image": ""},
-	CardType.GENESIS_BLOOM: {"label": "Genesis Bloom\n(Ecosystem Thrives!)"}
+	CardType.APEX_SPORE: {"label": "Apex Spore", "needs_substrate": CardType.FERTILE_SUBSTRATE, "needs_nutrient": CardType.LUMINA_CRYSTAL, "image": "uid://dg3adgjvowjr3"},
+	CardType.GROWING_APEX: {"label": "Growing Apex", "image": "uid://c5pdo423aq3i4"},
+	CardType.GENESIS_BLOOM: {"label": "Genesis Bloom\n(Ecosystem Thrives!)", "image": "uid://dj2n50342yvrp"}
 }
 
 static func get_label(type: CardType) -> String:
