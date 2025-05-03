@@ -1,0 +1,4 @@
+v0.5.4
+
+- Missed art for last few cards
+
