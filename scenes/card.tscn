@@ -1,7 +1,16 @@
-[gd_scene load_steps=11 format=3 uid="uid://din71ct0bjm3d"]
+[gd_scene load_steps=13 format=3 uid="uid://din71ct0bjm3d"]
 
+[ext_resource type="Shader" uid="uid://b5s3qtlqf0w8l" path="res://assets/2d-perspective.gdshader" id="1_ktuci"]
 [ext_resource type="Script" uid="uid://b7nu4kgv0lfv5" path="res://scenes/card.gd" id="1_rjlel"]
 [ext_resource type="Texture2D" uid="uid://cdmpp87dsmuwv" path="res://assets/cards/card_bg.svg" id="2_6u4wf"]
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_kg30u"]
+shader = ExtResource("1_ktuci")
+shader_parameter/fov = 90.0
+shader_parameter/cull_back = true
+shader_parameter/y_rot = 0.0
+shader_parameter/x_rot = 0.0
+shader_parameter/inset = 0.0
 
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_rjlel"]
 size = Vector2(90, 120)
@@ -142,6 +151,7 @@ _data = {
 }
 
 [node name="Card" type="Area2D"]
+material = SubResource("ShaderMaterial_kg30u")
 script = ExtResource("1_rjlel")
 
 [node name="Sprite2D" type="Sprite2D" parent="."]

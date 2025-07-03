@@ -3,7 +3,7 @@
 [ext_resource type="Script" uid="uid://c2f4272aeyy6j" path="res://scenes/main.gd" id="1_0wfyh"]
 [ext_resource type="PackedScene" uid="uid://dsj6kj5vycuc0" path="res://scenes/ui.tscn" id="2_sugp2"]
 [ext_resource type="PackedScene" uid="uid://ligvvwlrfmt3" path="res://scenes/tutorial/tutorial_manager.tscn" id="3_sugp2"]
-[ext_resource type="AudioStream" uid="uid://dpxi32b0apbip" path="res://assets/HoliznaCC0 - Lofi And Chill - 06 Glad To Be Stuck Inside.ogg" id="4_jyhfs"]
+[ext_resource type="AudioStream" uid="uid://dpxi32b0apbip" path="res://assets/audio/HoliznaCC0 - Lofi And Chill - 06 Glad To Be Stuck Inside.ogg" id="4_jyhfs"]
 [ext_resource type="Texture2D" uid="uid://c0sbjavlwcioi" path="res://assets/organic_pattern.png" id="4_tbgi4"]
 
 [sub_resource type="Gradient" id="Gradient_jyhfs"]
