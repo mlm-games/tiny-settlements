@@ -1,0 +1,19 @@
+[remap]
+
+importer="oggvorbisstr"
+type="AudioStreamOggVorbis"
+uid="uid://bm7yrev3jyq5b"
+path="res://.godot/imported/HoliznaCC0 - Lofi And Chill - 05 Mundane.ogg-a682ac6dad4bc3ac50e971bc93776879.oggvorbisstr"
+
+[deps]
+
+source_file="res://game/assets/audio/HoliznaCC0 - Lofi And Chill - 05 Mundane.ogg"
+dest_files=["res://.godot/imported/HoliznaCC0 - Lofi And Chill - 05 Mundane.ogg-a682ac6dad4bc3ac50e971bc93776879.oggvorbisstr"]
+
+[params]
+
+loop=false
+loop_offset=0
+bpm=0
+beat_count=0
+bar_beats=4

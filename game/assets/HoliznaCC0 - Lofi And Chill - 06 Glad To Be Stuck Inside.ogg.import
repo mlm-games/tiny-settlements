@@ -1,0 +1,19 @@
+[remap]
+
+importer="oggvorbisstr"
+type="AudioStreamOggVorbis"
+uid="uid://ckufp8016ntuh"
+path="res://.godot/imported/HoliznaCC0 - Lofi And Chill - 06 Glad To Be Stuck Inside.ogg-9dc3de11822539f4850bc3edbaa6a37a.oggvorbisstr"
+
+[deps]
+
+source_file="res://game/assets/HoliznaCC0 - Lofi And Chill - 06 Glad To Be Stuck Inside.ogg"
+dest_files=["res://.godot/imported/HoliznaCC0 - Lofi And Chill - 06 Glad To Be Stuck Inside.ogg-9dc3de11822539f4850bc3edbaa6a37a.oggvorbisstr"]
+
+[params]
+
+loop=true
+loop_offset=0.0
+bpm=0.0
+beat_count=0
+bar_beats=4

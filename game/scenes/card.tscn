@@ -1,0 +1,226 @@
+[gd_scene load_steps=13 format=3 uid="uid://din71ct0bjm3d"]
+
+[ext_resource type="Shader" uid="uid://b5s3qtlqf0w8l" path="res://game/assets/2d-perspective.gdshader" id="1_cmwa7"]
+[ext_resource type="Script" uid="uid://b7nu4kgv0lfv5" path="res://game/scenes/card.gd" id="2_5rxcw"]
+[ext_resource type="Texture2D" uid="uid://cdmpp87dsmuwv" path="res://game/assets/cards/card_bg.svg" id="3_px4kq"]
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_kg30u"]
+shader = ExtResource("1_cmwa7")
+shader_parameter/fov = 90.0
+shader_parameter/cull_back = true
+shader_parameter/y_rot = 0.0
+shader_parameter/x_rot = 0.0
+shader_parameter/inset = 0.0
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_rjlel"]
+size = Vector2(90, 120)
+
+[sub_resource type="Animation" id="Animation_ktuci"]
+length = 0.001
+tracks/0/type = "value"
+tracks/0/imported = false
+tracks/0/enabled = true
+tracks/0/path = NodePath(".:scale")
+tracks/0/interp = 1
+tracks/0/loop_wrap = true
+tracks/0/keys = {
+"times": PackedFloat32Array(0),
+"transitions": PackedFloat32Array(1),
+"update": 0,
+"values": [Vector2(1, 1)]
+}
+tracks/1/type = "value"
+tracks/1/imported = false
+tracks/1/enabled = true
+tracks/1/path = NodePath(".:position")
+tracks/1/interp = 1
+tracks/1/loop_wrap = true
+tracks/1/keys = {
+"times": PackedFloat32Array(0),
+"transitions": PackedFloat32Array(1),
+"update": 0,
+"values": [Vector2(0, 0)]
+}
+tracks/2/type = "value"
+tracks/2/imported = false
+tracks/2/enabled = true
+tracks/2/path = NodePath(".:modulate")
+tracks/2/interp = 1
+tracks/2/loop_wrap = true
+tracks/2/keys = {
+"times": PackedFloat32Array(0),
+"transitions": PackedFloat32Array(1),
+"update": 0,
+"values": [Color(1, 1, 1, 1)]
+}
+
+[sub_resource type="Animation" id="Animation_6ligt"]
+resource_name = "complete"
+length = 0.2
+step = 0.1
+tracks/0/type = "value"
+tracks/0/imported = false
+tracks/0/enabled = true
+tracks/0/path = NodePath(".:scale")
+tracks/0/interp = 2
+tracks/0/loop_wrap = true
+tracks/0/keys = {
+"times": PackedFloat32Array(0, 0.1, 0.2),
+"transitions": PackedFloat32Array(1, 1, 1),
+"update": 0,
+"values": [Vector2(1, 1), Vector2(1.2, 1.2), Vector2(1, 1)]
+}
+
+[sub_resource type="Animation" id="Animation_8w5pg"]
+resource_name = "consumed"
+length = 0.2
+step = 0.1
+tracks/0/type = "value"
+tracks/0/imported = false
+tracks/0/enabled = true
+tracks/0/path = NodePath(".:modulate")
+tracks/0/interp = 2
+tracks/0/loop_wrap = true
+tracks/0/keys = {
+"times": PackedFloat32Array(0, 0.2),
+"transitions": PackedFloat32Array(1, 1),
+"update": 0,
+"values": [Color(1, 1, 1, 0), Color(1, 1, 1, 1)]
+}
+
+[sub_resource type="Animation" id="Animation_kg30u"]
+resource_name = "drop"
+length = 0.1
+step = 0.1
+tracks/0/type = "value"
+tracks/0/imported = false
+tracks/0/enabled = true
+tracks/0/path = NodePath(".:scale")
+tracks/0/interp = 2
+tracks/0/loop_wrap = true
+tracks/0/keys = {
+"times": PackedFloat32Array(0, 0.1),
+"transitions": PackedFloat32Array(1, 1),
+"update": 0,
+"values": [Vector2(1.1, 1.1), Vector2(1, 1)]
+}
+
+[sub_resource type="Animation" id="Animation_6u4wf"]
+resource_name = "pickup"
+length = 0.1
+step = 0.1
+tracks/0/type = "value"
+tracks/0/imported = false
+tracks/0/enabled = true
+tracks/0/path = NodePath(".:scale")
+tracks/0/interp = 2
+tracks/0/loop_wrap = true
+tracks/0/keys = {
+"times": PackedFloat32Array(0, 0.1),
+"transitions": PackedFloat32Array(1, 1),
+"update": 0,
+"values": [Vector2(1, 1), Vector2(1.1, 1.1)]
+}
+
+[sub_resource type="Animation" id="Animation_sy11y"]
+resource_name = "working"
+length = 0.5
+loop_mode = 1
+step = 0.05
+tracks/0/type = "value"
+tracks/0/imported = false
+tracks/0/enabled = true
+tracks/0/path = NodePath(".:position")
+tracks/0/interp = 2
+tracks/0/loop_wrap = true
+tracks/0/keys = {
+"times": PackedFloat32Array(0, 0.25, 0.5),
+"transitions": PackedFloat32Array(1, 1, 1),
+"update": 0,
+"values": [Vector2(0, 0), Vector2(0, -1), Vector2(0, 0)]
+}
+
+[sub_resource type="AnimationLibrary" id="AnimationLibrary_kg30u"]
+_data = {
+&"RESET": SubResource("Animation_ktuci"),
+&"complete": SubResource("Animation_6ligt"),
+&"consumed": SubResource("Animation_8w5pg"),
+&"drop": SubResource("Animation_kg30u"),
+&"pickup": SubResource("Animation_6u4wf"),
+&"working": SubResource("Animation_sy11y")
+}
+
+[node name="Card" type="Area2D"]
+material = SubResource("ShaderMaterial_kg30u")
+script = ExtResource("2_5rxcw")
+
+[node name="Sprite2D" type="Sprite2D" parent="."]
+unique_name_in_owner = true
+position = Vector2(-1.90735e-06, -2.86102e-06)
+scale = Vector2(0.486, 0.426667)
+texture = ExtResource("3_px4kq")
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="."]
+unique_name_in_owner = true
+shape = SubResource("RectangleShape2D_rjlel")
+
+[node name="ImageRect" type="TextureRect" parent="."]
+unique_name_in_owner = true
+offset_left = -40.0
+offset_top = -37.0
+offset_right = 40.855
+offset_bottom = 32.79
+expand_mode = 1
+stretch_mode = 5
+metadata/_edit_use_anchors_ = true
+
+[node name="TitleLabel" type="Label" parent="."]
+offset_left = -44.0
+offset_top = -61.0
+offset_right = 46.0
+offset_bottom = -41.0
+mouse_filter = 1
+theme_override_colors/font_color = Color(0, 0, 0, 1)
+theme_override_constants/shadow_offset_x = 0
+theme_override_constants/shadow_offset_y = 0
+theme_override_constants/shadow_outline_size = 0
+theme_override_font_sizes/font_size = 8
+text = "Card Name"
+horizontal_alignment = 1
+vertical_alignment = 1
+autowrap_mode = 2
+metadata/_edit_use_anchors_ = true
+
+[node name="StatusLabel" type="Label" parent="."]
+offset_left = -45.0
+offset_top = 34.0
+offset_right = 45.0
+offset_bottom = 64.0
+mouse_filter = 1
+theme_override_colors/font_color = Color(0.2, 0.2, 0.2, 1)
+theme_override_constants/line_spacing = 0
+theme_override_constants/shadow_offset_x = 0
+theme_override_constants/shadow_offset_y = 0
+theme_override_constants/shadow_outline_size = 0
+theme_override_font_sizes/font_size = 6
+text = "Status text"
+horizontal_alignment = 1
+vertical_alignment = 1
+autowrap_mode = 2
+metadata/_edit_use_anchors_ = true
+
+[node name="AnimationPlayer" type="AnimationPlayer" parent="."]
+libraries = {
+&"": SubResource("AnimationLibrary_kg30u")
+}
+
+[node name="ActionTimer" type="Timer" parent="."]
+wait_time = 1e+07
+one_shot = true
+
+[node name="LifespanTimer" type="Timer" parent="."]
+wait_time = 1000.0
+one_shot = true
+
+[node name="PassiveActionTimer" type="Timer" parent="."]
+one_shot = true
