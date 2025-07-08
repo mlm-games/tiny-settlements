@@ -412,4 +412,4 @@ jobs:
   #             }
   #           });
 
-            console.log('Triggered AUR publish workflow for version ${{ inputs.version_name }}');
+  #           console.log('Triggered AUR publish workflow for version ${{ inputs.version_name }}');
