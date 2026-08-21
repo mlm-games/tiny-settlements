@@ -242,10 +242,7 @@ fn random_board_pos() -> Vec2 {
 
 fn offset_near(origin: Vec2) -> Vec2 {
     let mut rng = rand::rng();
-    clamp_board(origin + Vec2::new(
-        rng.random_range(45.0..75.0),
-        rng.random_range(-24.0..24.0),
-    ))
+    clamp_board(origin + Vec2::new(rng.random_range(45.0..75.0), rng.random_range(-24.0..24.0)))
 }
 
 fn spawn_card(
@@ -371,7 +368,9 @@ fn begin_drag(
         return;
     }
     let Ok(w) = window.single() else { return };
-    let Some(world) = pointer_world(w, &cam) else { return };
+    let Some(world) = pointer_world(w, &cam) else {
+        return;
+    };
 
     let mut best: Option<(Entity, f32, f32)> = None;
     for (e, tf, card) in &cards {
@@ -388,12 +387,12 @@ fn begin_drag(
             best = Some((e, z, y));
         }
     }
-    if let Some((e, _, _)) = best {
-        if let Ok((_, mut tf, _)) = cards.get_mut(e) {
-            let p = tf.translation.truncate();
-            commands.entity(e).insert(Dragging { offset: p - world });
-            tf.translation.z = 40.0;
-        }
+    if let Some((e, _, _)) = best
+        && let Ok((_, mut tf, _)) = cards.get_mut(e)
+    {
+        let p = tf.translation.truncate();
+        commands.entity(e).insert(Dragging { offset: p - world });
+        tf.translation.z = 40.0;
     }
 }
 
@@ -403,7 +402,9 @@ fn update_drag(
     mut q: Query<(&Dragging, &mut Transform)>,
 ) {
     let Ok(w) = window.single() else { return };
-    let Some(world) = pointer_world(w, &cam) else { return };
+    let Some(world) = pointer_world(w, &cam) else {
+        return;
+    };
     for (d, mut tf) in &mut q {
         let p = clamp_board(world + d.offset);
         tf.translation.x = p.x;
@@ -447,8 +448,7 @@ fn end_drag(
         .collect();
 
     for src in dragged {
-        let Some((_, spos, type_a, working_a, _)) =
-            snap.iter().find(|(e, ..)| *e == src).copied()
+        let Some((_, spos, type_a, working_a, _)) = snap.iter().find(|(e, ..)| *e == src).copied()
         else {
             continue;
         };
@@ -784,11 +784,11 @@ fn tick_work_timers(
     if finished.is_empty() {
         return;
     }
-    if let Some(g) = session.gardener {
-        if let Ok((mut gc, mut gtf)) = gq.get_mut(g) {
-            gc.is_working = false;
-            gtf.translation.z = 1.0;
-        }
+    if let Some(g) = session.gardener
+        && let Ok((mut gc, mut gtf)) = gq.get_mut(g)
+    {
+        gc.is_working = false;
+        gtf.translation.z = 1.0;
     }
     session.status.clear();
 
@@ -807,7 +807,9 @@ fn tick_work_timers(
             GardenerAction::UpgradeSubstrate { source } => {
                 pending_despawn.0.push(source);
                 pending_despawn.0.push(e);
-                pending_spawn.0.push((CardType::FertileSubstrate, pos, false));
+                pending_spawn
+                    .0
+                    .push((CardType::FertileSubstrate, pos, false));
             }
         }
     }
@@ -892,8 +894,7 @@ fn tick_passive_timers(
                     if next == CardType::GenesisBloom {
                         session.game_over = true;
                         session.victory = true;
-                        session.status =
-                            "GENESIS BLOOM CULTIVATED! The Ecosystem Thrives!".into();
+                        session.status = "GENESIS BLOOM CULTIVATED! The Ecosystem Thrives!".into();
                     }
                 }
             }
@@ -931,16 +932,16 @@ fn tick_passive_timers(
                 pending_spawn.0.push((CardType::GrazingSlug, pos, false));
             }
             PassiveKind::Eat => {
-                if let Some(food_t) = ctype.eats() {
-                    if let Some((food, _, _)) = others.iter().find(|(oe, otf, oc)| {
+                if let Some(food_t) = ctype.eats()
+                    && let Some((food, _, _)) = others.iter().find(|(oe, otf, oc)| {
                         *oe != e
                             && oc.card_type == food_t
                             && otf.translation.truncate().distance(pos) < NEARBY
-                    }) {
-                        pending_despawn.0.push(food);
-                        if let Some((_, interval)) = ctype.produces_passively() {
-                            pending_passive.0.push((e, PassiveKind::Produce, interval));
-                        }
+                    })
+                {
+                    pending_despawn.0.push(food);
+                    if let Some((_, interval)) = ctype.produces_passively() {
+                        pending_passive.0.push((e, PassiveKind::Produce, interval));
                     }
                 }
             }
@@ -1002,19 +1003,19 @@ fn world_timers(
         let pos = tf.translation.truncate();
 
         // producers (slugs only produce after eating)
-        if let Some((_, interval)) = c.card_type.produces_passively() {
-            if c.card_type != CardType::GrazingSlug {
-                let mut ok = true;
-                if let Some(need) = c.card_type.needs_substrate() {
-                    ok = cards.iter().any(|(oe, otf, oc)| {
-                        oe != e
-                            && oc.card_type == need
-                            && otf.translation.truncate().distance(pos) < NEARBY
-                    });
-                }
-                if ok {
-                    pending_passive.0.push((e, PassiveKind::Produce, interval));
-                }
+        if let Some((_, interval)) = c.card_type.produces_passively()
+            && c.card_type != CardType::GrazingSlug
+        {
+            let mut ok = true;
+            if let Some(need) = c.card_type.needs_substrate() {
+                ok = cards.iter().any(|(oe, otf, oc)| {
+                    oe != e
+                        && oc.card_type == need
+                        && otf.translation.truncate().distance(pos) < NEARBY
+                });
+            }
+            if ok {
+                pending_passive.0.push((e, PassiveKind::Produce, interval));
             }
         }
 
@@ -1032,16 +1033,14 @@ fn world_timers(
         }
 
         // slug eggs hatch near fungi
-        if c.card_type == CardType::GrazingSlugEgg {
-            if let Some(need) = c.card_type.needs_nearby() {
-                let near = cards.iter().any(|(oe, otf, oc)| {
-                    oe != e
-                        && oc.card_type == need
-                        && otf.translation.truncate().distance(pos) < NEARBY
-                });
-                if near {
-                    pending_passive.0.push((e, PassiveKind::Hatch, 8.0));
-                }
+        if c.card_type == CardType::GrazingSlugEgg
+            && let Some(need) = c.card_type.needs_nearby()
+        {
+            let near = cards.iter().any(|(oe, otf, oc)| {
+                oe != e && oc.card_type == need && otf.translation.truncate().distance(pos) < NEARBY
+            });
+            if near {
+                pending_passive.0.push((e, PassiveKind::Hatch, 8.0));
             }
         }
 
