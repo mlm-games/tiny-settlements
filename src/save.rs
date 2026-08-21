@@ -8,7 +8,9 @@ pub const SAVE_VERSION: u32 = 1;
 pub struct SaveData {
     #[serde(default)]
     pub version: u32,
-    pub high_score: u32,
+    pub high_biodiversity: u32,
+    pub wins: u32,
+    pub times_played: u32,
     pub settings: SettingsData,
 }
 
@@ -35,7 +37,9 @@ impl Default for SaveData {
     fn default() -> Self {
         Self {
             version: SAVE_VERSION,
-            high_score: 0,
+            high_biodiversity: 0,
+            wins: 0,
+            times_played: 0,
             settings: SettingsData::default(),
         }
     }

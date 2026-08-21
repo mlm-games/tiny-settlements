@@ -1,9 +1,23 @@
-# My Ecosystem Bevy
+# Tiny Settlements
 
-A WIP Bevy 2D game template with ecosystem plugins ported from [my-ecosystem-template](https://github.com/mlm-games/my-ecosystem-template) (Godot).
+A card-based ecosystem gardener: drag cards to combine species, direct your
+Gardener, and cultivate the **Genesis Bloom**. Bevy port of the Godot original,
+built on the [game-utils](https://github.com/mlm-games/game-utils) ecosystem and
+Repose UI.
+
+## How to Play
+
+- **Drag cards** around the board; drop one onto another to combine (recipes) or stage it
+- **Drop the Gardener** onto a seed/spore to plant it, onto a nutrient to apply it,
+  onto mulch to upgrade substrate, or onto waste toxin to clean it
+- Fungi produce nutrients passively; slugs eat fungi and make mulch;
+  flutterwings pollinate mature vines
+- Too many slugs spawn waste toxins — keep the balance
+- **Win** by growing the Genesis Bloom. `Esc` pauses, `R` restarts after game over
 
 ## Features
 
+- **Card Ecosystem** - 24 card types with planting, growth chains, passive production, pollination, hatching, and recipes
 - **Game Feel** - recoil, knockback, slow-motion, rumble (gamepad)
 - **Screen Effects** - trauma shake, freeze frame, flash white, chromatic aberration pulse + decay
 - **Transitions** - fade to black, circle wipe scene transitions with input edge blocking
@@ -20,7 +34,6 @@ A WIP Bevy 2D game template with ecosystem plugins ported from [my-ecosystem-tem
 - **States** - Splash -> Loading -> Title -> InGame with pause overlay
 - **Theme** - centralized color constants
 - **Dev Tools** - FPS overlay, state logging (dev feature)
-- **Demo Scene** - player with shooting, enemies, trauma, recoil, burst effects, damage numbers, gamepad rumble
 
 ## Quick Start
 
@@ -68,7 +81,7 @@ src/
 ├── screens/             # Splash, loading, title
 ├── menus/               # Main, pause, settings, credits (localized)
 ├── theme/               # Theme resource
-├── demo/                # Sample gameplay with all juice
+├── game/                # Card ecosystem gameplay (defs + simulation)
 ├── dev_tools.rs         # FPS overlay, state logging
 └── asset_tracking.rs    # Preload tracking
 ```

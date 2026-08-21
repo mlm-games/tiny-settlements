@@ -1,10 +1,10 @@
 $ErrorActionPreference = 'Stop'
 $toolsDir = Split-Path -Parent $MyInvocation.MyCommand.Definition
 $packageArgs = @{
-    packageName   = 'my-ecosystem-bevy'
+    packageName   = 'tiny-settlements'
     fileType      = 'exe'
-    url           = 'https://github.com/mlm-games/my-ecosystem-bevy/releases/latest'
-    softwareName  = 'my-ecosystem-bevy'
+    url           = 'https://github.com/mlm-games/tiny-settlements/releases/latest'
+    softwareName  = 'tiny-settlements'
     checksum      = ''
     checksumType  = 'sha256'
 }

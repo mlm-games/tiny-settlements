@@ -7,8 +7,8 @@ use repose_core::{prelude::Modifier, remember};
 use repose_ui::overlay::OverlayHandle;
 
 use crate::asset_tracking::AssetsLoading;
-use crate::demo::DemoPlugin;
 use crate::dev_tools::DevToolsPlugin;
+use crate::game::{GamePlugin, RestartFlag};
 use crate::menus::{self, UiAction, UiBridge};
 use crate::save::SaveData;
 use crate::screens::ScreensPlugin;
@@ -39,10 +39,13 @@ const TRANSLATION_KEYS: &[&str] = &[
     "sfx-volume",
     "music-volume",
     "language",
-    "score",
-    "best",
+    "biodiversity",
+    "focus",
     "controls-hint",
     "loading",
+    "restart-hint",
+    "you-win",
+    "you-lose",
 ];
 
 const LOCALES: &[(&str, &str)] = &[
@@ -88,8 +91,13 @@ pub struct SharedUi {
     pub master_vol: f32,
     pub sfx_vol: f32,
     pub music_vol: f32,
-    pub high_score: u32,
-    pub score: u32,
+    pub biodiversity: u32,
+    pub focus: f32,
+    pub max_focus: f32,
+    pub status_line: String,
+    pub game_over: bool,
+    pub victory: bool,
+    pub end_reason: String,
     pub transition_alpha: f32,
     pub flash_alpha: f32,
     pub language: String,
@@ -108,8 +116,13 @@ impl Default for SharedUi {
             master_vol: 1.0,
             sfx_vol: 1.0,
             music_vol: 0.8,
-            high_score: 0,
-            score: 0,
+            biodiversity: 0,
+            focus: 100.0,
+            max_focus: 100.0,
+            status_line: String::new(),
+            game_over: false,
+            victory: false,
+            end_reason: String::new(),
             transition_alpha: 0.0,
             flash_alpha: 0.0,
             language: "en".to_string(),
@@ -159,12 +172,12 @@ impl Plugin for AppPlugin {
                 SavePlugin::<SaveData>::new(SaveManager::new(
                     "com",
                     "mlm-games",
-                    "my-ecosystem-bevy",
+                    "tiny-settlements",
                     "save.ron",
                     1,
                 )),
                 ScreensPlugin,
-                DemoPlugin,
+                GamePlugin,
                 DevToolsPlugin,
             ))
             .add_systems(Startup, setup_camera)
@@ -215,7 +228,6 @@ fn sync_shared_ui(
     overlay: Res<OverlayMenu>,
     bridge: Res<UiBridge>,
     save: Res<SaveData>,
-    score: Option<Res<crate::demo::Score>>,
     transition: Res<Transition<AppState>>,
     flash: Res<game_utils_bevy::screen_effects::FlashWhite>,
     locale: Res<LocaleResources>,
@@ -229,8 +241,6 @@ fn sync_shared_ui(
     ui.phase = state.get().clone();
     ui.paused = paused.0;
     ui.overlay = *overlay;
-    ui.high_score = save.high_score;
-    ui.score = score.map(|s| s.0).unwrap_or(0);
     if *overlay != OverlayMenu::Settings {
         ui.master_vol = save.settings.master_volume;
         ui.sfx_vol = save.settings.sfx_volume;
@@ -285,6 +295,7 @@ fn process_ui_actions(
     manager: Res<SaveManager>,
     mut pending_unpause: ResMut<PendingUnpause>,
     mut locale: ResMut<LocaleResources>,
+    mut restart: ResMut<RestartFlag>,
 ) {
     let Ok(mut q) = bridge.actions.lock() else {
         return;
@@ -323,6 +334,12 @@ fn process_ui_actions(
             UiAction::Resume => {
                 *overlay = OverlayMenu::None;
                 pending_unpause.0 = Some(Timer::from_seconds(0.2, TimerMode::Once));
+            }
+            UiAction::Restart => {
+                restart.0 = true;
+                paused.0 = false;
+                *overlay = OverlayMenu::None;
+                pending_unpause.0 = None;
             }
             UiAction::QuitToTitle => {
                 paused.0 = false;

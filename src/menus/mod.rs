@@ -35,6 +35,7 @@ pub enum UiAction {
     OpenCredits,
     CloseOverlay,
     Resume,
+    Restart,
     QuitToTitle,
     QuitApp,
     SetMasterVol(f32),
@@ -93,6 +94,11 @@ pub fn compose_root(
             ZStack(Modifier::new().fill_max_size()).child((
                 hud,
                 AnimatedVisibility(
+                    st.game_over,
+                    game_over_ui(&st, actions.clone()),
+                    popup_anim_config("game_over"),
+                ),
+                AnimatedVisibility(
                     st.overlay == OverlayMenu::Pause,
                     pause_overlay(&st, actions.clone()),
                     popup_anim_config("pause"),
@@ -140,7 +146,7 @@ fn splash_ui() -> View {
             .align_items(AlignItems::CENTER)
             .background(col(8, 8, 12)),
     )
-    .child(RText("My Ecosystem").size(48.0).color(RColor::WHITE))
+    .child(RText("Tiny Settlements").size(48.0).color(RColor::WHITE))
 }
 
 fn loading_ui(st: &SharedUi) -> View {
@@ -194,7 +200,7 @@ fn title_ui(st: &SharedUi, actions: Arc<Mutex<Vec<UiAction>>>) -> View {
             .background(col(8, 8, 12)),
     )
     .child((
-        RText(t(tr, "app-title", "My Ecosystem Bevy"))
+        RText(t(tr, "app-title", "Tiny Settlements"))
             .size(56.0)
             .color(RColor::WHITE),
         spacer(24.0),
@@ -426,11 +432,12 @@ fn credits_ui(st: &SharedUi, actions: Arc<Mutex<Vec<UiAction>>>) -> View {
             .size(36.0)
             .color(RColor::WHITE),
         spacer(12.0),
-        RText("Original Godot template: mlm-games")
-            .size(16.0)
+        RText("Tiny Settlements").size(16.0).color(RColor::WHITE),
+        RText("Godot original -> Bevy port (mlm-games)")
+            .size(14.0)
             .color(RColor::WHITE),
-        RText("Bevy + Repose port: mlm-games")
-            .size(16.0)
+        RText("Cultivate the Genesis Bloom")
+            .size(14.0)
             .color(RColor::WHITE),
         RText("Engine: Bevy  UI: Repose")
             .size(16.0)
@@ -453,6 +460,45 @@ fn credits_ui(st: &SharedUi, actions: Arc<Mutex<Vec<UiAction>>>) -> View {
 
 fn ingame_hud(st: &SharedUi) -> View {
     let tr = &st.translations;
+    let focus_pct = if st.max_focus > 0.0 {
+        (st.focus / st.max_focus * 100.0) as i32
+    } else {
+        0
+    };
+
+    let mut children = vec![
+        RText(format!(
+            "{}: {}",
+            t(tr, "biodiversity", "Biodiversity"),
+            st.biodiversity
+        ))
+        .size(22.0)
+        .color(RColor::WHITE),
+        RText(format!(
+            "{}: {}%",
+            t(tr, "focus", "Gardener Focus"),
+            focus_pct
+        ))
+        .size(18.0)
+        .color(col(200, 230, 180)),
+        RText(t(
+            tr,
+            "controls-hint",
+            "Drag cards to combine | Gardener to plant/apply | Esc pause | R restart",
+        ))
+        .size(13.0)
+        .color(col(170, 180, 170)),
+    ];
+
+    if !st.status_line.is_empty() && !st.game_over {
+        children.push(spacer(8.0));
+        children.push(
+            RText(st.status_line.clone())
+                .size(16.0)
+                .color(col(220, 210, 150)),
+        );
+    }
+
     Column(
         Modifier::new()
             .fill_max_size()
@@ -460,21 +506,64 @@ fn ingame_hud(st: &SharedUi) -> View {
             .align_items(AlignItems::FLEX_START)
             .justify_content(JustifyContent::FLEX_START),
     )
+    .child(children)
+}
+
+fn game_over_ui(st: &SharedUi, actions: Arc<Mutex<Vec<UiAction>>>) -> View {
+    let a_r = actions.clone();
+    let a_t = actions.clone();
+    let tr = &st.translations;
+    let title = if st.victory {
+        t(tr, "you-win", "Ecosystem Thrives!")
+    } else {
+        t(tr, "you-lose", "Ecosystem Collapsed")
+    };
+    let status = if !st.end_reason.is_empty() && !st.victory {
+        format!("{}: {}", st.status_line, st.end_reason)
+    } else {
+        st.status_line.clone()
+    };
+    let inner = Column(
+        Modifier::new()
+            .width(420.0)
+            .padding(24.0)
+            .background(col(20, 28, 22))
+            .clip_rounded(14.0)
+            .align_items(AlignItems::CENTER),
+    )
     .child((
-        RText(format!("{}: {}", t(tr, "score", "Score"), st.score))
-            .size(22.0)
-            .color(RColor::WHITE),
-        RText(format!("{}: {}", t(tr, "best", "Best"), st.high_score))
-            .size(16.0)
-            .color(col(200, 200, 200)),
-        RText(t(
-            tr,
-            "controls-hint",
-            "WASD move  Click/Space shoot  Esc pause",
+        RText(title).size(32.0).color(RColor::WHITE),
+        spacer(8.0),
+        RText(status).size(15.0).color(col(200, 210, 200)),
+        spacer(6.0),
+        RText(format!(
+            "{}: {}",
+            t(tr, "biodiversity", "Biodiversity"),
+            st.biodiversity
         ))
-        .size(14.0)
-        .color(col(180, 180, 180)),
-    ))
+        .size(16.0)
+        .color(col(180, 220, 180)),
+        spacer(14.0),
+        mk_button(
+            &t(tr, "restart-hint", "Restart (R)"),
+            col(60, 140, 90),
+            move || push(&a_r, UiAction::Restart),
+        ),
+        mk_button(
+            &t(tr, "quit-to-title", "Quit to Title"),
+            col(180, 60, 60),
+            move || push(&a_t, UiAction::QuitToTitle),
+        ),
+    ));
+
+    Column(
+        Modifier::new()
+            .fill_max_size()
+            .justify_content(JustifyContent::CENTER)
+            .align_items(AlignItems::CENTER)
+            .background(RColor::from_rgba(0, 0, 0, 160)),
+    )
+    .child(inner)
 }
 
 fn mk_button(label: &str, _bg: RColor, on_click: impl Fn() + 'static) -> View {

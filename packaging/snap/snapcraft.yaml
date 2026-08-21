@@ -1,18 +1,18 @@
-name: my-ecosystem-bevy
+name: tiny-settlements
 version: '0.1.0'
-summary: Clone of my Godot template for bevy
+summary: Tiny Settlements - card-based ecosystem gardener
 description: |
-  A complete Bevy 2D game template with ecosystem plugins,
-  game feel, transitions, audio, save system, and more.
+  A cozy card-based ecosystem game: drag cards to combine species,
+  direct your Gardener, and cultivate the Genesis Bloom.
 grade: stable
 confinement: strict
 
 apps:
-  my-ecosystem-bevy:
-    command: my-ecosystem-bevy
+  tiny-settlements:
+    command: tiny-settlements
     plugs: [x11, wayland, audio, joystick]
 
 parts:
-  my-ecosystem-bevy:
+  tiny-settlements:
     plugin: rust
     source: .
