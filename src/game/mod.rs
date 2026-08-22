@@ -10,9 +10,12 @@ use std::collections::HashMap;
 
 use bevy::prelude::*;
 use bevy::window::PrimaryWindow;
+use game_utils_bevy::game_feel::{GameFeel, SlowMotion};
 use game_utils_bevy::juice::Juice;
 use game_utils_bevy::save::SaveManager;
+use game_utils_bevy::screen_effects::{FlashWhite, FreezeFrame, ScreenEffects, Trauma};
 use game_utils_bevy::transitions::Transition;
+use game_utils_bevy::vfx::VfxSpawner;
 use rand::RngExt;
 
 use crate::app::{AppState, Paused};
@@ -22,6 +25,7 @@ pub const CARD_SIZE: Vec2 = Vec2::new(96.0, 128.0);
 pub const BOARD_MIN: Vec2 = Vec2::new(-480.0, -280.0);
 pub const BOARD_MAX: Vec2 = Vec2::new(480.0, 280.0);
 pub const NEARBY: f32 = 95.0;
+pub const MAX_TOXINS_BEFORE_COLLAPSE: u32 = 4;
 
 #[derive(Component)]
 pub struct GameCleanup;
@@ -77,6 +81,8 @@ pub struct GameSession {
     waste_check: Timer,
     pub focus_recharge_rate: f32,
     pub max_slugs_before_waste: u32,
+    /// Fire win/lose juice exactly once.
+    pub end_fx_done: bool,
 }
 
 impl Default for GameSession {
@@ -101,6 +107,7 @@ impl Default for GameSession {
             waste_check: Timer::from_seconds(12.0, TimerMode::Repeating),
             focus_recharge_rate: 3.0,
             max_slugs_before_waste: 5,
+            end_fx_done: false,
         }
     }
 }
@@ -120,6 +127,20 @@ struct PendingPassives(Vec<(Entity, PassiveKind, f32)>);
 #[derive(Resource, Default)]
 struct PendingWork(Vec<(Entity, f32, GardenerAction)>);
 
+/// One-shot juice requests so systems stay small.
+#[derive(Resource, Default)]
+struct PendingFx(Vec<FxEvent>);
+
+enum FxEvent {
+    Craft { pos: Vec2 },
+    Plant { pos: Vec2 },
+    Clean { pos: Vec2 },
+    Produce { pos: Vec2, color: Color },
+    Win { pos: Vec2 },
+    Lose,
+    Toxin { pos: Vec2 },
+}
+
 pub struct GamePlugin;
 impl Plugin for GamePlugin {
     fn build(&self, app: &mut App) {
@@ -129,6 +150,7 @@ impl Plugin for GamePlugin {
             .init_resource::<PendingDespawns>()
             .init_resource::<PendingPassives>()
             .init_resource::<PendingWork>()
+            .init_resource::<PendingFx>()
             .add_systems(OnEnter(AppState::InGame), setup_game)
             .add_systems(OnExit(AppState::InGame), cleanup_game)
             .add_systems(
@@ -145,6 +167,9 @@ impl Plugin for GamePlugin {
                     world_timers,
                     apply_pending_spawns,
                     apply_pending_despawns,
+                    check_toxin_collapse,
+                    end_game_fx,
+                    apply_pending_fx,
                     update_card_labels,
                     tick_hint,
                     sync_hud,
@@ -162,8 +187,18 @@ fn setup_game(
     mut commands: Commands,
     mut session: ResMut<GameSession>,
     mut save: ResMut<SaveData>,
+    mut pending_spawn: ResMut<PendingSpawns>,
+    mut pending_despawn: ResMut<PendingDespawns>,
+    mut pending_passive: ResMut<PendingPassives>,
+    mut pending_work: ResMut<PendingWork>,
+    mut pending_fx: ResMut<PendingFx>,
 ) {
     *session = GameSession::default();
+    pending_spawn.0.clear();
+    pending_despawn.0.clear();
+    pending_passive.0.clear();
+    pending_work.0.clear();
+    pending_fx.0.clear();
     save.times_played = save.times_played.saturating_add(1);
 
     commands.spawn((
@@ -179,6 +214,7 @@ fn setup_game(
     spawn_card(
         &mut commands,
         &mut session,
+        None,
         CardType::Gardener,
         Vec2::new(-360.0, 0.0),
         false,
@@ -186,6 +222,7 @@ fn setup_game(
     spawn_card(
         &mut commands,
         &mut session,
+        None,
         CardType::BioSubstrate,
         Vec2::new(-180.0, 90.0),
         false,
@@ -193,6 +230,7 @@ fn setup_game(
     spawn_card(
         &mut commands,
         &mut session,
+        None,
         CardType::BioSubstrate,
         Vec2::new(-180.0, -90.0),
         false,
@@ -200,6 +238,7 @@ fn setup_game(
     spawn_card(
         &mut commands,
         &mut session,
+        None,
         CardType::SporePod,
         Vec2::new(20.0, 90.0),
         false,
@@ -207,6 +246,7 @@ fn setup_game(
     spawn_card(
         &mut commands,
         &mut session,
+        None,
         CardType::NutrientSlime,
         Vec2::new(20.0, 0.0),
         false,
@@ -214,6 +254,7 @@ fn setup_game(
     spawn_card(
         &mut commands,
         &mut session,
+        None,
         CardType::NutrientSlime,
         Vec2::new(20.0, -90.0),
         false,
@@ -224,8 +265,13 @@ fn setup_game(
     session.hint_timer = 8.0;
 }
 
-fn cleanup_game(mut commands: Commands, q: Query<Entity, With<GameCleanup>>) {
-    for e in &q {
+fn cleanup_game(
+    mut commands: Commands,
+    q: Query<Entity, With<GameCleanup>>,
+    numbers: Query<Entity, With<game_utils_bevy::vfx::DamageNumber>>,
+    particles: Query<Entity, With<game_utils_bevy::juice::Particle>>,
+) {
+    for e in q.iter().chain(numbers.iter()).chain(particles.iter()) {
         commands.entity(e).despawn();
     }
 }
@@ -252,6 +298,7 @@ fn offset_near(origin: Vec2) -> Vec2 {
 fn spawn_card(
     commands: &mut Commands,
     session: &mut GameSession,
+    assets: Option<&AssetServer>,
     card_type: CardType,
     pos: Vec2,
     planted: bool,
@@ -264,6 +311,16 @@ fn spawn_card(
     }
 
     let pos = clamp_board(pos);
+    let mut sprite = Sprite {
+        color: card_type.color(),
+        custom_size: Some(CARD_SIZE),
+        ..default()
+    };
+    if let (Some(server), Some(path)) = (assets, card_type.asset_path()) {
+        sprite.image = server.load(path);
+        sprite.color = Color::WHITE;
+    }
+
     let e = commands
         .spawn((
             GameCleanup,
@@ -275,11 +332,7 @@ fn spawn_card(
                 is_working: false,
                 action: None,
             },
-            Sprite {
-                color: card_type.color(),
-                custom_size: Some(CARD_SIZE),
-                ..default()
-            },
+            sprite,
             Transform::from_translation(pos.extend(1.0)),
         ))
         .with_children(|p| {
@@ -424,6 +477,7 @@ fn end_drag(
     mut pending_spawn: ResMut<PendingSpawns>,
     mut pending_despawn: ResMut<PendingDespawns>,
     mut pending_work: ResMut<PendingWork>,
+    mut pending_fx: ResMut<PendingFx>,
 ) {
     if !mouse.just_released(MouseButton::Left) {
         return;
@@ -484,6 +538,7 @@ fn end_drag(
                 &mut pending_spawn,
                 &mut pending_despawn,
                 &mut pending_work,
+                &mut pending_fx,
                 src,
                 type_a,
                 spos,
@@ -508,6 +563,7 @@ fn resolve_drop(
     pending_spawn: &mut PendingSpawns,
     pending_despawn: &mut PendingDespawns,
     pending_work: &mut PendingWork,
+    pending_fx: &mut PendingFx,
     src: Entity,
     type_a: CardType,
     spos: Vec2,
@@ -529,7 +585,9 @@ fn resolve_drop(
     if let Some(out) = recipe(type_a, type_b) {
         pending_despawn.0.push(src);
         pending_despawn.0.push(tgt);
-        pending_spawn.0.push((out, (spos + tpos) * 0.5, false));
+        let mid = (spos + tpos) * 0.5;
+        pending_spawn.0.push((out, mid, false));
+        pending_fx.0.push(FxEvent::Craft { pos: mid });
         session.hint = format!("Crafted {}!", out.label());
         session.hint_timer = 2.5;
         return;
@@ -781,6 +839,7 @@ fn tick_work_timers(
     mut pending_spawn: ResMut<PendingSpawns>,
     mut pending_despawn: ResMut<PendingDespawns>,
     mut pending_passive: ResMut<PendingPassives>,
+    mut pending_fx: ResMut<PendingFx>,
 ) {
     let mut finished = Vec::new();
     for (e, mut card, mut wt, tf) in &mut q {
@@ -821,6 +880,7 @@ fn tick_work_timers(
                 set_planted(&mut commands, e);
                 // SporePod / FertilizedVinePod auto-grow after plant
                 start_growth(&mut pending_passive, e, ctype, true, false, sub_ok);
+                pending_fx.0.push(FxEvent::Plant { pos });
                 session.hint = format!("{} planted", ctype.label());
                 session.hint_timer = 2.0;
             }
@@ -836,17 +896,22 @@ fn tick_work_timers(
                 } else {
                     pending_despawn.0.push(source);
                     start_growth(&mut pending_passive, e, ctype, planted, true, true);
+                    pending_fx.0.push(FxEvent::Plant { pos });
                     session.hint = format!("{} growing...", ctype.label());
                     session.hint_timer = 2.0;
                 }
             }
-            GardenerAction::Clean => pending_despawn.0.push(e),
+            GardenerAction::Clean => {
+                pending_despawn.0.push(e);
+                pending_fx.0.push(FxEvent::Clean { pos });
+            }
             GardenerAction::UpgradeSubstrate { source } => {
                 pending_despawn.0.push(source);
                 pending_despawn.0.push(e);
                 pending_spawn
                     .0
                     .push((CardType::FertileSubstrate, pos, false));
+                pending_fx.0.push(FxEvent::Craft { pos });
             }
         }
     }
@@ -917,6 +982,7 @@ fn tick_passive_timers(
     mut pending_spawn: ResMut<PendingSpawns>,
     mut pending_despawn: ResMut<PendingDespawns>,
     mut pending_passive: ResMut<PendingPassives>,
+    mut pending_fx: ResMut<PendingFx>,
 ) {
     // schedule passives queued last frame (skip entities despawned meanwhile)
     for (e, kind, dur) in pending_passive.0.drain(..) {
@@ -961,6 +1027,11 @@ fn tick_passive_timers(
                         session.game_over = true;
                         session.victory = true;
                         session.status = "GENESIS BLOOM CULTIVATED! The Ecosystem Thrives!".into();
+                    } else {
+                        pending_fx.0.push(FxEvent::Produce {
+                            pos,
+                            color: next.color(),
+                        });
                     }
                 }
             }
@@ -975,8 +1046,13 @@ fn tick_passive_timers(
                         });
                     }
                     if ok {
-                        pending_spawn.0.push((prod, offset_near(pos), false));
+                        let p = offset_near(pos);
+                        pending_spawn.0.push((prod, p, false));
                         pending_passive.0.push((e, PassiveKind::Produce, interval));
+                        pending_fx.0.push(FxEvent::Produce {
+                            pos: p,
+                            color: prod.color(),
+                        });
                     }
                 }
             }
@@ -987,15 +1063,22 @@ fn tick_passive_timers(
                         c.needs_pollination = false;
                     }
                 });
-                pending_spawn.0.push((
-                    CardType::FertilizedVinePod,
-                    pos + Vec2::new(0.0, -24.0),
-                    false,
-                ));
+                let p = pos + Vec2::new(0.0, -24.0);
+                pending_spawn
+                    .0
+                    .push((CardType::FertilizedVinePod, p, false));
+                pending_fx.0.push(FxEvent::Produce {
+                    pos: p,
+                    color: CardType::FertilizedVinePod.color(),
+                });
             }
             PassiveKind::Hatch => {
                 pending_despawn.0.push(e);
                 pending_spawn.0.push((CardType::GrazingSlug, pos, false));
+                pending_fx.0.push(FxEvent::Produce {
+                    pos,
+                    color: CardType::GrazingSlug.color(),
+                });
             }
             PassiveKind::Eat => {
                 if let Some(food_t) = ctype.eats()
@@ -1022,6 +1105,7 @@ fn world_timers(
     has_passive: Query<(), With<PassiveTimer>>,
     mut pending_spawn: ResMut<PendingSpawns>,
     mut pending_passive: ResMut<PendingPassives>,
+    mut pending_fx: ResMut<PendingFx>,
 ) {
     if session.game_over {
         return;
@@ -1050,9 +1134,9 @@ fn world_timers(
             .filter(|(_, _, c)| c.card_type == CardType::GrazingSlug)
             .count() as u32;
         if slugs >= session.max_slugs_before_waste {
-            pending_spawn
-                .0
-                .push((CardType::WasteToxin, random_board_pos(), false));
+            let pos = random_board_pos();
+            pending_spawn.0.push((CardType::WasteToxin, pos, false));
+            pending_fx.0.push(FxEvent::Toxin { pos });
             session.hint = "Too many slugs! Waste toxin appeared.".into();
             session.hint_timer = 3.0;
         }
@@ -1148,9 +1232,17 @@ fn apply_pending_spawns(
     mut commands: Commands,
     mut session: ResMut<GameSession>,
     mut pending: ResMut<PendingSpawns>,
+    assets: Res<AssetServer>,
 ) {
     for (t, pos, planted) in pending.0.drain(..) {
-        spawn_card(&mut commands, &mut session, t, pos, planted);
+        spawn_card(
+            &mut commands,
+            &mut session,
+            Some(assets.as_ref()),
+            t,
+            pos,
+            planted,
+        );
     }
 }
 
@@ -1173,6 +1265,109 @@ fn apply_pending_despawns(
             }
         }
         commands.entity(e).despawn();
+    }
+}
+
+fn check_toxin_collapse(mut session: ResMut<GameSession>, cards: Query<&Card>) {
+    if session.game_over {
+        return;
+    }
+    let toxins = cards
+        .iter()
+        .filter(|c| c.card_type == CardType::WasteToxin)
+        .count() as u32;
+    if toxins >= MAX_TOXINS_BEFORE_COLLAPSE {
+        session.game_over = true;
+        session.victory = false;
+        session.end_reason = format!("{toxins} waste toxins overwhelmed the board");
+        session.status = "ECOSYSTEM COLLAPSED: Waste toxins ran wild!".into();
+    }
+}
+
+fn end_game_fx(mut session: ResMut<GameSession>, mut pending_fx: ResMut<PendingFx>) {
+    if !session.game_over || session.end_fx_done {
+        return;
+    }
+    session.end_fx_done = true;
+    if session.victory {
+        pending_fx.0.push(FxEvent::Win { pos: Vec2::ZERO });
+    } else {
+        pending_fx.0.push(FxEvent::Lose);
+    }
+}
+
+fn apply_pending_fx(
+    mut commands: Commands,
+    mut pending: ResMut<PendingFx>,
+    mut trauma: ResMut<Trauma>,
+    mut flash: ResMut<FlashWhite>,
+    mut freeze: ResMut<FreezeFrame>,
+    mut slow: ResMut<SlowMotion>,
+) {
+    for ev in pending.0.drain(..) {
+        match ev {
+            FxEvent::Craft { pos } => {
+                ScreenEffects::add_trauma(&mut trauma, 0.22);
+                VfxSpawner::spawn_burst(
+                    &mut commands,
+                    pos,
+                    12,
+                    Color::srgb(0.85, 0.95, 0.55),
+                    (40.0, 110.0),
+                );
+            }
+            FxEvent::Plant { pos } => {
+                ScreenEffects::add_trauma(&mut trauma, 0.12);
+                VfxSpawner::spawn_burst(
+                    &mut commands,
+                    pos,
+                    8,
+                    Color::srgb(0.45, 0.85, 0.5),
+                    (30.0, 80.0),
+                );
+            }
+            FxEvent::Clean { pos } => {
+                ScreenEffects::add_trauma(&mut trauma, 0.18);
+                VfxSpawner::spawn_burst(
+                    &mut commands,
+                    pos,
+                    10,
+                    Color::srgb(0.7, 0.85, 0.95),
+                    (35.0, 90.0),
+                );
+            }
+            FxEvent::Produce { pos, color } => {
+                VfxSpawner::spawn_burst(&mut commands, pos, 6, color, (25.0, 70.0));
+            }
+            FxEvent::Toxin { pos } => {
+                ScreenEffects::add_trauma(&mut trauma, 0.35);
+                VfxSpawner::spawn_burst(
+                    &mut commands,
+                    pos,
+                    14,
+                    Color::srgb(0.9, 0.25, 0.3),
+                    (50.0, 120.0),
+                );
+            }
+            FxEvent::Win { pos } => {
+                ScreenEffects::add_trauma(&mut trauma, 0.55);
+                ScreenEffects::flash_white(&mut flash, 0.18);
+                ScreenEffects::freeze_frame(&mut freeze, 0.06);
+                GameFeel::slow_motion(&mut slow, 0.25, 0.35);
+                VfxSpawner::spawn_burst(
+                    &mut commands,
+                    pos,
+                    28,
+                    Color::srgb(0.55, 0.95, 0.75),
+                    (60.0, 160.0),
+                );
+            }
+            FxEvent::Lose => {
+                ScreenEffects::add_trauma(&mut trauma, 0.7);
+                ScreenEffects::flash_white(&mut flash, 0.12);
+                GameFeel::slow_motion(&mut slow, 0.2, 0.25);
+            }
+        }
     }
 }
 
@@ -1282,17 +1477,33 @@ fn process_restart(
     mut flag: ResMut<RestartFlag>,
     mut commands: Commands,
     cleanup: Query<Entity, With<GameCleanup>>,
+    numbers: Query<Entity, With<game_utils_bevy::vfx::DamageNumber>>,
+    particles: Query<Entity, With<game_utils_bevy::juice::Particle>>,
     session: ResMut<GameSession>,
     save: ResMut<SaveData>,
+    pending_spawn: ResMut<PendingSpawns>,
+    pending_despawn: ResMut<PendingDespawns>,
+    pending_passive: ResMut<PendingPassives>,
+    pending_work: ResMut<PendingWork>,
+    pending_fx: ResMut<PendingFx>,
 ) {
     if !flag.0 {
         return;
     }
     flag.0 = false;
-    for e in &cleanup {
+    for e in cleanup.iter().chain(numbers.iter()).chain(particles.iter()) {
         commands.entity(e).despawn();
     }
-    setup_game(commands, session, save);
+    setup_game(
+        commands,
+        session,
+        save,
+        pending_spawn,
+        pending_despawn,
+        pending_passive,
+        pending_work,
+        pending_fx,
+    );
 }
 
 #[cfg(test)]
@@ -1325,6 +1536,14 @@ mod tests {
         });
         app.insert_resource(ButtonInput::<MouseButton>::default());
         app.insert_resource(ButtonInput::<KeyCode>::default());
+        // screen-effects / game-feel resources consumed by apply_pending_fx
+        app.insert_resource(game_utils_bevy::screen_effects::Trauma::default());
+        app.insert_resource(FlashWhite::default());
+        app.insert_resource(FreezeFrame::default());
+        app.insert_resource(SlowMotion::default());
+        app.add_plugins(bevy::app::TaskPoolPlugin::default());
+        app.add_plugins(bevy::asset::AssetPlugin::default());
+        app.init_asset::<Image>();
         app.add_plugins(TimePlugin);
         app.insert_resource(TimeUpdateStrategy::ManualDuration(Duration::from_millis(
             250,
@@ -1361,7 +1580,7 @@ mod tests {
                 let mut queue = CommandQueue::default();
                 let spawned = {
                     let mut commands = Commands::new(&mut queue, world);
-                    spawn_card(&mut commands, session.as_mut(), t, pos, planted)
+                    spawn_card(&mut commands, session.as_mut(), None, t, pos, planted)
                         .expect("spawn succeeded")
                 };
                 queue.apply(world);
@@ -1385,27 +1604,30 @@ mod tests {
                 world.resource_scope(|world: &mut World, mut ps: Mut<PendingSpawns>| {
                     world.resource_scope(|world: &mut World, mut pd: Mut<PendingDespawns>| {
                         world.resource_scope(|world: &mut World, mut pw: Mut<PendingWork>| {
-                            let mut qstate = world.query::<(
-                                Entity,
-                                &mut Transform,
-                                &mut Card,
-                                Option<&Dragging>,
-                            )>();
-                            let mut q = qstate.query_mut(world);
-                            resolve_drop(
-                                &mut session,
-                                &mut q,
-                                ps.as_mut(),
-                                pd.as_mut(),
-                                pw.as_mut(),
-                                src,
-                                type_a,
-                                spos,
-                                tgt,
-                                type_b,
-                                tpos,
-                                false,
-                            );
+                            world.resource_scope(|world: &mut World, mut pf: Mut<PendingFx>| {
+                                let mut qstate = world.query::<(
+                                    Entity,
+                                    &mut Transform,
+                                    &mut Card,
+                                    Option<&Dragging>,
+                                )>();
+                                let mut q = qstate.query_mut(world);
+                                resolve_drop(
+                                    &mut session,
+                                    &mut q,
+                                    ps.as_mut(),
+                                    pd.as_mut(),
+                                    pw.as_mut(),
+                                    pf.as_mut(),
+                                    src,
+                                    type_a,
+                                    spos,
+                                    tgt,
+                                    type_b,
+                                    tpos,
+                                    false,
+                                );
+                            });
                         });
                     });
                 });
@@ -1672,5 +1894,60 @@ mod tests {
             1,
             "win flushed to save"
         );
+    }
+
+    #[test]
+    fn toxin_pileup_collapses_ecosystem() {
+        let mut app = test_app();
+        enter_game(&mut app);
+
+        for i in 0..MAX_TOXINS_BEFORE_COLLAPSE {
+            spawn_at(
+                &mut app,
+                CardType::WasteToxin,
+                Vec2::new(-400.0 + 60.0 * i as f32, 200.0),
+                false,
+            );
+        }
+
+        // one frame lets check_toxin_collapse + end_game_fx run
+        app.update();
+
+        let session = app.world().resource::<GameSession>();
+        assert!(session.game_over && !session.victory, "collapse triggers");
+        assert!(
+            session.end_reason.contains("toxins"),
+            "end reason explains the loss"
+        );
+    }
+
+    #[test]
+    fn restart_after_game_over_resets_board() {
+        let mut app = test_app();
+        enter_game(&mut app);
+
+        for i in 0..MAX_TOXINS_BEFORE_COLLAPSE {
+            spawn_at(
+                &mut app,
+                CardType::WasteToxin,
+                Vec2::new(-400.0 + 60.0 * i as f32, 200.0),
+                false,
+            );
+        }
+        app.update();
+        assert!(app.world().resource::<GameSession>().game_over);
+
+        // trigger restart via the same flag the UI/R key sets
+        app.world_mut().resource_mut::<RestartFlag>().0 = true;
+        app.update();
+
+        let world = app.world_mut();
+        assert!(!world.resource::<GameSession>().game_over, "fresh session");
+        assert_eq!(
+            cards_of(world, CardType::SporePod).len(),
+            1,
+            "opening spore back"
+        );
+        assert!(world.resource::<GameSession>().gardener.is_some());
     }
 }
