@@ -156,6 +156,27 @@ pub struct JournalEntryUi {
     pub blurb: String,
 }
 
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
+pub enum JournalTab {
+    #[default]
+    Cards,
+    FieldNotes,
+    Synergies,
+}
+
+#[derive(Clone, Debug, Default)]
+pub struct BlueprintUi {
+    pub id: String,
+    pub name: String,
+    pub unlocked: bool,
+    pub clue: String,
+    pub ingredients: Vec<String>,
+    pub output: String,
+    pub dew_cost: u32,
+    pub build_seconds: f32,
+    pub completed: bool,
+}
+
 #[derive(Clone, Debug, Default)]
 pub struct HabitatUi {
     pub substrate: String,
@@ -216,6 +237,7 @@ pub struct SharedUi {
     pub toast: String,
     pub toast_timer: f32,
     pub show_journal: bool,
+    pub journal_tab: JournalTab,
     pub commissions_ui: Vec<CommissionUi>,
     pub packs_ui: Vec<PackUi>,
     pub journal: Vec<JournalEntryUi>,
@@ -223,6 +245,9 @@ pub struct SharedUi {
     pub habitats: Vec<HabitatUi>,
     pub habitat_count: u32,
     pub total_resonance: f32,
+    // Phase 3 blueprints
+    pub blueprints: Vec<BlueprintUi>,
+    pub synergies: Vec<String>,
 }
 
 impl Default for SharedUi {
@@ -263,12 +288,15 @@ impl Default for SharedUi {
             toast: String::new(),
             toast_timer: 0.0,
             show_journal: false,
+            journal_tab: JournalTab::default(),
             commissions_ui: Vec::new(),
             packs_ui: Vec::new(),
             journal: Vec::new(),
             habitats: Vec::new(),
             habitat_count: 0,
             total_resonance: 0.0,
+            blueprints: Vec::new(),
+            synergies: Vec::new(),
         }
     }
 }
@@ -314,7 +342,7 @@ impl Plugin for AppPlugin {
                     "mlm-games",
                     "tiny-settlements",
                     "save.ron",
-                    2,
+                    crate::save::SAVE_VERSION,
                 )),
                 ScreensPlugin,
                 GamePlugin,
@@ -400,6 +428,8 @@ fn sync_shared_ui(
     economy: Option<Res<crate::game::RunEconomy>>,
     discovery: Option<Res<crate::game::DiscoveryState>>,
     commissions: Option<Res<crate::game::CommissionBoard>>,
+    bonuses: Option<Res<crate::game::projects::InfrastructureBonuses>>,
+    blueprints_state: Option<Res<crate::game::projects::BlueprintState>>,
 ) {
     let Ok(mut ui) = bridge.shared.lock() else {
         return;
@@ -497,12 +527,14 @@ fn sync_shared_ui(
             .map(|c| c.total_completed)
             .unwrap_or(0)
             .max(save.total_commissions_completed);
+        let discount = bonuses.as_deref().map(|b| b.pack_discount).unwrap_or(0);
         let mut packs_legacy: Vec<PackHud> = Vec::new();
         let mut packs_ui: Vec<PackUi> = Vec::new();
         for def in crate::game::PACKS {
             let unlocked =
                 disc >= def.required_discoveries as u32 && done >= def.required_commissions as u32;
-            let affordable = dew >= def.cost;
+            let eff_cost = def.cost.saturating_sub(discount).max(1);
+            let affordable = dew >= eff_cost;
             let locked_reason = if disc < def.required_discoveries as u32 {
                 format!("Discover {} more", def.required_discoveries as u32 - disc)
             } else if done < def.required_commissions as u32 {
@@ -516,14 +548,14 @@ fn sync_shared_ui(
             packs_legacy.push(PackHud {
                 id: def.id,
                 name: def.name.to_string(),
-                cost: def.cost,
+                cost: eff_cost,
                 unlocked,
                 can_afford: affordable,
             });
             packs_ui.push(PackUi {
                 id: crate::game::pack_id_to_str(def.id).to_string(),
                 name: def.name.to_string(),
-                cost: def.cost,
+                cost: eff_cost,
                 draws: def.draws as u32,
                 unlocked,
                 affordable,
@@ -532,6 +564,31 @@ fn sync_shared_ui(
         }
         ui.packs = packs_legacy;
         ui.packs_ui = packs_ui;
+    }
+    // Blueprints (Field Notes) - available if blueprint state present
+    if let Some(bstate) = blueprints_state.as_deref() {
+        let mut bps = Vec::new();
+        for def in crate::game::projects::BLUEPRINTS {
+            let unlocked = bstate.unlocked.contains(&def.id);
+            let completed = bstate.completed_ids.contains(&def.id);
+            let ingredients: Vec<String> = def
+                .ingredients
+                .iter()
+                .map(|ing| format!("{}× {}", ing.amount, ing.card.label()))
+                .collect();
+            bps.push(crate::app::BlueprintUi {
+                id: def.id.stable_id().to_string(),
+                name: def.name.to_string(),
+                unlocked,
+                clue: def.clue.to_string(),
+                ingredients,
+                output: def.output.label().to_string(),
+                dew_cost: def.dew_cost,
+                build_seconds: def.build_seconds,
+                completed,
+            });
+        }
+        ui.blueprints = bps;
     }
 }
 
@@ -686,6 +743,11 @@ fn process_ui_actions(
                 if let Ok(mut ui) = bridge.shared.lock() {
                     ui.toast.clear();
                     ui.toast_timer = 0.0;
+                }
+            }
+            UiAction::SetJournalTab(tab) => {
+                if let Ok(mut ui) = bridge.shared.lock() {
+                    ui.journal_tab = tab;
                 }
             }
         }

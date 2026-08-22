@@ -10,7 +10,6 @@ use super::card_defs::CardType;
 use super::events::{GameEvent, PendingGameEvents};
 use super::{Card, GameCleanup, GameSession, CARD_SIZE};
 
-// ── Grid ──────────────────────────────────────────────────────────────
 
 pub const GRID_ORIGIN: Vec2 = Vec2::new(-330.0, -160.0);
 pub const GRID_CELL: Vec2 = Vec2::new(108.0, 140.0);
@@ -33,13 +32,13 @@ pub fn world_to_grid(pos: Vec2) -> Option<(i32, i32)> {
     }
 }
 
-// ── Components ────────────────────────────────────────────────────────
 
 #[derive(Component)]
 pub struct HabitatBase {
     pub substrate: CardType,
     pub plant: Option<Entity>,
     pub companion: Option<Entity>,
+    pub installation: Option<Entity>,
 }
 
 #[derive(Component)]
@@ -52,6 +51,7 @@ pub struct StackedOn {
 pub enum StackLayer {
     Plant,
     Companion,
+    Installation,
 }
 
 #[derive(Component, Default, Clone)]
@@ -73,7 +73,6 @@ pub struct GridSlot {
 #[derive(Component)]
 pub struct GridGhost;
 
-// ── Rules ─────────────────────────────────────────────────────────────
 
 pub fn is_habitat_substrate(t: CardType) -> bool {
     matches!(t, CardType::BioSubstrate | CardType::FertileSubstrate)
@@ -98,6 +97,10 @@ pub fn can_stack_as_companion(t: CardType) -> bool {
     )
 }
 
+pub fn can_stack_as_installation(t: CardType) -> bool {
+    t.is_installation()
+}
+
 pub fn substrate_growth_mult(t: CardType) -> f32 {
     match t {
         CardType::FertileSubstrate => 1.35,
@@ -106,7 +109,6 @@ pub fn substrate_growth_mult(t: CardType) -> f32 {
     }
 }
 
-// ── Named combos ──────────────────────────────────────────────────────
 
 #[derive(Clone, Copy, Debug)]
 pub struct SynergyCombo {
@@ -147,13 +149,11 @@ pub fn find_synergy(plant: CardType, companion: CardType) -> Option<&'static Syn
         .find(|s| s.plant == plant && s.companion == companion)
 }
 
-// ── Pending FX placeholder: we use crate events directly here.
 //    We avoid depending on private PendingFx by pushing via Events resource.
 //    For FX, we use a simple helper that spawns via PendingFx if available,
 //    otherwise we just emit GameEvent and let mod.rs handle FX.
 //    To keep spec compatibility, we provide helpers that take generic callbacks.
 
-// ── Placement / stacking ──────────────────────────────────────────────
 
 /// Drop substrate onto a free grid cell → become HabitatBase.
 /// Returns snap position if placed, None otherwise.
@@ -177,7 +177,7 @@ pub fn try_place_habitat(
     Some((col, row, snap))
 }
 
-/// Drop plant/companion onto a nearby habitat.
+/// Drop plant/companion/installation onto a nearby habitat.
 /// Returns Some((base_entity, layer)) if stack possible.
 pub fn find_stack_target(
     card_type: CardType,
@@ -197,6 +197,8 @@ pub fn find_stack_target(
                 && hab.companion.is_none()
             {
                 Some(StackLayer::Companion)
+            } else if can_stack_as_installation(card_type) && hab.installation.is_none() {
+                Some(StackLayer::Installation)
             } else {
                 None
             };
@@ -210,7 +212,31 @@ pub fn find_stack_target(
     best.map(|(e, _, layer)| (e, layer))
 }
 
-// ── Systems ───────────────────────────────────────────────────────────
+/// Find installation-specific target (for explicit installation stacking).
+pub fn find_installation_target(
+    card_type: CardType,
+    drop_pos: Vec2,
+    habitats: &Query<(Entity, &GridSlot, &HabitatBase)>,
+) -> Option<Entity> {
+    if !can_stack_as_installation(card_type) {
+        return None;
+    }
+    let mut best: Option<(Entity, f32)> = None;
+    for (e, slot, hab) in habitats.iter() {
+        if hab.installation.is_some() {
+            continue;
+        }
+        let pos = grid_to_world(slot.col, slot.row);
+        let d = drop_pos.distance(pos);
+        if d <= STACK_SNAP_DIST {
+            if best.map_or(true, |(_, bd)| d < bd) {
+                best = Some((e, d));
+            }
+        }
+    }
+    best.map(|(e, _)| e)
+}
+
 
 pub fn spawn_grid_ghosts(mut commands: Commands) {
     for col in 0..MAX_COLS {
@@ -313,6 +339,9 @@ pub fn position_stacked_cards(
             StackLayer::Companion => {
                 tf.translation = Vec3::new(b.x + 14.0, b.y + 40.0, b.z + 5.0);
             }
+            StackLayer::Installation => {
+                tf.translation = Vec3::new(b.x - 18.0, b.y + 58.0, b.z + 7.0);
+            }
         }
     }
 }
@@ -335,6 +364,11 @@ pub fn clear_dead_stacks(
         if let Some(c) = hab.companion {
             if cards.get(c).is_err() {
                 hab.companion = None;
+            }
+        }
+        if let Some(i) = hab.installation {
+            if cards.get(i).is_err() {
+                hab.installation = None;
             }
         }
     }
@@ -378,6 +412,27 @@ pub fn synergy_income_tick(
                 }
             }
         }
+        // Infrastructure: Dew Basin and Pollinator Lodge bonuses
+        if let Some(inst) = hab.installation {
+            if let Ok(ic) = cards.get(inst) {
+                match ic.card_type {
+                    CardType::DewBasin => {
+                        // Only counts if habitat has plant (we already checked plant is_some)
+                        dew += 1;
+                    }
+                    CardType::PollinatorLodge => {
+                        if let Some(comp) = hab.companion {
+                            if let Ok(cc) = cards.get(comp) {
+                                if cc.card_type == CardType::MatureFlutterwing {
+                                    dew += 1;
+                                }
+                            }
+                        }
+                    }
+                    _ => {}
+                }
+            }
+        }
     }
 
     if dew > 0 {
@@ -418,7 +473,6 @@ pub fn production_mult_for_entity(
         .unwrap_or(1.0)
 }
 
-// ── Tests ─────────────────────────────────────────────────────────────
 
 #[cfg(test)]
 mod tests {

@@ -1,6 +1,6 @@
 use bevy::prelude::*;
 
-use super::CardType;
+use super::{BlueprintId, CardType};
 
 /// Domain events for discovery / commissions / stats.
 /// Systems push events instead of directly mutating those subsystems.
@@ -33,6 +33,20 @@ pub enum GameEvent {
     },
     SynergyTick {
         dew: u32,
+    },
+    ProjectStarted {
+        blueprint: BlueprintId,
+    },
+    ProjectCompleted {
+        blueprint: BlueprintId,
+        output: CardType,
+    },
+    InstallationInstalled {
+        installation: CardType,
+        habitat: Entity,
+    },
+    BlueprintUnlocked {
+        blueprint: BlueprintId,
     },
 }
 

@@ -27,6 +27,12 @@ pub enum CardType {
     ApexSpore,
     GrowingApex,
     GenesisBloom,
+    NurseryTray,
+    CompostCradle,
+    MyceliumBed,
+    PollinatorLodge,
+    DewBasin,
+    SeedArchive,
 }
 
 impl CardType {
@@ -56,6 +62,12 @@ impl CardType {
             Self::ApexSpore => "Apex Spore",
             Self::GrowingApex => "Growing Apex",
             Self::GenesisBloom => "Genesis Bloom",
+            Self::NurseryTray => "Nursery Tray",
+            Self::CompostCradle => "Compost Cradle",
+            Self::MyceliumBed => "Mycelium Bed",
+            Self::PollinatorLodge => "Pollinator Lodge",
+            Self::DewBasin => "Dew Basin",
+            Self::SeedArchive => "Seed Archive",
         }
     }
 
@@ -82,6 +94,12 @@ impl CardType {
             Self::WasteToxin => Color::srgb(0.75, 0.22, 0.25),
             Self::GrowingApex => Color::srgb(0.55, 0.88, 0.7),
             Self::GenesisBloom => Color::srgb(0.55, 0.95, 0.75),
+            Self::NurseryTray => Color::srgb(0.55, 0.65, 0.45),
+            Self::CompostCradle => Color::srgb(0.45, 0.45, 0.35),
+            Self::MyceliumBed => Color::srgb(0.68, 0.62, 0.48),
+            Self::PollinatorLodge => Color::srgb(0.72, 0.68, 0.52),
+            Self::DewBasin => Color::srgb(0.45, 0.68, 0.78),
+            Self::SeedArchive => Color::srgb(0.60, 0.58, 0.42),
             Self::None => Color::srgb(0.3, 0.3, 0.3),
         }
     }
@@ -215,6 +233,12 @@ impl CardType {
             Self::GrazingSlugEgg => Some(4),
             Self::RichMulch => Some(3),
             Self::WasteToxin => Some(0),
+            Self::NurseryTray => Some(3),
+            Self::CompostCradle => Some(4),
+            Self::MyceliumBed => Some(5),
+            Self::PollinatorLodge => Some(6),
+            Self::DewBasin => Some(7),
+            Self::SeedArchive => Some(8),
             Self::Gardener
             | Self::BasicFungi
             | Self::YoungVine
@@ -228,6 +252,30 @@ impl CardType {
             | Self::GrowingApex
             | Self::GenesisBloom
             | Self::None => None,
+        }
+    }
+
+    pub const fn is_installation(self) -> bool {
+        matches!(
+            self,
+            Self::NurseryTray
+                | Self::CompostCradle
+                | Self::MyceliumBed
+                | Self::PollinatorLodge
+                | Self::DewBasin
+                | Self::SeedArchive
+        )
+    }
+
+    pub const fn installation_sell_value(self) -> Option<u32> {
+        match self {
+            Self::NurseryTray => Some(3),
+            Self::CompostCradle => Some(4),
+            Self::MyceliumBed => Some(5),
+            Self::PollinatorLodge => Some(6),
+            Self::DewBasin => Some(7),
+            Self::SeedArchive => Some(8),
+            _ => None,
         }
     }
 
@@ -257,6 +305,12 @@ impl CardType {
             Self::ApexSpore => "apex_spore",
             Self::GrowingApex => "growing_apex",
             Self::GenesisBloom => "genesis_bloom",
+            Self::NurseryTray => "nursery_tray",
+            Self::CompostCradle => "compost_cradle",
+            Self::MyceliumBed => "mycelium_bed",
+            Self::PollinatorLodge => "pollinator_lodge",
+            Self::DewBasin => "dew_basin",
+            Self::SeedArchive => "seed_archive",
         }
     }
 
@@ -286,6 +340,12 @@ impl CardType {
             "apex_spore" => Self::ApexSpore,
             "growing_apex" => Self::GrowingApex,
             "genesis_bloom" => Self::GenesisBloom,
+            "nursery_tray" => Self::NurseryTray,
+            "compost_cradle" => Self::CompostCradle,
+            "mycelium_bed" => Self::MyceliumBed,
+            "pollinator_lodge" => Self::PollinatorLodge,
+            "dew_basin" => Self::DewBasin,
+            "seed_archive" => Self::SeedArchive,
             _ => return None,
         })
     }
@@ -317,6 +377,12 @@ impl CardType {
             Self::ApexSpore => "images/cards/apex_spore.ren",
             Self::GrowingApex => "images/cards/growing_apex.ren",
             Self::GenesisBloom => "images/cards/genesis_bloom.ren",
+            Self::NurseryTray => "images/cards/nursery_tray.ren",
+            Self::CompostCradle => "images/cards/compost_cradle.ren",
+            Self::MyceliumBed => "images/cards/mycelium_bed.ren",
+            Self::PollinatorLodge => "images/cards/pollinator_lodge.ren",
+            Self::DewBasin => "images/cards/dew_basin.ren",
+            Self::SeedArchive => "images/cards/seed_archive.ren",
         })
     }
 }

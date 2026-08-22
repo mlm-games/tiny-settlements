@@ -18,7 +18,7 @@ use repose_ui::anim_ext::{
 use repose_ui::overlay::OverlayHandle;
 use repose_ui::{Column, Row, Text as RText, TextStyle, ViewExt, ZStack};
 
-use crate::app::{AppState, CommissionUi, JournalEntryUi, OverlayMenu, PackUi, SharedUi};
+use crate::app::{AppState, BlueprintUi, CommissionUi, JournalEntryUi, JournalTab, OverlayMenu, PackUi, SharedUi};
 
 fn t(translations: &HashMap<String, String>, key: &str, fallback: &str) -> String {
     translations
@@ -47,6 +47,7 @@ pub enum UiAction {
     OpenJournal,
     CloseJournal,
     DismissToast,
+    SetJournalTab(JournalTab),
 }
 
 #[derive(bevy::prelude::Resource, Clone)]
@@ -1089,6 +1090,9 @@ fn toast_banner(st: &SharedUi, actions: Arc<Mutex<Vec<UiAction>>>) -> View {
 fn journal_overlay(st: &SharedUi, actions: Arc<Mutex<Vec<UiAction>>>) -> View {
     let tr = &st.translations;
     let a_close = actions.clone();
+    let a_cards = actions.clone();
+    let a_notes = actions.clone();
+    let a_syn = actions.clone();
 
     let mut entries: Vec<View> = Vec::new();
     entries.push(
@@ -1108,46 +1112,103 @@ fn journal_overlay(st: &SharedUi, actions: Arc<Mutex<Vec<UiAction>>>) -> View {
         )),
     );
     entries.push(spacer(6.0));
-    entries.push(body(
-        format!(
-            "{}: {} / {}",
-            t(tr, "discoveries", "Discoveries"),
-            st.discoveries,
-            st.discoveries_total
+    // Tabs
+    let tab_cards = st.journal_tab == JournalTab::Cards;
+    let tab_notes = st.journal_tab == JournalTab::FieldNotes;
+    let tab_syn = st.journal_tab == JournalTab::Synergies;
+    let tab_row = Row(Modifier::new().gap(6.0)).child((
+        mk_button_wide(
+            "Cards".to_string(),
+            tab_cards,
+            move || push(&a_cards, UiAction::SetJournalTab(JournalTab::Cards)),
         ),
-        14.0,
-        col(180, 210, 180),
+        mk_button_wide(
+            "Field Notes".to_string(),
+            tab_notes,
+            move || push(&a_notes, UiAction::SetJournalTab(JournalTab::FieldNotes)),
+        ),
+        mk_button_wide(
+            "Synergies".to_string(),
+            tab_syn,
+            move || push(&a_syn, UiAction::SetJournalTab(JournalTab::Synergies)),
+        ),
     ));
-    entries.push(spacer(12.0));
+    entries.push(tab_row);
+    entries.push(spacer(10.0));
 
-    if st.journal.is_empty() {
-        for name in [
-            "Gardener",
-            "Bio-Substrate",
-            "Spore Pod",
-            "Nutrient slime",
-            "Basic Fungi",
-            "…",
-        ] {
-            entries.push(journal_row(&JournalEntryUi {
-                id: name.into(),
-                name: name.into(),
-                discovered: matches!(
-                    name,
-                    "Gardener" | "Bio-Substrate" | "Spore Pod" | "Nutrient slime"
+    match st.journal_tab {
+        JournalTab::Cards => {
+            entries.push(body(
+                format!(
+                    "{}: {} / {}",
+                    t(tr, "discoveries", "Discoveries"),
+                    st.discoveries,
+                    st.discoveries_total
                 ),
-                blurb: if name == "…" {
-                    "Grow, craft, and open satchels to fill the journal.".into()
-                } else {
-                    String::new()
-                },
-            }));
-            entries.push(spacer(6.0));
+                14.0,
+                col(180, 210, 180),
+            ));
+            entries.push(spacer(10.0));
+            if st.journal.is_empty() {
+                for name in [
+                    "Gardener",
+                    "Bio-Substrate",
+                    "Spore Pod",
+                    "Nutrient slime",
+                    "Basic Fungi",
+                    "…",
+                ] {
+                    entries.push(journal_row(&JournalEntryUi {
+                        id: name.into(),
+                        name: name.into(),
+                        discovered: matches!(
+                            name,
+                            "Gardener" | "Bio-Substrate" | "Spore Pod" | "Nutrient slime"
+                        ),
+                        blurb: if name == "…" {
+                            "Grow, craft, and open satchels to fill the journal.".into()
+                        } else {
+                            String::new()
+                        },
+                    }));
+                    entries.push(spacer(6.0));
+                }
+            } else {
+                for e in &st.journal {
+                    entries.push(journal_row(e));
+                    entries.push(spacer(6.0));
+                }
+            }
         }
-    } else {
-        for e in &st.journal {
-            entries.push(journal_row(e));
-            entries.push(spacer(6.0));
+        JournalTab::FieldNotes => {
+            if st.blueprints.is_empty() {
+                entries.push(body("No Field Notes discovered".into(), 13.0, col(150, 160, 150)));
+            } else {
+                for b in &st.blueprints {
+                    entries.push(blueprint_row(b));
+                    entries.push(spacer(6.0));
+                }
+            }
+        }
+        JournalTab::Synergies => {
+            if st.synergies.is_empty() {
+                entries.push(body("Discover synergies by stacking companions".into(), 13.0, col(150, 160, 150)));
+            } else {
+                for s in &st.synergies {
+                    entries.push(synergy_row(s));
+                    entries.push(spacer(6.0));
+                }
+            }
+            // also show habitats synergy summary
+            if !st.habitats.is_empty() {
+                entries.push(body("Active habitats:".into(), 13.0, col(180, 210, 180)));
+                entries.push(spacer(4.0));
+                for h in st.habitats.iter().filter(|h| h.synergy_name.is_some()).take(4) {
+                    let name = h.synergy_name.as_deref().unwrap_or("—");
+                    entries.push(body(format!("{} ×{:.1}", name, h.production_mult), 12.0, col(160, 200, 150)));
+                    entries.push(spacer(4.0));
+                }
+            }
         }
     }
 
@@ -1161,7 +1222,7 @@ fn journal_overlay(st: &SharedUi, actions: Arc<Mutex<Vec<UiAction>>>) -> View {
     .child(
         Column(
             Modifier::new()
-                .width(520.0)
+                .width(560.0)
                 .padding(20.0)
                 .background(col(14, 24, 18))
                 .clip_rounded(16.0)
@@ -1195,6 +1256,63 @@ fn journal_row(e: &JournalEntryUi) -> View {
             spacer(0.0)
         },
     ))
+}
+
+fn blueprint_row(b: &BlueprintUi) -> View {
+    if !b.unlocked {
+        return Column(
+            Modifier::new()
+                .width(520.0)
+                .padding(10.0)
+                .background(cola(22, 28, 24, 255))
+                .clip_rounded(8.0),
+        )
+        .child((
+            body("???".into(), 15.0, col(120, 130, 120)),
+            body(format!("“{}”", b.clue), 12.0, col(100, 110, 100)),
+        ));
+    }
+    let ingredients = if b.ingredients.is_empty() {
+        "No ingredients".into()
+    } else {
+        b.ingredients.join(" + ")
+    };
+    Column(
+        Modifier::new()
+            .width(520.0)
+            .padding(10.0)
+            .background(cola(30, 50, 35, 255))
+            .clip_rounded(8.0),
+    )
+    .child((
+        Row(Modifier::new()
+            .fill_max_width()
+            .justify_content(JustifyContent::SPACE_BETWEEN))
+        .child((
+            body(b.name.clone(), 15.0, RColor::WHITE),
+            body(format!("{:.0}s", b.build_seconds), 12.0, col(180, 210, 180)),
+        )),
+        spacer(4.0),
+        body(ingredients, 12.0, col(170, 190, 170)),
+        spacer(4.0),
+        body(format!("Produces: {}  •  {} Dew", b.output, b.dew_cost), 12.0, col(160, 200, 150)),
+        if b.completed {
+            body("✓ Completed".into(), 12.0, col(140, 200, 120))
+        } else {
+            spacer(0.0)
+        },
+    ))
+}
+
+fn synergy_row(s: &str) -> View {
+    Column(
+        Modifier::new()
+            .width(520.0)
+            .padding(10.0)
+            .background(cola(26, 36, 28, 255))
+            .clip_rounded(8.0),
+    )
+    .child(body(s.to_string(), 13.0, col(180, 210, 180)))
 }
 
 fn game_over_ui(st: &SharedUi, actions: Arc<Mutex<Vec<UiAction>>>) -> View {

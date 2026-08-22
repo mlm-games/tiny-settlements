@@ -15,6 +15,11 @@ pub enum CommissionKind {
     Hatch { card: CardType },
     CleanToxins { need: u32 },
     Create { card: CardType },
+    // Phase 3
+    CompleteProjects { need: u32 },
+    InstallStructures { need: u32 },
+    OwnDistinctInstallations { need: u32 },
+    CompostToxins { need: u32 },
 }
 
 #[derive(Clone, Debug)]
@@ -104,6 +109,30 @@ pub const COMMISSION_TEMPLATES: &[CommissionTemplate] = &[
         },
         reward_dew: 10,
     },
+    CommissionTemplate {
+        id: "groundwork",
+        title: "Groundwork",
+        kind: CommissionKind::CompleteProjects { need: 1 },
+        reward_dew: 6,
+    },
+    CommissionTemplate {
+        id: "designed_habitat",
+        title: "Designed Habitat",
+        kind: CommissionKind::InstallStructures { need: 1 },
+        reward_dew: 7,
+    },
+    CommissionTemplate {
+        id: "garden_engineer",
+        title: "Garden Engineer",
+        kind: CommissionKind::OwnDistinctInstallations { need: 3 },
+        reward_dew: 10,
+    },
+    CommissionTemplate {
+        id: "circular_garden",
+        title: "Circular Garden",
+        kind: CommissionKind::CompostToxins { need: 2 },
+        reward_dew: 9,
+    },
 ];
 
 #[derive(Clone, Debug)]
@@ -128,6 +157,10 @@ impl ActiveCommission {
             CommissionKind::Hatch { .. } => 1,
             CommissionKind::CleanToxins { need } => *need,
             CommissionKind::Create { .. } => 1,
+            CommissionKind::CompleteProjects { need } => *need,
+            CommissionKind::InstallStructures { need } => *need,
+            CommissionKind::OwnDistinctInstallations { need } => *need,
+            CommissionKind::CompostToxins { need } => *need,
         };
         Self {
             template_id: t.id,
@@ -192,6 +225,11 @@ pub struct CommissionStateSnapshot {
     pub hatched: std::collections::HashMap<CardType, u32>,
     pub cleaned_toxins: u32,
     pub created: std::collections::HashMap<CardType, u32>,
+    // Phase 3
+    pub projects_completed: u32,
+    pub installations_installed: u32,
+    pub distinct_installations: u32,
+    pub composted_toxins: u32,
 }
 
 pub fn progress_for_kind(kind: &CommissionKind, snap: &CommissionStateSnapshot) -> u32 {
@@ -221,6 +259,12 @@ pub fn progress_for_kind(kind: &CommissionKind, snap: &CommissionStateSnapshot) 
             }
         }
         CommissionKind::CleanToxins { need } => snap.cleaned_toxins.min(*need),
+        CommissionKind::CompleteProjects { need } => snap.projects_completed.min(*need),
+        CommissionKind::InstallStructures { need } => snap.installations_installed.min(*need),
+        CommissionKind::OwnDistinctInstallations { need } => {
+            snap.distinct_installations.min(*need)
+        }
+        CommissionKind::CompostToxins { need } => snap.composted_toxins.min(*need),
     }
 }
 
