@@ -12,6 +12,7 @@ master-volume = Master
 sfx-volume = SFX
 music-volume = Music
 language = Language
+wins = Wins
 biodiversity = Biodiversity
 focus = Gardener Focus
 controls-hint = Drag cards to combine | Gardener to plant/apply | Esc pause | R restart

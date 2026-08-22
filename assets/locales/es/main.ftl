@@ -12,6 +12,7 @@ master-volume = General
 sfx-volume = SFX
 music-volume = Música
 language = Idioma
+wins = Victorias
 biodiversity = Biodiversidad
 focus = Enfoque del Jardinero
 controls-hint = Arrastra cartas para combinar | Jardinero para plantar/aplicar | Esc pausa | R reiniciar

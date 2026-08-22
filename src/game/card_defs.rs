@@ -178,6 +178,59 @@ impl CardType {
             _ => None,
         }
     }
+
+    /// Seconds for a growth tick once conditions are met.
+    pub fn growth_duration(self) -> Option<f32> {
+        match self {
+            Self::SporePod => Some(5.0),
+            Self::FlutterwingLarva => Some(10.0),
+            Self::VineSeed
+            | Self::YoungVine
+            | Self::FlutterwingSpore
+            | Self::FertilizedVinePod
+            | Self::ApexSpore
+            | Self::GrowingApex => Some(8.0),
+            _ => None,
+        }
+    }
+
+    /// True if this stage auto-grows without a nutrient application.
+    pub fn auto_grows(self) -> bool {
+        matches!(
+            self,
+            Self::SporePod | Self::FlutterwingLarva | Self::FertilizedVinePod | Self::GrowingApex
+        )
+    }
+
+    /// Texture path under `assets/`, when card art exists for this type.
+    #[allow(dead_code)]
+    pub fn asset_path(self) -> Option<&'static str> {
+        Some(match self {
+            Self::None | Self::WasteToxin => return None,
+            Self::Gardener => "images/cards/gardener.png",
+            Self::BioSubstrate => "images/cards/bio_substrate.png",
+            Self::SporePod => "images/cards/spore_pod.png",
+            Self::NutrientSlime => "images/cards/nutrient_slime.png",
+            Self::BasicFungi => "images/cards/basic_fungi.png",
+            Self::ProcessedNutrients => "images/cards/processed_nutrients.png",
+            Self::VineSeed => "images/cards/vine_seed.png",
+            Self::YoungVine => "images/cards/young_vine.png",
+            Self::MatureVine => "images/cards/mature_vine.png",
+            Self::FlutterwingSpore => "images/cards/flutterwing_spore.png",
+            Self::FlutterwingLarva => "images/cards/flutterwing_larva.png",
+            Self::MatureFlutterwing => "images/cards/mature_flutterwing.png",
+            Self::FertilizedVinePod => "images/cards/fertilized_vine_pod.png",
+            Self::SymbioticAlgae => "images/cards/symbiotic_algae.png",
+            Self::LuminaCrystal => "images/cards/lumina_crystal.png",
+            Self::GrazingSlugEgg => "images/cards/grazing_slug_egg.png",
+            Self::GrazingSlug => "images/cards/grazing_slug.png",
+            Self::RichMulch => "images/cards/rich_mulch.png",
+            Self::FertileSubstrate => "images/cards/fertile_substrate.png",
+            Self::ApexSpore => "images/cards/apex_spore.png",
+            Self::GrowingApex => "images/cards/growing_apex.png",
+            Self::GenesisBloom => "images/cards/genesis_bloom.png",
+        })
+    }
 }
 
 #[derive(Clone, Debug)]

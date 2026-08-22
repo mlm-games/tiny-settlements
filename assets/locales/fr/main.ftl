@@ -12,6 +12,7 @@ master-volume = Principal
 sfx-volume = SFX
 music-volume = Musique
 language = Langue
+wins = Victoires
 biodiversity = Biodiversité
 focus = Concentration du Jardinier
 controls-hint = Glissez les cartes pour combiner | Jardinier pour planter/appliquer | Échap pause | R recommencer

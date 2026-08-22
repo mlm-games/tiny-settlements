@@ -12,6 +12,7 @@ master-volume = 主音量
 sfx-volume = 音效
 music-volume = 音乐
 language = 语言
+wins = 胜场
 biodiversity = 生物多样性
 focus = 园丁专注力
 controls-hint = 拖动卡片进行组合 | 用园丁种植/施加 | Esc暂停 | R重开

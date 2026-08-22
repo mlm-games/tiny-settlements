@@ -196,29 +196,66 @@ fn title_ui(st: &SharedUi, actions: Arc<Mutex<Vec<UiAction>>>) -> View {
         Modifier::new()
             .fill_max_size()
             .justify_content(JustifyContent::CENTER)
-            .align_items(AlignItems::CENTER)
-            .background(col(8, 8, 12)),
+            .align_items(AlignItems::CENTER),
     )
-    .child((
-        RText(t(tr, "app-title", "Tiny Settlements"))
-            .size(56.0)
-            .color(RColor::WHITE),
-        spacer(24.0),
-        mk_button(
-            &t(tr, "start-game", "Start Game"),
-            col(60, 120, 200),
-            move || push(&a1, UiAction::StartGame),
-        ),
-        mk_button(&t(tr, "settings", "Settings"), col(70, 70, 90), move || {
-            push(&a2, UiAction::OpenSettings)
-        }),
-        mk_button(&t(tr, "credits", "Credits"), col(70, 70, 90), move || {
-            push(&a3, UiAction::OpenCredits)
-        }),
-        mk_button(&t(tr, "quit", "Quit"), col(180, 60, 60), move || {
-            push(&a4, UiAction::QuitApp)
-        }),
-    ))
+    .child(
+        Column(
+            Modifier::new()
+                .width(460.0)
+                .padding(28.0)
+                .background(RColor::from_rgba(8, 14, 10, 160))
+                .clip_rounded(18.0)
+                .border(2.0, col(70, 110, 80), 18.0)
+                .align_items(AlignItems::CENTER),
+        )
+        .child((
+            RText(t(tr, "app-title", "Tiny Settlements"))
+                .size(48.0)
+                .color(RColor::WHITE),
+            spacer(10.0),
+            Row(Modifier::new().gap(10.0).align_items(AlignItems::CENTER)).child((
+                chip(
+                    format!(
+                        "{} {}",
+                        t(tr, "biodiversity", "Biodiversity"),
+                        st.high_biodiversity
+                    ),
+                    col(40, 80, 50),
+                    col(160, 220, 160),
+                ),
+                chip(
+                    format!("{} {}", t(tr, "wins", "Wins"), st.wins),
+                    col(50, 50, 70),
+                    col(190, 195, 210),
+                ),
+            )),
+            spacer(20.0),
+            mk_button(
+                &t(tr, "start-game", "Start Game"),
+                col(60, 120, 200),
+                move || push(&a1, UiAction::StartGame),
+            ),
+            mk_button(&t(tr, "settings", "Settings"), col(70, 70, 90), move || {
+                push(&a2, UiAction::OpenSettings)
+            }),
+            mk_button(&t(tr, "credits", "Credits"), col(70, 70, 90), move || {
+                push(&a3, UiAction::OpenCredits)
+            }),
+            mk_button(&t(tr, "quit", "Quit"), col(180, 60, 60), move || {
+                push(&a4, UiAction::QuitApp)
+            }),
+        )),
+    )
+}
+
+fn chip(label: String, bg: RColor, fg: RColor) -> View {
+    Column(
+        Modifier::new()
+            .padding(8.0)
+            .background(bg)
+            .clip_rounded(8.0),
+    )
+    .child(RText(label).size(14.0).color(fg))
 }
 
 fn pause_overlay(st: &SharedUi, actions: Arc<Mutex<Vec<UiAction>>>) -> View {
@@ -460,11 +497,12 @@ fn credits_ui(st: &SharedUi, actions: Arc<Mutex<Vec<UiAction>>>) -> View {
 
 fn ingame_hud(st: &SharedUi) -> View {
     let tr = &st.translations;
-    let focus_pct = if st.max_focus > 0.0 {
-        (st.focus / st.max_focus * 100.0) as i32
+    let focus_frac = if st.max_focus > 0.0 {
+        (st.focus / st.max_focus).clamp(0.0, 1.0)
     } else {
-        0
+        0.0
     };
+    let focus_pct = (focus_frac * 100.0) as i32;
 
     let mut children = vec![
         RText(format!(
@@ -474,13 +512,30 @@ fn ingame_hud(st: &SharedUi) -> View {
         ))
         .size(22.0)
         .color(RColor::WHITE),
+        spacer(6.0),
         RText(format!(
             "{}: {}%",
             t(tr, "focus", "Gardener Focus"),
             focus_pct
         ))
-        .size(18.0)
+        .size(16.0)
         .color(col(200, 230, 180)),
+        Column(
+            Modifier::new()
+                .width(220.0)
+                .height(10.0)
+                .background(col(30, 40, 32))
+                .clip_rounded(5.0),
+        )
+        .child(Column(
+            Modifier::new()
+                .width((220.0 * focus_frac).max(1.0))
+                .height(10.0)
+                .background(col(120, 200, 110))
+                .clip_rounded(5.0)
+                .align_self(AlignSelf::FLEX_START),
+        )),
+        spacer(6.0),
         RText(t(
             tr,
             "controls-hint",

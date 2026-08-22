@@ -12,6 +12,7 @@ master-volume = Hauptlautstärke
 sfx-volume = SFX
 music-volume = Musik
 language = Sprache
+wins = Siege
 biodiversity = Biodiversität
 focus = Gärtner-Fokus
 controls-hint = Karten ziehen zum Kombinieren | Gärtner zum Pflanzen/Anwenden | Esc Pause | R Neustart

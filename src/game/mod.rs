@@ -1,5 +1,9 @@
 mod card_defs;
 
+use bevy::ecs::query::QueryFilter;
+#[cfg(test)]
+use bevy::ecs::world::CommandQueue;
+
 pub use card_defs::*;
 
 use std::collections::HashMap;
@@ -598,6 +602,18 @@ fn gardener_on(
             session.hint_timer = 3.0;
             return;
         };
+        // reject before spending if the plant's substrate requirement isn't met
+        let plant_type = cards
+            .get(plant)
+            .map(|(_, _, c, _)| c.card_type)
+            .unwrap_or(type_b);
+        if let Some(need) = plant_type.needs_substrate()
+            && nearest(cards, plant, |t| t == need).is_none()
+        {
+            session.hint = format!("{} needs {} nearby", plant_type.label(), need.label());
+            session.hint_timer = 3.0;
+            return;
+        }
         if !spend(session, cost) {
             return;
         }
@@ -761,7 +777,7 @@ fn tick_work_timers(
     time: Res<Time>,
     mut session: ResMut<GameSession>,
     mut q: Query<(Entity, &mut Card, &mut WorkTimer, &Transform)>,
-    mut gq: Query<(&mut Card, &mut Transform), Without<WorkTimer>>,
+    others: Query<(Entity, &Transform, &Card), Without<WorkTimer>>,
     mut pending_spawn: ResMut<PendingSpawns>,
     mut pending_despawn: ResMut<PendingDespawns>,
     mut pending_passive: ResMut<PendingPassives>,
@@ -784,24 +800,45 @@ fn tick_work_timers(
     if finished.is_empty() {
         return;
     }
-    if let Some(g) = session.gardener
-        && let Ok((mut gc, mut gtf)) = gq.get_mut(g)
-    {
-        gc.is_working = false;
-        gtf.translation.z = 1.0;
+    if let Some(g) = session.gardener {
+        let gardener = g;
+        commands.queue(move |world: &mut World| {
+            if let Some(mut c) = world.get_mut::<Card>(gardener) {
+                c.is_working = false;
+            }
+            if let Some(mut tf) = world.get_mut::<Transform>(gardener) {
+                tf.translation.z = 1.0;
+            }
+        });
     }
     session.status.clear();
 
     for (e, action, pos, ctype, planted) in finished {
         let Some(action) = action else { continue };
+        let sub_ok = substrate_ok_for(&others, e, ctype, pos);
         match action {
             GardenerAction::Plant => {
                 set_planted(&mut commands, e);
-                start_growth(&mut pending_passive, e, ctype, true, true);
+                // SporePod / FertilizedVinePod auto-grow after plant
+                start_growth(&mut pending_passive, e, ctype, true, false, sub_ok);
+                session.hint = format!("{} planted", ctype.label());
+                session.hint_timer = 2.0;
             }
             GardenerAction::ApplyNutrient { source } => {
-                pending_despawn.0.push(source);
-                start_growth(&mut pending_passive, e, ctype, planted, true);
+                if !sub_ok {
+                    // substrate vanished mid-action: don't consume the nutrient
+                    session.hint = format!(
+                        "{} needs {} nearby",
+                        ctype.label(),
+                        ctype.needs_substrate().map(|t| t.label()).unwrap_or("?")
+                    );
+                    session.hint_timer = 3.0;
+                } else {
+                    pending_despawn.0.push(source);
+                    start_growth(&mut pending_passive, e, ctype, planted, true, true);
+                    session.hint = format!("{} growing...", ctype.label());
+                    session.hint_timer = 2.0;
+                }
             }
             GardenerAction::Clean => pending_despawn.0.push(e),
             GardenerAction::UpgradeSubstrate { source } => {
@@ -828,19 +865,46 @@ fn start_growth(
     e: Entity,
     ctype: CardType,
     planted: bool,
-    nutrient_ok: bool,
+    nutrient_applied: bool,
+    substrate_ok: bool,
 ) {
-    // planted spores sprout on their own
-    if ctype == CardType::SporePod && planted {
-        pending_passive.0.push((e, PassiveKind::Grow, 5.0));
+    let Some(dur) = ctype.growth_duration() else {
+        return;
+    };
+
+    // Auto-grow stages (after plant / spawn)
+    if ctype.auto_grows() {
+        let ok = match ctype {
+            CardType::SporePod | CardType::FertilizedVinePod => planted,
+            CardType::FlutterwingLarva | CardType::GrowingApex => true,
+            _ => false,
+        };
+        if ok && substrate_ok {
+            pending_passive.0.push((e, PassiveKind::Grow, dur));
+        }
         return;
     }
-    if ctype == CardType::FlutterwingLarva {
-        pending_passive.0.push((e, PassiveKind::Grow, 10.0));
-        return;
+
+    // Nutrient-gated stages (VineSeed, YoungVine, FlutterwingSpore, ApexSpore)
+    if nutrient_applied && substrate_ok {
+        let ready = planted || ctype.is_plant();
+        if ready {
+            pending_passive.0.push((e, PassiveKind::Grow, dur));
+        }
     }
-    if nutrient_ok && matches!(ctype, CardType::ApexSpore | CardType::SymbioticAlgae) {
-        pending_passive.0.push((e, PassiveKind::Grow, 8.0));
+}
+
+fn substrate_ok_for<F: QueryFilter>(
+    cards: &Query<(Entity, &Transform, &Card), F>,
+    e: Entity,
+    ctype: CardType,
+    pos: Vec2,
+) -> bool {
+    match ctype.needs_substrate() {
+        Some(need) => cards.iter().any(|(oe, otf, oc)| {
+            oe != e && oc.card_type == need && otf.translation.truncate().distance(pos) < NEARBY
+        }),
+        None => true,
     }
 }
 
@@ -854,12 +918,14 @@ fn tick_passive_timers(
     mut pending_despawn: ResMut<PendingDespawns>,
     mut pending_passive: ResMut<PendingPassives>,
 ) {
-    // schedule passives queued last frame
+    // schedule passives queued last frame (skip entities despawned meanwhile)
     for (e, kind, dur) in pending_passive.0.drain(..) {
-        commands.entity(e).insert(PassiveTimer {
-            timer: Timer::from_seconds(dur, TimerMode::Once),
-            kind,
-        });
+        if commands.get_entity(e).is_ok() {
+            commands.entity(e).insert(PassiveTimer {
+                timer: Timer::from_seconds(dur, TimerMode::Once),
+                kind,
+            });
+        }
     }
 
     let mut done = Vec::new();
@@ -1060,6 +1126,21 @@ fn world_timers(
         if c.card_type == CardType::FlutterwingLarva {
             pending_passive.0.push((e, PassiveKind::Grow, 10.0));
         }
+
+        // final apex stage auto-matures into the Genesis Bloom
+        if c.card_type == CardType::GrowingApex {
+            pending_passive.0.push((e, PassiveKind::Grow, 8.0));
+        }
+
+        // planted fertilized pods grow into symbiotic algae
+        if c.card_type == CardType::FertilizedVinePod && c.is_planted {
+            pending_passive.0.push((e, PassiveKind::Grow, 8.0));
+        }
+
+        // planted spore that somehow lost its timer
+        if c.card_type == CardType::SporePod && c.is_planted {
+            pending_passive.0.push((e, PassiveKind::Grow, 5.0));
+        }
     }
 }
 
@@ -1212,4 +1293,384 @@ fn process_restart(
         commands.entity(e).despawn();
     }
     setup_game(commands, session, save);
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::app::SharedUi;
+    use crate::menus::UiBridge;
+    use bevy::time::{TimePlugin, TimeUpdateStrategy};
+    use std::sync::{Arc, Mutex};
+    use std::time::Duration;
+
+    /// Minimal headless app: no render/window plugins, fixed 250ms timestep.
+    fn test_app() -> App {
+        let mut app = App::new();
+        app.add_plugins(bevy::state::app::StatesPlugin);
+        app.init_state::<AppState>();
+        app.insert_resource(Paused(false));
+        app.insert_resource(Transition::<AppState>::default());
+        app.insert_resource(SaveData::default());
+        app.insert_resource(SaveManager::new(
+            "com",
+            "mlm-games",
+            "tiny-settlements-test",
+            "test-save.ron",
+            1,
+        ));
+        app.insert_resource(UiBridge {
+            shared: Arc::new(Mutex::new(SharedUi::default())),
+            actions: Arc::new(Mutex::new(Vec::new())),
+        });
+        app.insert_resource(ButtonInput::<MouseButton>::default());
+        app.insert_resource(ButtonInput::<KeyCode>::default());
+        app.add_plugins(TimePlugin);
+        app.insert_resource(TimeUpdateStrategy::ManualDuration(Duration::from_millis(
+            250,
+        )));
+        app.add_plugins(GamePlugin);
+        app
+    }
+
+    fn enter_game(app: &mut App) {
+        app.insert_resource(NextState::Pending(AppState::InGame));
+        app.update();
+    }
+
+    fn cards_of(world: &mut World, t: CardType) -> Vec<Entity> {
+        world
+            .query::<(Entity, &Card)>()
+            .iter(world)
+            .filter(|(_, c)| c.card_type == t)
+            .map(|(e, _)| e)
+            .collect()
+    }
+
+    fn pos_of(world: &mut World, e: Entity) -> Vec2 {
+        world
+            .get::<Transform>(e)
+            .expect("card transform")
+            .translation
+            .truncate()
+    }
+
+    fn spawn_at(app: &mut App, t: CardType, pos: Vec2, planted: bool) -> Entity {
+        app.world_mut()
+            .resource_scope(|world: &mut World, mut session: Mut<GameSession>| {
+                let mut queue = CommandQueue::default();
+                let spawned = {
+                    let mut commands = Commands::new(&mut queue, world);
+                    spawn_card(&mut commands, session.as_mut(), t, pos, planted)
+                        .expect("spawn succeeded")
+                };
+                queue.apply(world);
+                spawned
+            })
+    }
+
+    /// Drive resolve_drop outside a system via nested resource scopes.
+    #[allow(clippy::too_many_arguments)]
+    fn drop_on(
+        app: &mut App,
+        src: Entity,
+        type_a: CardType,
+        spos: Vec2,
+        tgt: Entity,
+        type_b: CardType,
+        tpos: Vec2,
+    ) {
+        app.world_mut()
+            .resource_scope(|world: &mut World, mut session: Mut<GameSession>| {
+                world.resource_scope(|world: &mut World, mut ps: Mut<PendingSpawns>| {
+                    world.resource_scope(|world: &mut World, mut pd: Mut<PendingDespawns>| {
+                        world.resource_scope(|world: &mut World, mut pw: Mut<PendingWork>| {
+                            let mut qstate = world.query::<(
+                                Entity,
+                                &mut Transform,
+                                &mut Card,
+                                Option<&Dragging>,
+                            )>();
+                            let mut q = qstate.query_mut(world);
+                            resolve_drop(
+                                &mut session,
+                                &mut q,
+                                ps.as_mut(),
+                                pd.as_mut(),
+                                pw.as_mut(),
+                                src,
+                                type_a,
+                                spos,
+                                tgt,
+                                type_b,
+                                tpos,
+                                false,
+                            );
+                        });
+                    });
+                });
+            });
+    }
+
+    fn gardener_act(app: &mut App, gardener: Entity, target: Entity, type_b: CardType, tpos: Vec2) {
+        app.world_mut()
+            .resource_scope(|world: &mut World, mut session: Mut<GameSession>| {
+                world.resource_scope(|world: &mut World, mut pw: Mut<PendingWork>| {
+                    let mut qstate =
+                        world.query::<(Entity, &mut Transform, &mut Card, Option<&Dragging>)>();
+                    let mut q = qstate.query_mut(world);
+                    gardener_on(
+                        &mut session,
+                        &mut q,
+                        pw.as_mut(),
+                        gardener,
+                        target,
+                        type_b,
+                        tpos,
+                    );
+                });
+            });
+    }
+
+    /// Run updates until `target` exists (or budget exhausted).
+    fn wait_for(app: &mut App, target: CardType, max_updates: usize) -> bool {
+        for _ in 0..max_updates {
+            app.update();
+            if !cards_of(app.world_mut(), target).is_empty() {
+                return true;
+            }
+        }
+        false
+    }
+
+    #[test]
+    fn three_card_opening_places_smoothly() {
+        let mut app = test_app();
+        enter_game(&mut app);
+
+        // opening hand: spore + substrate + gardener
+        let spore = cards_of(app.world_mut(), CardType::SporePod).remove(0);
+        let sub = cards_of(app.world_mut(), CardType::BioSubstrate).remove(0);
+        let gardener = cards_of(app.world_mut(), CardType::Gardener).remove(0);
+
+        // placement 1: drop the Spore Pod onto Bio-Substrate -> snaps on top
+        let spos = pos_of(app.world_mut(), spore);
+        let tpos = pos_of(app.world_mut(), sub);
+        drop_on(
+            &mut app,
+            spore,
+            CardType::SporePod,
+            spos,
+            sub,
+            CardType::BioSubstrate,
+            tpos,
+        );
+        let snapped = pos_of(app.world_mut(), spore);
+        assert_eq!(
+            snapped,
+            tpos + Vec2::new(0.0, 16.0),
+            "seed should snap above substrate"
+        );
+
+        // placement 2: drop the Gardener onto the staged seed -> plant action
+        gardener_act(&mut app, gardener, spore, CardType::SporePod, snapped);
+        {
+            let session = app.world().resource::<GameSession>();
+            assert_eq!(session.focus, 50.0, "one action cost spent");
+            assert!(session.gardener.is_some());
+        }
+        assert!(
+            pos_of(app.world_mut(), gardener).y > snapped.y,
+            "gardener moves above its work target"
+        );
+
+        // card 3 in play: run the pipeline until the planted spore grows into fungi
+        app.update(); // apply_pending_work inserts the WorkTimer
+        assert!(
+            app.world().get::<WorkTimer>(spore).is_some(),
+            "plant work timer should start"
+        );
+
+        assert!(
+            wait_for(&mut app, CardType::BasicFungi, 80),
+            "planted spore should grow into Basic Fungi"
+        );
+
+        let world = app.world_mut();
+        assert!(
+            cards_of(world, CardType::SporePod).is_empty(),
+            "old spore card despawned"
+        );
+        let fungi = cards_of(world, CardType::BasicFungi).remove(0);
+        let fpos = pos_of(world, fungi);
+        assert!(
+            (fpos - snapped).length() < 1.0,
+            "fungi replaces the spore in place"
+        );
+        assert_eq!(
+            world.resource::<GameSession>().biodiversity,
+            1,
+            "first mature species tracked"
+        );
+        assert!(
+            world.resource::<GameSession>().focus >= 49.0,
+            "focus recharges while gardener is idle"
+        );
+    }
+
+    #[test]
+    fn nutrient_pair_crafts_spore_pod() {
+        let mut app = test_app();
+        enter_game(&mut app);
+
+        let before = cards_of(app.world_mut(), CardType::SporePod).len();
+        let mut slimes = cards_of(app.world_mut(), CardType::NutrientSlime);
+        assert_eq!(slimes.len(), 2);
+        let a = slimes.remove(0);
+        let b = slimes.remove(0);
+
+        drop_on(
+            &mut app,
+            a,
+            CardType::NutrientSlime,
+            Vec2::ZERO,
+            b,
+            CardType::NutrientSlime,
+            Vec2::new(40.0, 0.0),
+        );
+
+        // one frame flushes pending spawn/despawn through the real chain
+        app.update();
+
+        let world = app.world_mut();
+        assert!(
+            cards_of(world, CardType::NutrientSlime).is_empty(),
+            "both ingredients consumed"
+        );
+        assert_eq!(
+            cards_of(world, CardType::SporePod).len(),
+            before + 1,
+            "recipe produced a Spore Pod"
+        );
+    }
+
+    #[test]
+    fn vine_seed_grows_after_feeding() {
+        let mut app = test_app();
+        enter_game(&mut app);
+
+        let _seed = spawn_at(
+            &mut app,
+            CardType::VineSeed,
+            Vec2::new(-300.0, -200.0),
+            true,
+        );
+        let nutrient = spawn_at(
+            &mut app,
+            CardType::ProcessedNutrients,
+            Vec2::new(-260.0, -200.0),
+            false,
+        );
+        let gardener = cards_of(app.world_mut(), CardType::Gardener).remove(0);
+
+        // drop gardener onto the nutrient next to the seed
+        let npos = pos_of(app.world_mut(), nutrient);
+        gardener_act(
+            &mut app,
+            gardener,
+            nutrient,
+            CardType::ProcessedNutrients,
+            npos,
+        );
+        assert_eq!(app.world().resource::<GameSession>().focus, 50.0);
+
+        assert!(
+            wait_for(&mut app, CardType::YoungVine, 60),
+            "fed VineSeed must become YoungVine"
+        );
+        assert!(cards_of(app.world_mut(), CardType::VineSeed).is_empty());
+
+        // feed again -> MatureVine (mature species, raises biodiversity)
+        let vine = cards_of(app.world_mut(), CardType::YoungVine).remove(0);
+        let vpos = pos_of(app.world_mut(), vine);
+        let food = spawn_at(
+            &mut app,
+            CardType::ProcessedNutrients,
+            vpos + Vec2::new(40.0, 0.0),
+            false,
+        );
+        let fpos = pos_of(app.world_mut(), food);
+        gardener_act(&mut app, gardener, food, CardType::ProcessedNutrients, fpos);
+
+        assert!(
+            wait_for(&mut app, CardType::MatureVine, 60),
+            "fed YoungVine must become MatureVine"
+        );
+        assert_eq!(app.world().resource::<GameSession>().biodiversity, 1);
+    }
+
+    #[test]
+    fn apex_spore_requires_fertile_substrate() {
+        let mut app = test_app();
+        enter_game(&mut app);
+
+        let _spore = spawn_at(&mut app, CardType::ApexSpore, Vec2::new(300.0, 200.0), true);
+        let crystal = spawn_at(
+            &mut app,
+            CardType::LuminaCrystal,
+            Vec2::new(340.0, 200.0),
+            false,
+        );
+        let gardener = cards_of(app.world_mut(), CardType::Gardener).remove(0);
+
+        // no FertileSubstrate nearby -> feeding rejected before spending anything
+        let cpos = pos_of(app.world_mut(), crystal);
+        gardener_act(&mut app, gardener, crystal, CardType::LuminaCrystal, cpos);
+        {
+            let session = app.world().resource::<GameSession>();
+            assert_eq!(session.focus, 100.0, "no focus spent on rejected action");
+            assert!(
+                session.hint.to_lowercase().contains("substrate"),
+                "hint explains blocker"
+            );
+        }
+        assert!(
+            app.world().get::<Card>(crystal).is_some(),
+            "nutrient not consumed on rejected action"
+        );
+        assert!(!wait_for(&mut app, CardType::GrowingApex, 40));
+
+        // place fertile substrate nearby -> now it grows through to the bloom win
+        spawn_at(
+            &mut app,
+            CardType::FertileSubstrate,
+            Vec2::new(360.0, 220.0),
+            false,
+        );
+        let crystal2 = spawn_at(
+            &mut app,
+            CardType::LuminaCrystal,
+            Vec2::new(320.0, 180.0),
+            false,
+        );
+        let c2pos = pos_of(app.world_mut(), crystal2);
+        gardener_act(&mut app, gardener, crystal2, CardType::LuminaCrystal, c2pos);
+
+        assert!(wait_for(&mut app, CardType::GrowingApex, 60));
+        assert!(
+            wait_for(&mut app, CardType::GenesisBloom, 80),
+            "GrowingApex auto-matures into Genesis Bloom"
+        );
+
+        let session = app.world().resource::<GameSession>();
+        assert!(
+            session.game_over && session.victory,
+            "win condition reached"
+        );
+        assert_eq!(
+            app.world().resource::<SaveData>().wins,
+            1,
+            "win flushed to save"
+        );
+    }
 }

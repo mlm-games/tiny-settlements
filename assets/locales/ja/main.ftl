@@ -12,6 +12,7 @@ master-volume = マスター
 sfx-volume = SFX
 music-volume = 音楽
 language = 言語
+wins = 勝利数
 biodiversity = 生物多様性
 focus = 庭師の集中力
 controls-hint = カードをドラッグして組み合わせ | 庭師で植える/与える | Esc一時停止 | Rリスタート

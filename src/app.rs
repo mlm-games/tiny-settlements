@@ -40,6 +40,7 @@ const TRANSLATION_KEYS: &[&str] = &[
     "music-volume",
     "language",
     "biodiversity",
+    "wins",
     "focus",
     "controls-hint",
     "loading",
@@ -98,6 +99,9 @@ pub struct SharedUi {
     pub game_over: bool,
     pub victory: bool,
     pub end_reason: String,
+    pub high_biodiversity: u32,
+    pub wins: u32,
+    pub times_played: u32,
     pub transition_alpha: f32,
     pub flash_alpha: f32,
     pub language: String,
@@ -123,6 +127,9 @@ impl Default for SharedUi {
             game_over: false,
             victory: false,
             end_reason: String::new(),
+            high_biodiversity: 0,
+            wins: 0,
+            times_played: 0,
             transition_alpha: 0.0,
             flash_alpha: 0.0,
             language: "en".to_string(),
@@ -241,6 +248,9 @@ fn sync_shared_ui(
     ui.phase = state.get().clone();
     ui.paused = paused.0;
     ui.overlay = *overlay;
+    ui.high_biodiversity = save.high_biodiversity;
+    ui.wins = save.wins;
+    ui.times_played = save.times_played;
     if *overlay != OverlayMenu::Settings {
         ui.master_vol = save.settings.master_volume;
         ui.sfx_vol = save.settings.sfx_volume;
