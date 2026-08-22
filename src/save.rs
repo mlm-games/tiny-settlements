@@ -2,7 +2,18 @@ use bevy::prelude::*;
 use game_utils::save::Versioned;
 use serde::{Deserialize, Serialize};
 
-pub const SAVE_VERSION: u32 = 5;
+pub const SAVE_VERSION: u32 = 6;
+
+#[derive(Clone, Debug, Default, Serialize, Deserialize)]
+pub struct SavedGardenProgress {
+    pub id: String,
+    pub completed: bool,
+    pub stars: u8,
+    pub best_biodiversity: u32,
+    pub best_dew_earned: u32,
+    pub best_year: u32,
+    pub completions: u32,
+}
 
 #[derive(Resource, Clone, Serialize, Deserialize)]
 pub struct SaveData {
@@ -45,6 +56,13 @@ pub struct SaveData {
     pub discovered_workers: Vec<String>,
     #[serde(default)]
     pub advanced_structures_built: u32,
+    // Phase 6
+    #[serde(default)]
+    pub garden_progress: Vec<SavedGardenProgress>,
+    #[serde(default)]
+    pub campaign_completed: bool,
+    #[serde(default)]
+    pub total_campaign_stars: u32,
 }
 
 fn default_version() -> u32 {
@@ -92,6 +110,9 @@ impl Default for SaveData {
             workers_assigned: 0,
             discovered_workers: Vec::new(),
             advanced_structures_built: 0,
+            garden_progress: Vec::new(),
+            campaign_completed: false,
+            total_campaign_stars: 0,
         }
     }
 }

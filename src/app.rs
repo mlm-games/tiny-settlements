@@ -99,6 +99,7 @@ pub enum AppState {
     Splash,
     Loading,
     Title,
+    GardenSelect,
     InGame,
 }
 
@@ -264,6 +265,26 @@ pub struct SharedUi {
     pub upkeep: u32,
     pub fatigued_workers: u32,
     pub workers_hired: u32,
+    // Phase 6 campaign
+    pub garden_progress: Vec<crate::save::SavedGardenProgress>,
+    pub total_campaign_stars: u32,
+    pub campaign_completed: bool,
+    pub selected_garden: Option<String>,
+    pub campaign_mode: bool,
+    pub run_completed: bool,
+    pub awarded_stars: u8,
+    pub current_garden_name: String,
+    pub objectives_ui: Vec<ObjectiveUi>,
+}
+
+#[derive(Clone, Debug, Default)]
+pub struct ObjectiveUi {
+    pub title: String,
+    pub description: String,
+    pub current: u32,
+    pub required: u32,
+    pub complete: bool,
+    pub is_primary: bool,
 }
 
 impl Default for SharedUi {
@@ -324,6 +345,15 @@ impl Default for SharedUi {
             upkeep: 0,
             fatigued_workers: 0,
             workers_hired: 0,
+            garden_progress: Vec::new(),
+            total_campaign_stars: 0,
+            campaign_completed: false,
+            selected_garden: None,
+            campaign_mode: false,
+            run_completed: false,
+            awarded_stars: 0,
+            current_garden_name: String::new(),
+            objectives_ui: Vec::new(),
         }
     }
 }
@@ -617,6 +647,11 @@ fn sync_shared_ui(
         }
         ui.blueprints = bps;
     }
+    // Phase 6 campaign progress snapshot
+    ui.garden_progress = save.garden_progress.clone();
+    ui.total_campaign_stars = save.total_campaign_stars;
+    ui.campaign_completed = save.campaign_completed;
+    ui.selected_garden = None;
 }
 
 fn tick_toast(real: Res<Time<Real>>, bridge: Res<UiBridge>) {
@@ -651,6 +686,7 @@ fn set_vol(bridge: &UiBridge, field: impl Fn(&mut SharedUi) -> &mut f32, v: f32)
     }
 }
 
+#[allow(clippy::too_many_arguments)]
 fn process_ui_actions(
     bridge: Res<UiBridge>,
     mut paused: ResMut<Paused>,
@@ -663,6 +699,9 @@ fn process_ui_actions(
     mut locale: ResMut<LocaleResources>,
     mut restart: ResMut<RestartFlag>,
     mut pack_queue: ResMut<crate::game::PackPurchaseQueue>,
+    mut garden_run: ResMut<crate::game::campaign::GardenRun>,
+    mut run_rules: ResMut<crate::game::run_rules::RunRules>,
+    mut run_mode: ResMut<crate::game::campaign::RunMode>,
 ) {
     let Ok(mut q) = bridge.actions.lock() else {
         return;
@@ -776,6 +815,30 @@ fn process_ui_actions(
                 if let Ok(mut ui) = bridge.shared.lock() {
                     ui.journal_tab = tab;
                 }
+            }
+            UiAction::OpenGardenSelect => {
+                transition.begin_to_state(AppState::GardenSelect);
+            }
+            UiAction::SelectGarden(ref id) => {
+                if let Some(garden) = crate::game::campaign::GardenId::from_stable_id(id) {
+                    *garden_run = crate::game::campaign::GardenRun::start(garden, 0);
+                    *run_mode = crate::game::campaign::RunMode::Campaign(garden);
+                    transition.begin_to_state(AppState::Loading);
+                }
+            }
+            UiAction::StartFreeGarden => {
+                *garden_run = crate::game::campaign::GardenRun::free(0);
+                *run_mode = crate::game::campaign::RunMode::FreeGarden;
+                transition.begin_to_state(AppState::Loading);
+            }
+            UiAction::ReplayGarden => {
+                transition.begin_to_state(AppState::Loading);
+            }
+            UiAction::NextGarden => {
+                transition.begin_to_state(AppState::GardenSelect);
+            }
+            UiAction::ReturnToGardenSelect => {
+                transition.begin_to_state(AppState::GardenSelect);
             }
         }
     }

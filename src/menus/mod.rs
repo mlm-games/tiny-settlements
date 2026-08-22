@@ -18,7 +18,7 @@ use repose_ui::anim_ext::{
 use repose_ui::overlay::OverlayHandle;
 use repose_ui::{Column, Row, Text as RText, TextStyle, ViewExt, ZStack};
 
-use crate::app::{AppState, BlueprintUi, CommissionUi, JournalEntryUi, JournalTab, OverlayMenu, PackUi, SharedUi};
+use crate::app::{AppState, BlueprintUi, CommissionUi, JournalEntryUi, JournalTab, ObjectiveUi, OverlayMenu, PackUi, SharedUi};
 
 fn t(translations: &HashMap<String, String>, key: &str, fallback: &str) -> String {
     translations
@@ -48,6 +48,12 @@ pub enum UiAction {
     CloseJournal,
     DismissToast,
     SetJournalTab(JournalTab),
+    OpenGardenSelect,
+    SelectGarden(String),
+    StartFreeGarden,
+    ReplayGarden,
+    NextGarden,
+    ReturnToGardenSelect,
 }
 
 #[derive(bevy::prelude::Resource, Clone)]
@@ -106,6 +112,7 @@ pub fn compose_root(
                 popup_anim_config("title_credits"),
             ),
         )),
+        AppState::GardenSelect => garden_select_ui(&st, actions.clone()),
         AppState::InGame => ZStack(Modifier::new().fill_max_size()).child((
             ingame_shell(&st, actions.clone()),
             AnimatedVisibility(
@@ -137,6 +144,11 @@ pub fn compose_root(
                 st.toast_timer > 0.05 && !st.toast.is_empty(),
                 toast_banner(&st, actions.clone()),
                 slide_toast_config("toast"),
+            ),
+            AnimatedVisibility(
+                st.game_over && st.campaign_mode && st.run_completed,
+                results_overlay(&st, actions.clone()),
+                popup_anim_config("results"),
             ),
         )),
     };
@@ -381,6 +393,50 @@ fn title_ui(st: &SharedUi, actions: Arc<Mutex<Vec<UiAction>>>) -> View {
     )
 }
 
+
+fn garden_select_ui(st: &SharedUi, actions: Arc<Mutex<Vec<UiAction>>>) -> View {
+    let tr = &st.translations;
+    let mut cards: Vec<View> = Vec::new();
+    cards.push(RText(t(tr, "garden-select", "Choose a Garden")).size(32.0).color(RColor::WHITE));
+    cards.push(spacer(12.0));
+    for garden in crate::game::campaign::GARDENS {
+        let id = garden.id.stable_id().to_string();
+        let unlocked = {
+            if garden.id == crate::game::campaign::GardenId::AbandonedBalcony {
+                true
+            } else {
+                let prev = crate::game::campaign::GardenId::ALL[garden.id.index() - 1];
+                st.garden_progress.iter().any(|p| p.id == prev.stable_id() && p.completed)
+            }
+        };
+        let stars = st.garden_progress.iter().find(|p| p.id == id).map(|p| p.stars).unwrap_or(0);
+        let label = if unlocked { format!("{} - {} {}★", garden.name, garden.subtitle, stars) } else { format!("{} (Locked)", garden.name) };
+        let gid = id.clone();
+        let acts = actions.clone();
+        let btn_label = if unlocked { "Play".to_string() } else { "Locked".to_string() };
+        let is_unlocked = unlocked;
+        cards.push(
+            Column(Modifier::new().width(340.0).padding(12.0).background(cola(14,24,18,230)).clip_rounded(10.0).border(1.2, if is_unlocked { col(90,160,120) } else { col(60,60,60) }, 10.0))
+            .child((
+                body(garden.name.to_string(), 16.0, RColor::WHITE),
+                body(garden.subtitle.to_string(), 12.0, col(160,180,160)),
+                body(garden.description.to_string(), 12.0, col(150,160,150)),
+                spacer(6.0),
+                mk_button_wide(btn_label, is_unlocked, move || {
+                    if is_unlocked {
+                        push(&acts, UiAction::SelectGarden(gid.clone()))
+                    }
+                }),
+            ))
+        );
+        cards.push(spacer(8.0));
+    }
+    let a_free = actions.clone();
+    cards.push(mk_button_wide("Free Garden".to_string(), true, move || push(&a_free, UiAction::StartFreeGarden)));
+    Column(Modifier::new().fill_max_size().justify_content(JustifyContent::CENTER).align_items(AlignItems::CENTER).background(col(8,14,10)))
+        .child(Column(Modifier::new().width(420.0).padding(20.0).background(col(14,24,18)).clip_rounded(16.0).border(2.0, col(70,120,85), 16.0)).child(cards))
+}
+
 fn pause_overlay(st: &SharedUi, actions: Arc<Mutex<Vec<UiAction>>>) -> View {
     let a1 = actions.clone();
     let a2 = actions.clone();
@@ -597,6 +653,8 @@ fn ingame_shell(st: &SharedUi, actions: Arc<Mutex<Vec<UiAction>>>) -> View {
         )
         .child((
             commissions_panel(st),
+            spacer(10.0),
+            objectives_panel(st),
             spacer(10.0),
             habitat_panel(st),
         )),
@@ -832,6 +890,62 @@ fn commission_card_new(c: &CommissionUi) -> View {
             col(190, 210, 190),
         ),
     ))
+}
+
+fn objectives_panel(st: &SharedUi) -> View {
+    if !st.campaign_mode || st.objectives_ui.is_empty() {
+        return spacer(0.0);
+    }
+    let mut rows: Vec<View> = Vec::new();
+    rows.push(section_title("Garden Goals".to_string()));
+    rows.push(spacer(6.0));
+    for o in &st.objectives_ui {
+        let marker = if o.complete { "●" } else { "○" };
+        let color = if o.complete { col(140, 220, 140) } else if o.is_primary { col(230, 210, 150) } else { col(160, 180, 160) };
+        rows.push(body(format!("{} {}  {}/{}", marker, o.title, o.current.min(o.required), o.required), 12.0, color));
+        rows.push(spacer(3.0));
+    }
+    panel(280.0, Column(Modifier::new()).child(rows))
+}
+
+fn results_overlay(st: &SharedUi, actions: Arc<Mutex<Vec<UiAction>>>) -> View {
+    let a_next = actions.clone();
+    let a_replay = actions.clone();
+    let a_select = actions.clone();
+    let stars_str = "★".repeat(st.awarded_stars as usize) + &"☆".repeat((3 - st.awarded_stars.min(3)) as usize);
+    Column(
+        Modifier::new()
+            .fill_max_size()
+            .justify_content(JustifyContent::CENTER)
+            .align_items(AlignItems::CENTER)
+            .background(cola(0, 0, 0, 190)),
+    )
+    .child(panel(
+        440.0,
+        Column(Modifier::new().align_items(AlignItems::CENTER)).child((
+            body(format!("{} RESTORED", st.current_garden_name.to_uppercase()), 24.0, RColor::WHITE),
+            spacer(8.0),
+            body(stars_str, 22.0, col(230, 210, 120)),
+            spacer(10.0),
+            for_view_objectives(&st.objectives_ui),
+            spacer(14.0),
+            Row(Modifier::new().gap(8.0)).child((
+                mk_button_wide("Next Garden".to_string(), true, move || push(&a_next, UiAction::NextGarden)),
+                mk_button_wide("Replay".to_string(), true, move || push(&a_replay, UiAction::ReplayGarden)),
+                mk_button_wide("Garden Select".to_string(), true, move || push(&a_select, UiAction::ReturnToGardenSelect)),
+            )),
+        )),
+    ))
+}
+
+fn for_view_objectives(objs: &[ObjectiveUi]) -> View {
+    let mut rows: Vec<View> = Vec::new();
+    for o in objs {
+        let star = if o.complete { "★" } else { "☆" };
+        rows.push(body(format!("{} {}", star, o.title), 13.0, if o.complete { col(180, 230, 160) } else { col(150, 160, 150) }));
+        rows.push(spacer(2.0));
+    }
+    Column(Modifier::new().align_items(AlignItems::CENTER)).child(rows)
 }
 
 fn habitat_panel(st: &SharedUi) -> View {

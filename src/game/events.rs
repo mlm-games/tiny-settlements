@@ -91,6 +91,17 @@ pub enum GameEvent {
     AdvancedStructureUnlocked {
         blueprint: BlueprintId,
     },
+    GardenStarted {
+        garden: crate::game::campaign::GardenId,
+        seed: u64,
+    },
+    ObjectiveCompleted {
+        objective: super::objectives::ObjectiveId,
+    },
+    GardenCompleted {
+        garden: crate::game::campaign::GardenId,
+        stars: u8,
+    },
 }
 
 #[derive(Resource, Default)]

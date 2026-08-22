@@ -4,6 +4,9 @@ mod commissions;
 mod content;
 mod discovery;
 mod economy;
+pub mod objectives;
+pub mod campaign;
+pub mod run_rules;
 pub mod seasons;
 pub mod workers;
 mod events;
@@ -41,6 +44,11 @@ pub use stacks::{
     can_stack_as_installation, can_stack_as_plant, find_synergy, grid_to_world,
     is_habitat_substrate, substrate_growth_mult, world_to_grid,
 };
+pub use campaign::{GardenId, GardenDef, RunMode, GardenRun, FeatureRules, GARDENS, garden_def};
+pub use objectives::{ObjectiveId, ObjectiveKind, ObjectiveDef, ObjectiveSnapshot};
+pub use run_rules::RunRules;
+pub use seasons::{Season, SeasonClock, ActiveWeather, EcoModifiers, WeatherEvent};
+pub use workers::{WorkerKind, Worker, AssignedWorker};
 
 use std::collections::{HashMap, HashSet};
 use std::marker::PhantomData;
@@ -237,6 +245,9 @@ struct RunSetup<'w, 's> {
     season_clock: ResMut<'w, crate::game::seasons::SeasonClock>,
     active_weather: ResMut<'w, crate::game::seasons::ActiveWeather>,
     eco: ResMut<'w, crate::game::seasons::EcoModifiers>,
+    garden_run: ResMut<'w, crate::game::campaign::GardenRun>,
+    run_rules: ResMut<'w, crate::game::run_rules::RunRules>,
+    run_mode: ResMut<'w, crate::game::campaign::RunMode>,
     #[allow(dead_code)]
     _phantom: PhantomData<&'s ()>,
 }
@@ -255,6 +266,7 @@ struct EndDragParams<'w, 's> {
     assigned_q: Query<'w, 's, &'static crate::game::workers::AssignedWorker>,
     worker_q: Query<'w, 's, &'static crate::game::workers::Worker>,
     blueprint_state: Res<'w, crate::game::projects::BlueprintState>,
+    run_rules: Option<Res<'w, crate::game::run_rules::RunRules>>,
     pending_spawn: ResMut<'w, PendingSpawns>,
     pending_despawn: ResMut<'w, PendingDespawns>,
     pending_work: ResMut<'w, PendingWork>,
@@ -285,6 +297,9 @@ impl Plugin for GamePlugin {
             .init_resource::<crate::game::seasons::SeasonClock>()
             .init_resource::<crate::game::seasons::ActiveWeather>()
             .init_resource::<crate::game::seasons::EcoModifiers>()
+            .init_resource::<crate::game::run_rules::RunRules>()
+            .init_resource::<crate::game::campaign::GardenRun>()
+            .init_resource::<crate::game::campaign::RunMode>()
             .add_systems(
                 OnEnter(AppState::InGame),
                 (setup_game, stacks::spawn_grid_ghosts).chain(),
@@ -344,6 +359,7 @@ impl Plugin for GamePlugin {
                         apply_pending_despawns,
                         drain_game_events,
                         tick_commissions,
+                        check_garden_completion,
                         end_game_fx,
                     )
                         .chain(),
@@ -375,9 +391,40 @@ fn setup_game(mut commands: Commands, mut run: RunSetup) {
     run.purchases.0.clear();
     *run.counters = RunCounters::default();
     *run.economy = RunEconomy::default();
-    // deterministic seed per run (randomly sampled)
-    let seed: u64 = rand::random();
+    // Handle GardenRun seed and RunRules
+    let garden = run.garden_run.garden;
+    let seed = if let Some(_) = garden {
+        if run.garden_run.seed == 0 {
+            let s: u64 = rand::random();
+            run.garden_run.seed = s;
+            s
+        } else {
+            run.garden_run.seed
+        }
+    } else {
+        let s: u64 = rand::random();
+        run.garden_run.seed = s;
+        s
+    };
     run.rng.0 = StdRng::seed_from_u64(seed);
+    if let Some(id) = garden {
+        run.events.0.push(GameEvent::GardenStarted { garden: id, seed });
+    }
+    match garden {
+        Some(id) => {
+            *run.run_mode = crate::game::campaign::RunMode::Campaign(id);
+            *run.run_rules = crate::game::run_rules::RunRules::for_garden(id);
+            let def = crate::game::campaign::garden_def(id);
+            run.economy.dew = def.starting_dew;
+            run.economy.total_earned = def.starting_dew as u32;
+        }
+        None => {
+            *run.run_mode = crate::game::campaign::RunMode::FreeGarden;
+            *run.run_rules = crate::game::run_rules::RunRules::free_garden();
+            run.economy.dew = 0;
+            run.economy.total_earned = 0;
+        }
+    }
     // load discovery from save (global cumulative)
     *run.discovery = DiscoveryState::from_id_strings(&run.save.discovered_cards);
     // init blueprint state from save + starting unlocks
@@ -462,70 +509,30 @@ fn setup_game(mut commands: Commands, mut run: RunSetup) {
     // Exchange label placeholder? We'll use a child Text2d for "Seed Exchange"
     // For now, the board tint + exchange rectangle is sufficient; HUD explains.
 
-    // initial cards
-    if let Some(e) = spawn_card(
-        &mut commands,
-        &mut run.session,
-        Some(&run.art),
-        CardType::Gardener,
-        gpos(100.0, 300.0),
-        false,
-    ) {
-        run.events.0.push(GameEvent::Spawned { card: CardType::Gardener, entity: e });
+    // initial cards based on garden
+    let starting: &[crate::game::campaign::StartingCard] = if let Some(id) = garden {
+        crate::game::campaign::garden_def(id).starting_cards
+    } else {
+        &[
+            crate::game::campaign::StartingCard { card: CardType::Gardener, position: gpos(100.0, 300.0), planted: false },
+            crate::game::campaign::StartingCard { card: CardType::BioSubstrate, position: gpos(250.0, 200.0), planted: false },
+            crate::game::campaign::StartingCard { card: CardType::BioSubstrate, position: gpos(250.0, 400.0), planted: false },
+            crate::game::campaign::StartingCard { card: CardType::SporePod, position: gpos(400.0, 200.0), planted: false },
+            crate::game::campaign::StartingCard { card: CardType::NutrientSlime, position: gpos(400.0, 300.0), planted: false },
+            crate::game::campaign::StartingCard { card: CardType::NutrientSlime, position: gpos(400.0, 400.0), planted: false },
+        ]
+    };
+    for spec in starting {
+        if let Some(e) = spawn_card(&mut commands, &mut run.session, Some(&run.art), spec.card, spec.position, spec.planted) {
+            run.events.0.push(GameEvent::Spawned { card: spec.card, entity: e });
+        }
     }
-    if let Some(e) = spawn_card(
-        &mut commands,
-        &mut run.session,
-        Some(&run.art),
-        CardType::BioSubstrate,
-        gpos(250.0, 200.0),
-        false,
-    ) {
-        run.events.0.push(GameEvent::Spawned { card: CardType::BioSubstrate, entity: e });
-    }
-    if let Some(e) = spawn_card(
-        &mut commands,
-        &mut run.session,
-        Some(&run.art),
-        CardType::BioSubstrate,
-        gpos(250.0, 400.0),
-        false,
-    ) {
-        run.events.0.push(GameEvent::Spawned { card: CardType::BioSubstrate, entity: e });
-    }
-    if let Some(e) = spawn_card(
-        &mut commands,
-        &mut run.session,
-        Some(&run.art),
-        CardType::SporePod,
-        gpos(400.0, 200.0),
-        false,
-    ) {
-        run.events.0.push(GameEvent::Spawned { card: CardType::SporePod, entity: e });
-    }
-    if let Some(e) = spawn_card(
-        &mut commands,
-        &mut run.session,
-        Some(&run.art),
-        CardType::NutrientSlime,
-        gpos(400.0, 300.0),
-        false,
-    ) {
-        run.events.0.push(GameEvent::Spawned { card: CardType::NutrientSlime, entity: e });
-    }
-    if let Some(e) = spawn_card(
-        &mut commands,
-        &mut run.session,
-        Some(&run.art),
-        CardType::NutrientSlime,
-        gpos(400.0, 400.0),
-        false,
-    ) {
-        run.events.0.push(GameEvent::Spawned { card: CardType::NutrientSlime, entity: e });
-    }
-
-    run.session.hint =
-        "Drag Spore Pod onto Bio-Substrate, then drop Gardener on the spore to plant. Sell surplus at Seed Exchange!".into();
+    let intro = if let Some(id) = garden {
+        crate::game::campaign::garden_def(id).intro
+    } else {
+        "Drag Spore Pod onto Bio-Substrate, then drop Gardener on the spore to plant. Sell surplus at Seed Exchange!"
+    };
+    run.session.hint = intro.into();
     run.session.hint_timer = 8.0;
 }
 
@@ -777,6 +784,7 @@ fn end_drag(mut params: EndDragParams) {
         assigned_q,
         worker_q,
         blueprint_state,
+        run_rules,
         mut pending_spawn,
         mut pending_despawn,
         mut pending_work,
@@ -820,7 +828,7 @@ fn end_drag(mut params: EndDragParams) {
         }
 
         // 1. Habitat placement (substrate onto free grid cell)
-        if stacks::is_habitat_substrate(type_a) {
+        if run_rules.as_deref().map(|r| r.features.habitats).unwrap_or(true) && stacks::is_habitat_substrate(type_a) {
             if let Some((col, row, snap_pos)) =
                 stacks::try_place_habitat(src, type_a, spos, &habitat_slots)
             {
@@ -857,9 +865,10 @@ fn end_drag(mut params: EndDragParams) {
         }
 
         // 2. Stack plant/companion/installation onto nearby habitat
-        if stacks::can_stack_as_plant(type_a)
-            || stacks::can_stack_as_companion(type_a)
-            || stacks::can_stack_as_installation(type_a)
+        if run_rules.as_deref().map(|r| r.features.habitats).unwrap_or(true)
+            && (stacks::can_stack_as_plant(type_a)
+                || stacks::can_stack_as_companion(type_a)
+                || (run_rules.as_deref().map(|r| r.features.installations).unwrap_or(true) && stacks::can_stack_as_installation(type_a)))
         {
             if let Some((base, layer)) =
                 stacks::find_stack_target(type_a, spos, &habitats_read)
@@ -955,7 +964,7 @@ fn end_drag(mut params: EndDragParams) {
         }
 
         // 3. Worker assignment / unassignment
-        if type_a.is_worker() {
+        if run_rules.as_deref().map(|r| r.features.workers).unwrap_or(true) && type_a.is_worker() {
             if let Ok(assign) = assigned_q.get(src) {
                 let hab = assign.habitat;
                 if let Ok((_, slot, _)) = habitats_read.get(hab) {
@@ -1053,7 +1062,7 @@ fn end_drag(mut params: EndDragParams) {
         }
 
         // 4. If Gardener dragged: try starting an infrastructure project
-        if type_a == CardType::Gardener {
+        if run_rules.as_deref().map(|r| r.features.projects).unwrap_or(true) && type_a == CardType::Gardener {
             let mut pile: Vec<(Entity, CardType, Vec2)> = Vec::new();
             for (e, pos, card_type, is_working, _) in &snap {
                 if *e == src {
@@ -2136,6 +2145,7 @@ fn process_pack_queue(
     board: Res<CommissionBoard>,
     save: Res<SaveData>,
     bonuses: Res<crate::game::projects::InfrastructureBonuses>,
+    rules: Option<Res<crate::game::run_rules::RunRules>>,
     cards: Query<&Card>,
 ) {
     if queue.0.is_empty() || session.game_over {
@@ -2160,6 +2170,13 @@ fn process_pack_queue(
             session.hint_timer = 2.5;
             continue;
         }
+        if let Some(rules) = rules.as_deref() {
+            if !rules.allows_pack(def.id) {
+                session.hint = format!("{} not available in this garden", def.name);
+                session.hint_timer = 2.5;
+                continue;
+            }
+        }
         let eff_cost = crate::game::projects::effective_pack_cost(def.cost, &bonuses);
         if !economy.can_afford(eff_cost) {
             session.hint = format!("Not enough Dew for {} (need {} Dew, have {})", def.name, eff_cost, economy.dew);
@@ -2169,7 +2186,18 @@ fn process_pack_queue(
         if !economy.spend(eff_cost) {
             continue;
         }
-        let draws = draw_for_pack(&mut rng.0, def, &live_fn);
+        let filtered_entries: Vec<PackEntry> = if let Some(rules) = rules.as_deref() {
+            def.entries.iter().filter(|e| rules.allows_card(e.card)).copied().collect()
+        } else {
+            def.entries.to_vec()
+        };
+        if filtered_entries.is_empty() {
+            economy.earn(eff_cost);
+            session.hint = format!("{} has nothing allowed in this garden", def.name);
+            session.hint_timer = 2.0;
+            continue;
+        }
+        let draws = crate::game::packs::weighted_draws(&mut rng.0, &filtered_entries, def.draws, &live_fn);
         // prevent deadlock: if draws empty due to max_owned, refund? For now refund half? Spec says cannot deadlock, so we allow empty but still charge? Better refund if empty and hint.
         if draws.is_empty() {
             // refund
@@ -2414,6 +2442,20 @@ fn drain_game_events(
                     ui.toast_timer = 3.0;
                 }
             }
+            GameEvent::GardenStarted { .. } => {}
+            GameEvent::ObjectiveCompleted { objective } => {
+                if let Ok(mut ui) = bridge.shared.try_lock() {
+                    let title = crate::game::objectives::objective_title(objective);
+                    ui.toast = format!("Objective complete: {}", title);
+                    ui.toast_timer = 2.5;
+                }
+            }
+            GameEvent::GardenCompleted { garden, stars } => {
+                if let Ok(mut ui) = bridge.shared.try_lock() {
+                    ui.toast = format!("{} restored! {}★", garden.label(), stars);
+                    ui.toast_timer = 4.0;
+                }
+            }
         }
     }
     // after processing, refresh blueprint unlocks based on new discovery/commissions
@@ -2509,6 +2551,116 @@ fn tick_commissions(
             save.best_run_discoveries = discovery.count() as u32;
         }
     }
+}
+
+fn build_objective_snapshot(
+    session: &GameSession,
+    economy: &RunEconomy,
+    discovery: &DiscoveryState,
+    counters: &RunCounters,
+    clock: &crate::game::seasons::SeasonClock,
+    habitats: &Query<&HabitatBase>,
+    workers_q: &Query<&crate::game::workers::Worker>,
+) -> crate::game::objectives::ObjectiveSnapshot {
+    let mut snap = crate::game::objectives::ObjectiveSnapshot {
+        biodiversity: session.biodiversity,
+        dew_earned: economy.total_earned,
+        discoveries: discovery.count() as u32,
+        projects_completed: counters.projects_completed,
+        installations: counters.installations_installed,
+        distinct_installations: counters.installed_types.len() as u32,
+        synergies_activated: counters.pollinations, // synergy count approximated via events; use pollinations fallback
+        pollinations: counters.pollinations,
+        cleaned_toxins: counters.cleaned_toxins,
+        assigned_workers: habitats.iter().filter(|h| h.worker.is_some()).count() as u32,
+        distinct_workers: counters.distinct_workers.len() as u32,
+        seasons_survived: clock.seasons_survived,
+        current_year: clock.current_year,
+        has_genesis: session.victory && session.game_over,
+        grown_cards: counters.created.keys().copied().collect(),
+    };
+    // non-fatigued workers requirement handled at eval time; approximate assigned as all
+    let _ = workers_q;
+    snap.synergies_activated = counters.pollinations.max(snap.synergies_activated);
+    snap
+}
+
+fn check_garden_completion(
+    mut garden_run: ResMut<crate::game::campaign::GardenRun>,
+    rules: Res<crate::game::run_rules::RunRules>,
+    session: Res<GameSession>,
+    economy: Res<RunEconomy>,
+    discovery: Res<DiscoveryState>,
+    counters: Res<RunCounters>,
+    clock: Res<crate::game::seasons::SeasonClock>,
+    habitats: Query<&HabitatBase>,
+    workers_q: Query<&crate::game::workers::Worker>,
+    mut save: ResMut<SaveData>,
+    manager: Res<SaveManager>,
+    mut events: ResMut<PendingGameEvents>,
+    mut saved_flag: Local<bool>,
+) {
+    if garden_run.garden.is_none() || garden_run.completed {
+        return;
+    }
+    let garden = garden_run.garden.unwrap();
+    let def = crate::game::campaign::garden_def(garden);
+    let snap = build_objective_snapshot(&session, &economy, &discovery, &counters, &clock, &habitats, &workers_q);
+
+    // update progress per objective
+    for (prog, odef) in garden_run.objectives.iter_mut().zip(def.objectives.iter()) {
+        let (cur, req) = crate::game::objectives::progress_for_objective(odef.kind, &snap);
+        let was_complete = prog.complete;
+        prog.current = cur;
+        prog.required = req;
+        prog.complete = cur >= req;
+        if !was_complete && prog.complete {
+            events.0.push(GameEvent::ObjectiveCompleted { objective: prog.id });
+        }
+    }
+
+    let primary_complete = garden_run.objectives.iter()
+        .zip(def.objectives.iter())
+        .filter(|(_, d)| d.required_for_completion)
+        .all(|(p, _)| p.complete);
+    if !primary_complete {
+        return;
+    }
+
+    garden_run.completed = true;
+    garden_run.awarded_stars = garden_run.objectives.iter().filter(|o| o.complete).count().min(3) as u8;
+    events.0.push(GameEvent::GardenCompleted { garden, stars: garden_run.awarded_stars });
+
+    // merge into save (preserve max stars / best values)
+    let id_str = garden.stable_id().to_string();
+    let entry = save.garden_progress.iter_mut().find(|p| p.id == id_str);
+    match entry {
+        Some(p) => {
+            p.completed = true;
+            p.stars = p.stars.max(garden_run.awarded_stars);
+            p.best_biodiversity = p.best_biodiversity.max(session.biodiversity);
+            p.best_dew_earned = p.best_dew_earned.max(economy.total_earned);
+            p.best_year = p.best_year.max(clock.current_year);
+            p.completions += 1;
+        }
+        None => {
+            save.garden_progress.push(crate::save::SavedGardenProgress {
+                id: id_str,
+                completed: true,
+                stars: garden_run.awarded_stars,
+                best_biodiversity: session.biodiversity,
+                best_dew_earned: economy.total_earned,
+                best_year: clock.current_year,
+                completions: 1,
+            });
+        }
+    }
+    save.total_campaign_stars = save.garden_progress.iter().map(|p| p.stars as u32).sum();
+    if crate::game::campaign::next_garden(garden).is_none() {
+        save.campaign_completed = true;
+    }
+    let _ = manager.save(&*save);
+    *saved_flag = true;
 }
 
 fn end_game_fx(mut session: ResMut<GameSession>, mut pending_fx: ResMut<PendingFx>) {
@@ -2677,6 +2829,7 @@ fn sync_hud(
     active_weather: Res<crate::game::seasons::ActiveWeather>,
     eco: Res<crate::game::seasons::EcoModifiers>,
     workers_q: Query<&crate::game::workers::Worker>,
+    garden_run: Res<crate::game::campaign::GardenRun>,
 ) {
     let Ok(mut ui) = bridge.shared.lock() else {
         return;
@@ -2872,6 +3025,33 @@ fn sync_hud(
     }
     ui.eco_growth_mult = eco.growth_mult;
     ui.eco_production_mult = eco.production_mult;
+    // Phase 6 campaign HUD
+    if let Some(id) = garden_run.garden {
+        let def = crate::game::campaign::garden_def(id);
+        ui.campaign_mode = true;
+        ui.current_garden_name = def.name.to_string();
+        ui.run_completed = garden_run.completed;
+        ui.awarded_stars = garden_run.awarded_stars;
+        ui.objectives_ui = garden_run
+            .objectives
+            .iter()
+            .zip(def.objectives.iter())
+            .map(|(p, d)| crate::app::ObjectiveUi {
+                title: d.title.to_string(),
+                description: d.description.to_string(),
+                current: p.current,
+                required: p.required,
+                complete: p.complete,
+                is_primary: d.required_for_completion,
+            })
+            .collect();
+    } else {
+        ui.campaign_mode = false;
+        ui.run_completed = false;
+        ui.awarded_stars = 0;
+        ui.current_garden_name.clear();
+        ui.objectives_ui.clear();
+    }
 }
 
 fn done_need(board: &CommissionBoard, save: &SaveData, def: &PackDefinition) -> bool {

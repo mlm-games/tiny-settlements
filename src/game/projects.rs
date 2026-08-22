@@ -444,6 +444,27 @@ pub fn refresh_blueprint_unlocks(
     }
 }
 
+pub fn refresh_blueprint_unlocks_with_rules(
+    state: &mut BlueprintState,
+    discovery: &DiscoveryState,
+    board: &CommissionBoard,
+    rules: &crate::game::run_rules::RunRules,
+    events: &mut PendingGameEvents,
+) {
+    for def in BLUEPRINTS {
+        if state.unlocked.contains(&def.id) {
+            continue;
+        }
+        if !rules.allows_blueprint(def.id) {
+            continue;
+        }
+        if unlock_satisfied(def.unlock, discovery, board) {
+            state.unlocked.insert(def.id);
+            events.0.push(GameEvent::BlueprintUnlocked { blueprint: def.id });
+        }
+    }
+}
+
 pub fn effective_pack_cost(base: u32, bonuses: &InfrastructureBonuses) -> u32 {
     base.saturating_sub(bonuses.pack_discount).max(1)
 }

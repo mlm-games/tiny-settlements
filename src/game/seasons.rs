@@ -63,6 +63,14 @@ pub enum WeatherEvent {
 }
 
 impl WeatherEvent {
+    pub const ALL: [Self; 6] = [
+        Self::Heatwave,
+        Self::HeavyRain,
+        Self::Blight,
+        Self::FrostSnap,
+        Self::PollinatorSurge,
+        Self::HarvestFair,
+    ];
     pub fn label(self) -> &'static str {
         match self {
             Self::Heatwave => "Heatwave",
@@ -277,12 +285,18 @@ pub fn tick_season_clock(
     mut clock: ResMut<SeasonClock>,
     mut eco: ResMut<EcoModifiers>,
     active_weather: Res<ActiveWeather>,
+    rules: Option<Res<crate::game::run_rules::RunRules>>,
     mut events: ResMut<PendingGameEvents>,
     // For autumn harvest
     cards: Query<&Card>,
     mut economy: ResMut<super::economy::RunEconomy>,
     mut save: ResMut<crate::save::SaveData>,
 ) {
+    if let Some(r) = rules.as_deref() {
+        if !r.features.seasons {
+            return;
+        }
+    }
     if clock.moon_timer.tick(time.delta()).just_finished() {
         let old_season = clock.current;
         let season_changed = clock.advance_moon();
@@ -341,7 +355,13 @@ pub fn tick_active_weather(
     mut events: ResMut<PendingGameEvents>,
     mut rng: ResMut<super::packs::RunRng>,
     clock: Res<SeasonClock>,
+    rules: Option<Res<crate::game::run_rules::RunRules>>,
 ) {
+    if let Some(r) = rules.as_deref() {
+        if !r.features.weather {
+            return;
+        }
+    }
     // cooldown handling
     if weather.cooldown.duration().is_zero() {
         weather.cooldown = Timer::from_seconds(8.0, TimerMode::Once);
