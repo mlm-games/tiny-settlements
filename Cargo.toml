@@ -78,6 +78,11 @@ repose-material = "0.28"
 repose-render-wgpu = "0.28"
 game-utils = { git = "https://github.com/mlm-games/game-utils" }
 game-utils-bevy = { git = "https://github.com/mlm-games/game-utils" }
+anyhow = "1"
+renamite-io-ren = { git = "https://github.com/mlm-games/renamite", rev = "a98ec7cf0e8977e7a9c25166cc559dd882725329" }
+renamite-player = { git = "https://github.com/mlm-games/renamite", rev = "a98ec7cf0e8977e7a9c25166cc559dd882725329" }
+renamite-render-bridge = { git = "https://github.com/mlm-games/renamite", rev = "a98ec7cf0e8977e7a9c25166cc559dd882725329" }
+renamite-render-offscreen = { git = "https://github.com/mlm-games/renamite", rev = "a98ec7cf0e8977e7a9c25166cc559dd882725329" }
 rand = "0.10"
 serde = { version = "1", features = ["derive"] }
 bevy_rapier2d = { package = "bevy_rapier2d", git = "https://github.com/mlm-games/bevy_rapier", optional = true, default-features = false, features = [

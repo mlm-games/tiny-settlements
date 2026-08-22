@@ -1,0 +1,2080 @@
+// renamite project: https://github.com/mlm-games/renamite
+RenFile(
+    format_version: 1,
+    meta: Meta(
+        name: "basic_fungi",
+        author: "",
+        generator: "renamite",
+    ),
+    document: Document(
+        format_version: 1,
+        compositions: [
+            SerdeSlot(
+                value: None,
+                version: 0,
+            ),
+            SerdeSlot(
+                value: Some(Composition(
+                    name: "Imported SVG",
+                    size: (100, 100),
+                    rate: FrameRate(
+                        num: 60,
+                        den: 1,
+                    ),
+                    range: (Frame(0), Frame(1)),
+                    children: [
+                        SerKey(
+                            idx: 1,
+                            version: 1,
+                        ),
+                        SerKey(
+                            idx: 4,
+                            version: 1,
+                        ),
+                        SerKey(
+                            idx: 7,
+                            version: 1,
+                        ),
+                        SerKey(
+                            idx: 10,
+                            version: 1,
+                        ),
+                        SerKey(
+                            idx: 13,
+                            version: 1,
+                        ),
+                        SerKey(
+                            idx: 16,
+                            version: 1,
+                        ),
+                        SerKey(
+                            idx: 19,
+                            version: 1,
+                        ),
+                        SerKey(
+                            idx: 22,
+                            version: 1,
+                        ),
+                        SerKey(
+                            idx: 25,
+                            version: 1,
+                        ),
+                        SerKey(
+                            idx: 28,
+                            version: 1,
+                        ),
+                        SerKey(
+                            idx: 31,
+                            version: 1,
+                        ),
+                    ],
+                )),
+                version: 1,
+            ),
+        ],
+        nodes: [
+            SerdeSlot(
+                value: None,
+                version: 0,
+            ),
+            SerdeSlot(
+                value: Some(Node(
+                    name: "circle6",
+                    parent: None,
+                    children: [
+                        SerKey(
+                            idx: 2,
+                            version: 1,
+                        ),
+                        SerKey(
+                            idx: 3,
+                            version: 1,
+                        ),
+                    ],
+                    visible: true,
+                    locked: false,
+                    transform: AnimatedTransform(
+                        anchor: Animated(
+                            base: DVec2(0.0, 0.0),
+                            keyframes: [],
+                        ),
+                        position: Animated(
+                            base: DVec2(0.0, 0.0),
+                            keyframes: [],
+                        ),
+                        scale: Animated(
+                            base: DVec2(100.0, 100.0),
+                            keyframes: [],
+                        ),
+                        rotation: Animated(
+                            base: Angle(0.0),
+                            keyframes: [],
+                        ),
+                        skew: Animated(
+                            base: 0.0,
+                            keyframes: [],
+                        ),
+                        skew_axis: Animated(
+                            base: 0.0,
+                            keyframes: [],
+                        ),
+                    ),
+                    opacity: Animated(
+                        base: 1.0,
+                        keyframes: [],
+                    ),
+                    kind: Group,
+                )),
+                version: 1,
+            ),
+            SerdeSlot(
+                value: Some(Node(
+                    name: "circle6",
+                    parent: Some(SerKey(
+                        idx: 1,
+                        version: 1,
+                    )),
+                    children: [],
+                    visible: true,
+                    locked: false,
+                    transform: AnimatedTransform(
+                        anchor: Animated(
+                            base: DVec2(0.0, 0.0),
+                            keyframes: [],
+                        ),
+                        position: Animated(
+                            base: DVec2(0.0, 0.0),
+                            keyframes: [],
+                        ),
+                        scale: Animated(
+                            base: DVec2(100.0, 100.0),
+                            keyframes: [],
+                        ),
+                        rotation: Animated(
+                            base: Angle(0.0),
+                            keyframes: [],
+                        ),
+                        skew: Animated(
+                            base: 0.0,
+                            keyframes: [],
+                        ),
+                        skew_axis: Animated(
+                            base: 0.0,
+                            keyframes: [],
+                        ),
+                    ),
+                    opacity: Animated(
+                        base: 1.0,
+                        keyframes: [],
+                    ),
+                    kind: Shape(Path(Animated(
+                        base: VectorPath(
+                            anchors: [
+                                Anchor(
+                                    pos: DVec2(78.0, 85.0),
+                                    tan_in: DVec2(0.0, -4.418281555175781),
+                                    tan_out: DVec2(0.0, 4.418281555175781),
+                                    mode: Symmetric,
+                                ),
+                                Anchor(
+                                    pos: DVec2(70.0, 93.0),
+                                    tan_in: DVec2(4.418281555175781, 0.0),
+                                    tan_out: DVec2(-4.418281555175781, 0.0),
+                                    mode: Symmetric,
+                                ),
+                                Anchor(
+                                    pos: DVec2(62.0, 85.0),
+                                    tan_in: DVec2(0.0, 4.418281555175781),
+                                    tan_out: DVec2(0.0, -4.418281555175781),
+                                    mode: Symmetric,
+                                ),
+                                Anchor(
+                                    pos: DVec2(70.0, 77.0),
+                                    tan_in: DVec2(-4.418281555175781, 0.0),
+                                    tan_out: DVec2(4.418281555175781, 0.0),
+                                    mode: Symmetric,
+                                ),
+                            ],
+                            closed: true,
+                        ),
+                        keyframes: [],
+                    ))),
+                )),
+                version: 1,
+            ),
+            SerdeSlot(
+                value: Some(Node(
+                    name: "circle6",
+                    parent: Some(SerKey(
+                        idx: 1,
+                        version: 1,
+                    )),
+                    children: [],
+                    visible: true,
+                    locked: false,
+                    transform: AnimatedTransform(
+                        anchor: Animated(
+                            base: DVec2(0.0, 0.0),
+                            keyframes: [],
+                        ),
+                        position: Animated(
+                            base: DVec2(0.0, 0.0),
+                            keyframes: [],
+                        ),
+                        scale: Animated(
+                            base: DVec2(100.0, 100.0),
+                            keyframes: [],
+                        ),
+                        rotation: Animated(
+                            base: Angle(0.0),
+                            keyframes: [],
+                        ),
+                        skew: Animated(
+                            base: 0.0,
+                            keyframes: [],
+                        ),
+                        skew_axis: Animated(
+                            base: 0.0,
+                            keyframes: [],
+                        ),
+                    ),
+                    opacity: Animated(
+                        base: 1.0,
+                        keyframes: [],
+                    ),
+                    kind: Style(Fill(
+                        paint: Solid(
+                            color: Animated(
+                                base: Color(
+                                    r: 0.7333333333333333,
+                                    g: 0.6666666666666666,
+                                    b: 0.6,
+                                    a: 1.0,
+                                ),
+                                keyframes: [],
+                            ),
+                        ),
+                        rule: NonZero,
+                    )),
+                )),
+                version: 1,
+            ),
+            SerdeSlot(
+                value: Some(Node(
+                    name: "path5",
+                    parent: None,
+                    children: [
+                        SerKey(
+                            idx: 5,
+                            version: 1,
+                        ),
+                        SerKey(
+                            idx: 6,
+                            version: 1,
+                        ),
+                    ],
+                    visible: true,
+                    locked: false,
+                    transform: AnimatedTransform(
+                        anchor: Animated(
+                            base: DVec2(0.0, 0.0),
+                            keyframes: [],
+                        ),
+                        position: Animated(
+                            base: DVec2(0.0, 0.0),
+                            keyframes: [],
+                        ),
+                        scale: Animated(
+                            base: DVec2(100.0, 100.0),
+                            keyframes: [],
+                        ),
+                        rotation: Animated(
+                            base: Angle(0.0),
+                            keyframes: [],
+                        ),
+                        skew: Animated(
+                            base: 0.0,
+                            keyframes: [],
+                        ),
+                        skew_axis: Animated(
+                            base: 0.0,
+                            keyframes: [],
+                        ),
+                    ),
+                    opacity: Animated(
+                        base: 1.0,
+                        keyframes: [],
+                    ),
+                    kind: Group,
+                )),
+                version: 1,
+            ),
+            SerdeSlot(
+                value: Some(Node(
+                    name: "path5",
+                    parent: Some(SerKey(
+                        idx: 4,
+                        version: 1,
+                    )),
+                    children: [],
+                    visible: true,
+                    locked: false,
+                    transform: AnimatedTransform(
+                        anchor: Animated(
+                            base: DVec2(0.0, 0.0),
+                            keyframes: [],
+                        ),
+                        position: Animated(
+                            base: DVec2(0.0, 0.0),
+                            keyframes: [],
+                        ),
+                        scale: Animated(
+                            base: DVec2(100.0, 100.0),
+                            keyframes: [],
+                        ),
+                        rotation: Animated(
+                            base: Angle(0.0),
+                            keyframes: [],
+                        ),
+                        skew: Animated(
+                            base: 0.0,
+                            keyframes: [],
+                        ),
+                        skew_axis: Animated(
+                            base: 0.0,
+                            keyframes: [],
+                        ),
+                    ),
+                    opacity: Animated(
+                        base: 1.0,
+                        keyframes: [],
+                    ),
+                    kind: Shape(Path(Animated(
+                        base: VectorPath(
+                            anchors: [
+                                Anchor(
+                                    pos: DVec2(60.0, 75.0),
+                                    tan_in: DVec2(0.0, 0.0),
+                                    tan_out: DVec2(0.0, 0.0),
+                                    mode: Corner,
+                                ),
+                                Anchor(
+                                    pos: DVec2(70.0, 85.0),
+                                    tan_in: DVec2(0.0, 0.0),
+                                    tan_out: DVec2(0.0, 0.0),
+                                    mode: Corner,
+                                ),
+                            ],
+                            closed: false,
+                        ),
+                        keyframes: [],
+                    ))),
+                )),
+                version: 1,
+            ),
+            SerdeSlot(
+                value: Some(Node(
+                    name: "path5",
+                    parent: Some(SerKey(
+                        idx: 4,
+                        version: 1,
+                    )),
+                    children: [],
+                    visible: true,
+                    locked: false,
+                    transform: AnimatedTransform(
+                        anchor: Animated(
+                            base: DVec2(0.0, 0.0),
+                            keyframes: [],
+                        ),
+                        position: Animated(
+                            base: DVec2(0.0, 0.0),
+                            keyframes: [],
+                        ),
+                        scale: Animated(
+                            base: DVec2(100.0, 100.0),
+                            keyframes: [],
+                        ),
+                        rotation: Animated(
+                            base: Angle(0.0),
+                            keyframes: [],
+                        ),
+                        skew: Animated(
+                            base: 0.0,
+                            keyframes: [],
+                        ),
+                        skew_axis: Animated(
+                            base: 0.0,
+                            keyframes: [],
+                        ),
+                    ),
+                    opacity: Animated(
+                        base: 1.0,
+                        keyframes: [],
+                    ),
+                    kind: Style(Stroke(
+                        paint: Solid(
+                            color: Animated(
+                                base: Color(
+                                    r: 0.7333333333333333,
+                                    g: 0.6666666666666666,
+                                    b: 0.6,
+                                    a: 1.0,
+                                ),
+                                keyframes: [],
+                            ),
+                        ),
+                        width: Animated(
+                            base: 4.0,
+                            keyframes: [],
+                        ),
+                        cap: Butt,
+                        join: Miter,
+                        dash: None,
+                    )),
+                )),
+                version: 1,
+            ),
+            SerdeSlot(
+                value: Some(Node(
+                    name: "circle5",
+                    parent: None,
+                    children: [
+                        SerKey(
+                            idx: 8,
+                            version: 1,
+                        ),
+                        SerKey(
+                            idx: 9,
+                            version: 1,
+                        ),
+                    ],
+                    visible: true,
+                    locked: false,
+                    transform: AnimatedTransform(
+                        anchor: Animated(
+                            base: DVec2(0.0, 0.0),
+                            keyframes: [],
+                        ),
+                        position: Animated(
+                            base: DVec2(0.0, 0.0),
+                            keyframes: [],
+                        ),
+                        scale: Animated(
+                            base: DVec2(100.0, 100.0),
+                            keyframes: [],
+                        ),
+                        rotation: Animated(
+                            base: Angle(0.0),
+                            keyframes: [],
+                        ),
+                        skew: Animated(
+                            base: 0.0,
+                            keyframes: [],
+                        ),
+                        skew_axis: Animated(
+                            base: 0.0,
+                            keyframes: [],
+                        ),
+                    ),
+                    opacity: Animated(
+                        base: 1.0,
+                        keyframes: [],
+                    ),
+                    kind: Group,
+                )),
+                version: 1,
+            ),
+            SerdeSlot(
+                value: Some(Node(
+                    name: "circle5",
+                    parent: Some(SerKey(
+                        idx: 7,
+                        version: 1,
+                    )),
+                    children: [],
+                    visible: true,
+                    locked: false,
+                    transform: AnimatedTransform(
+                        anchor: Animated(
+                            base: DVec2(0.0, 0.0),
+                            keyframes: [],
+                        ),
+                        position: Animated(
+                            base: DVec2(0.0, 0.0),
+                            keyframes: [],
+                        ),
+                        scale: Animated(
+                            base: DVec2(100.0, 100.0),
+                            keyframes: [],
+                        ),
+                        rotation: Animated(
+                            base: Angle(0.0),
+                            keyframes: [],
+                        ),
+                        skew: Animated(
+                            base: 0.0,
+                            keyframes: [],
+                        ),
+                        skew_axis: Animated(
+                            base: 0.0,
+                            keyframes: [],
+                        ),
+                    ),
+                    opacity: Animated(
+                        base: 1.0,
+                        keyframes: [],
+                    ),
+                    kind: Shape(Path(Animated(
+                        base: VectorPath(
+                            anchors: [
+                                Anchor(
+                                    pos: DVec2(38.0, 85.0),
+                                    tan_in: DVec2(0.0, -4.418281555175781),
+                                    tan_out: DVec2(0.0, 4.418281555175781),
+                                    mode: Symmetric,
+                                ),
+                                Anchor(
+                                    pos: DVec2(30.0, 93.0),
+                                    tan_in: DVec2(4.418277740478516, 0.0),
+                                    tan_out: DVec2(-4.418277740478516, 0.0),
+                                    mode: Symmetric,
+                                ),
+                                Anchor(
+                                    pos: DVec2(22.0, 85.0),
+                                    tan_in: DVec2(0.0, 4.418281555175781),
+                                    tan_out: DVec2(0.0, -4.418281555175781),
+                                    mode: Symmetric,
+                                ),
+                                Anchor(
+                                    pos: DVec2(30.0, 77.0),
+                                    tan_in: DVec2(-4.418277740478516, 0.0),
+                                    tan_out: DVec2(4.418277740478516, 0.0),
+                                    mode: Symmetric,
+                                ),
+                            ],
+                            closed: true,
+                        ),
+                        keyframes: [],
+                    ))),
+                )),
+                version: 1,
+            ),
+            SerdeSlot(
+                value: Some(Node(
+                    name: "circle5",
+                    parent: Some(SerKey(
+                        idx: 7,
+                        version: 1,
+                    )),
+                    children: [],
+                    visible: true,
+                    locked: false,
+                    transform: AnimatedTransform(
+                        anchor: Animated(
+                            base: DVec2(0.0, 0.0),
+                            keyframes: [],
+                        ),
+                        position: Animated(
+                            base: DVec2(0.0, 0.0),
+                            keyframes: [],
+                        ),
+                        scale: Animated(
+                            base: DVec2(100.0, 100.0),
+                            keyframes: [],
+                        ),
+                        rotation: Animated(
+                            base: Angle(0.0),
+                            keyframes: [],
+                        ),
+                        skew: Animated(
+                            base: 0.0,
+                            keyframes: [],
+                        ),
+                        skew_axis: Animated(
+                            base: 0.0,
+                            keyframes: [],
+                        ),
+                    ),
+                    opacity: Animated(
+                        base: 1.0,
+                        keyframes: [],
+                    ),
+                    kind: Style(Fill(
+                        paint: Solid(
+                            color: Animated(
+                                base: Color(
+                                    r: 0.7333333333333333,
+                                    g: 0.6666666666666666,
+                                    b: 0.6,
+                                    a: 1.0,
+                                ),
+                                keyframes: [],
+                            ),
+                        ),
+                        rule: NonZero,
+                    )),
+                )),
+                version: 1,
+            ),
+            SerdeSlot(
+                value: Some(Node(
+                    name: "path4",
+                    parent: None,
+                    children: [
+                        SerKey(
+                            idx: 11,
+                            version: 1,
+                        ),
+                        SerKey(
+                            idx: 12,
+                            version: 1,
+                        ),
+                    ],
+                    visible: true,
+                    locked: false,
+                    transform: AnimatedTransform(
+                        anchor: Animated(
+                            base: DVec2(0.0, 0.0),
+                            keyframes: [],
+                        ),
+                        position: Animated(
+                            base: DVec2(0.0, 0.0),
+                            keyframes: [],
+                        ),
+                        scale: Animated(
+                            base: DVec2(100.0, 100.0),
+                            keyframes: [],
+                        ),
+                        rotation: Animated(
+                            base: Angle(0.0),
+                            keyframes: [],
+                        ),
+                        skew: Animated(
+                            base: 0.0,
+                            keyframes: [],
+                        ),
+                        skew_axis: Animated(
+                            base: 0.0,
+                            keyframes: [],
+                        ),
+                    ),
+                    opacity: Animated(
+                        base: 1.0,
+                        keyframes: [],
+                    ),
+                    kind: Group,
+                )),
+                version: 1,
+            ),
+            SerdeSlot(
+                value: Some(Node(
+                    name: "path4",
+                    parent: Some(SerKey(
+                        idx: 10,
+                        version: 1,
+                    )),
+                    children: [],
+                    visible: true,
+                    locked: false,
+                    transform: AnimatedTransform(
+                        anchor: Animated(
+                            base: DVec2(0.0, 0.0),
+                            keyframes: [],
+                        ),
+                        position: Animated(
+                            base: DVec2(0.0, 0.0),
+                            keyframes: [],
+                        ),
+                        scale: Animated(
+                            base: DVec2(100.0, 100.0),
+                            keyframes: [],
+                        ),
+                        rotation: Animated(
+                            base: Angle(0.0),
+                            keyframes: [],
+                        ),
+                        skew: Animated(
+                            base: 0.0,
+                            keyframes: [],
+                        ),
+                        skew_axis: Animated(
+                            base: 0.0,
+                            keyframes: [],
+                        ),
+                    ),
+                    opacity: Animated(
+                        base: 1.0,
+                        keyframes: [],
+                    ),
+                    kind: Shape(Path(Animated(
+                        base: VectorPath(
+                            anchors: [
+                                Anchor(
+                                    pos: DVec2(40.0, 75.0),
+                                    tan_in: DVec2(0.0, 0.0),
+                                    tan_out: DVec2(0.0, 0.0),
+                                    mode: Corner,
+                                ),
+                                Anchor(
+                                    pos: DVec2(30.0, 85.0),
+                                    tan_in: DVec2(0.0, 0.0),
+                                    tan_out: DVec2(0.0, 0.0),
+                                    mode: Corner,
+                                ),
+                            ],
+                            closed: false,
+                        ),
+                        keyframes: [],
+                    ))),
+                )),
+                version: 1,
+            ),
+            SerdeSlot(
+                value: Some(Node(
+                    name: "path4",
+                    parent: Some(SerKey(
+                        idx: 10,
+                        version: 1,
+                    )),
+                    children: [],
+                    visible: true,
+                    locked: false,
+                    transform: AnimatedTransform(
+                        anchor: Animated(
+                            base: DVec2(0.0, 0.0),
+                            keyframes: [],
+                        ),
+                        position: Animated(
+                            base: DVec2(0.0, 0.0),
+                            keyframes: [],
+                        ),
+                        scale: Animated(
+                            base: DVec2(100.0, 100.0),
+                            keyframes: [],
+                        ),
+                        rotation: Animated(
+                            base: Angle(0.0),
+                            keyframes: [],
+                        ),
+                        skew: Animated(
+                            base: 0.0,
+                            keyframes: [],
+                        ),
+                        skew_axis: Animated(
+                            base: 0.0,
+                            keyframes: [],
+                        ),
+                    ),
+                    opacity: Animated(
+                        base: 1.0,
+                        keyframes: [],
+                    ),
+                    kind: Style(Stroke(
+                        paint: Solid(
+                            color: Animated(
+                                base: Color(
+                                    r: 0.7333333333333333,
+                                    g: 0.6666666666666666,
+                                    b: 0.6,
+                                    a: 1.0,
+                                ),
+                                keyframes: [],
+                            ),
+                        ),
+                        width: Animated(
+                            base: 4.0,
+                            keyframes: [],
+                        ),
+                        cap: Butt,
+                        join: Miter,
+                        dash: None,
+                    )),
+                )),
+                version: 1,
+            ),
+            SerdeSlot(
+                value: Some(Node(
+                    name: "circle4",
+                    parent: None,
+                    children: [
+                        SerKey(
+                            idx: 14,
+                            version: 1,
+                        ),
+                        SerKey(
+                            idx: 15,
+                            version: 1,
+                        ),
+                    ],
+                    visible: true,
+                    locked: false,
+                    transform: AnimatedTransform(
+                        anchor: Animated(
+                            base: DVec2(0.0, 0.0),
+                            keyframes: [],
+                        ),
+                        position: Animated(
+                            base: DVec2(0.0, 0.0),
+                            keyframes: [],
+                        ),
+                        scale: Animated(
+                            base: DVec2(100.0, 100.0),
+                            keyframes: [],
+                        ),
+                        rotation: Animated(
+                            base: Angle(0.0),
+                            keyframes: [],
+                        ),
+                        skew: Animated(
+                            base: 0.0,
+                            keyframes: [],
+                        ),
+                        skew_axis: Animated(
+                            base: 0.0,
+                            keyframes: [],
+                        ),
+                    ),
+                    opacity: Animated(
+                        base: 1.0,
+                        keyframes: [],
+                    ),
+                    kind: Group,
+                )),
+                version: 1,
+            ),
+            SerdeSlot(
+                value: Some(Node(
+                    name: "circle4",
+                    parent: Some(SerKey(
+                        idx: 13,
+                        version: 1,
+                    )),
+                    children: [],
+                    visible: true,
+                    locked: false,
+                    transform: AnimatedTransform(
+                        anchor: Animated(
+                            base: DVec2(0.0, 0.0),
+                            keyframes: [],
+                        ),
+                        position: Animated(
+                            base: DVec2(0.0, 0.0),
+                            keyframes: [],
+                        ),
+                        scale: Animated(
+                            base: DVec2(100.0, 100.0),
+                            keyframes: [],
+                        ),
+                        rotation: Animated(
+                            base: Angle(0.0),
+                            keyframes: [],
+                        ),
+                        skew: Animated(
+                            base: 0.0,
+                            keyframes: [],
+                        ),
+                        skew_axis: Animated(
+                            base: 0.0,
+                            keyframes: [],
+                        ),
+                    ),
+                    opacity: Animated(
+                        base: 1.0,
+                        keyframes: [],
+                    ),
+                    kind: Shape(Path(Animated(
+                        base: VectorPath(
+                            anchors: [
+                                Anchor(
+                                    pos: DVec2(88.0, 40.0),
+                                    tan_in: DVec2(0.0, -4.418277740478516),
+                                    tan_out: DVec2(0.0, 4.418277740478516),
+                                    mode: Symmetric,
+                                ),
+                                Anchor(
+                                    pos: DVec2(80.0, 48.0),
+                                    tan_in: DVec2(4.418281555175781, 0.0),
+                                    tan_out: DVec2(-4.418281555175781, 0.0),
+                                    mode: Symmetric,
+                                ),
+                                Anchor(
+                                    pos: DVec2(72.0, 40.0),
+                                    tan_in: DVec2(0.0, 4.418277740478516),
+                                    tan_out: DVec2(0.0, -4.418277740478516),
+                                    mode: Symmetric,
+                                ),
+                                Anchor(
+                                    pos: DVec2(80.0, 32.0),
+                                    tan_in: DVec2(-4.418281555175781, 0.0),
+                                    tan_out: DVec2(4.418281555175781, 0.0),
+                                    mode: Symmetric,
+                                ),
+                            ],
+                            closed: true,
+                        ),
+                        keyframes: [],
+                    ))),
+                )),
+                version: 1,
+            ),
+            SerdeSlot(
+                value: Some(Node(
+                    name: "circle4",
+                    parent: Some(SerKey(
+                        idx: 13,
+                        version: 1,
+                    )),
+                    children: [],
+                    visible: true,
+                    locked: false,
+                    transform: AnimatedTransform(
+                        anchor: Animated(
+                            base: DVec2(0.0, 0.0),
+                            keyframes: [],
+                        ),
+                        position: Animated(
+                            base: DVec2(0.0, 0.0),
+                            keyframes: [],
+                        ),
+                        scale: Animated(
+                            base: DVec2(100.0, 100.0),
+                            keyframes: [],
+                        ),
+                        rotation: Animated(
+                            base: Angle(0.0),
+                            keyframes: [],
+                        ),
+                        skew: Animated(
+                            base: 0.0,
+                            keyframes: [],
+                        ),
+                        skew_axis: Animated(
+                            base: 0.0,
+                            keyframes: [],
+                        ),
+                    ),
+                    opacity: Animated(
+                        base: 1.0,
+                        keyframes: [],
+                    ),
+                    kind: Style(Fill(
+                        paint: Solid(
+                            color: Animated(
+                                base: Color(
+                                    r: 0.7333333333333333,
+                                    g: 0.6666666666666666,
+                                    b: 0.6,
+                                    a: 1.0,
+                                ),
+                                keyframes: [],
+                            ),
+                        ),
+                        rule: NonZero,
+                    )),
+                )),
+                version: 1,
+            ),
+            SerdeSlot(
+                value: Some(Node(
+                    name: "path3",
+                    parent: None,
+                    children: [
+                        SerKey(
+                            idx: 17,
+                            version: 1,
+                        ),
+                        SerKey(
+                            idx: 18,
+                            version: 1,
+                        ),
+                    ],
+                    visible: true,
+                    locked: false,
+                    transform: AnimatedTransform(
+                        anchor: Animated(
+                            base: DVec2(0.0, 0.0),
+                            keyframes: [],
+                        ),
+                        position: Animated(
+                            base: DVec2(0.0, 0.0),
+                            keyframes: [],
+                        ),
+                        scale: Animated(
+                            base: DVec2(100.0, 100.0),
+                            keyframes: [],
+                        ),
+                        rotation: Animated(
+                            base: Angle(0.0),
+                            keyframes: [],
+                        ),
+                        skew: Animated(
+                            base: 0.0,
+                            keyframes: [],
+                        ),
+                        skew_axis: Animated(
+                            base: 0.0,
+                            keyframes: [],
+                        ),
+                    ),
+                    opacity: Animated(
+                        base: 1.0,
+                        keyframes: [],
+                    ),
+                    kind: Group,
+                )),
+                version: 1,
+            ),
+            SerdeSlot(
+                value: Some(Node(
+                    name: "path3",
+                    parent: Some(SerKey(
+                        idx: 16,
+                        version: 1,
+                    )),
+                    children: [],
+                    visible: true,
+                    locked: false,
+                    transform: AnimatedTransform(
+                        anchor: Animated(
+                            base: DVec2(0.0, 0.0),
+                            keyframes: [],
+                        ),
+                        position: Animated(
+                            base: DVec2(0.0, 0.0),
+                            keyframes: [],
+                        ),
+                        scale: Animated(
+                            base: DVec2(100.0, 100.0),
+                            keyframes: [],
+                        ),
+                        rotation: Animated(
+                            base: Angle(0.0),
+                            keyframes: [],
+                        ),
+                        skew: Animated(
+                            base: 0.0,
+                            keyframes: [],
+                        ),
+                        skew_axis: Animated(
+                            base: 0.0,
+                            keyframes: [],
+                        ),
+                    ),
+                    opacity: Animated(
+                        base: 1.0,
+                        keyframes: [],
+                    ),
+                    kind: Shape(Path(Animated(
+                        base: VectorPath(
+                            anchors: [
+                                Anchor(
+                                    pos: DVec2(70.0, 50.0),
+                                    tan_in: DVec2(0.0, 0.0),
+                                    tan_out: DVec2(0.0, 0.0),
+                                    mode: Corner,
+                                ),
+                                Anchor(
+                                    pos: DVec2(80.0, 40.0),
+                                    tan_in: DVec2(0.0, 0.0),
+                                    tan_out: DVec2(0.0, 0.0),
+                                    mode: Corner,
+                                ),
+                            ],
+                            closed: false,
+                        ),
+                        keyframes: [],
+                    ))),
+                )),
+                version: 1,
+            ),
+            SerdeSlot(
+                value: Some(Node(
+                    name: "path3",
+                    parent: Some(SerKey(
+                        idx: 16,
+                        version: 1,
+                    )),
+                    children: [],
+                    visible: true,
+                    locked: false,
+                    transform: AnimatedTransform(
+                        anchor: Animated(
+                            base: DVec2(0.0, 0.0),
+                            keyframes: [],
+                        ),
+                        position: Animated(
+                            base: DVec2(0.0, 0.0),
+                            keyframes: [],
+                        ),
+                        scale: Animated(
+                            base: DVec2(100.0, 100.0),
+                            keyframes: [],
+                        ),
+                        rotation: Animated(
+                            base: Angle(0.0),
+                            keyframes: [],
+                        ),
+                        skew: Animated(
+                            base: 0.0,
+                            keyframes: [],
+                        ),
+                        skew_axis: Animated(
+                            base: 0.0,
+                            keyframes: [],
+                        ),
+                    ),
+                    opacity: Animated(
+                        base: 1.0,
+                        keyframes: [],
+                    ),
+                    kind: Style(Stroke(
+                        paint: Solid(
+                            color: Animated(
+                                base: Color(
+                                    r: 0.7333333333333333,
+                                    g: 0.6666666666666666,
+                                    b: 0.6,
+                                    a: 1.0,
+                                ),
+                                keyframes: [],
+                            ),
+                        ),
+                        width: Animated(
+                            base: 4.0,
+                            keyframes: [],
+                        ),
+                        cap: Butt,
+                        join: Miter,
+                        dash: None,
+                    )),
+                )),
+                version: 1,
+            ),
+            SerdeSlot(
+                value: Some(Node(
+                    name: "circle3",
+                    parent: None,
+                    children: [
+                        SerKey(
+                            idx: 20,
+                            version: 1,
+                        ),
+                        SerKey(
+                            idx: 21,
+                            version: 1,
+                        ),
+                    ],
+                    visible: true,
+                    locked: false,
+                    transform: AnimatedTransform(
+                        anchor: Animated(
+                            base: DVec2(0.0, 0.0),
+                            keyframes: [],
+                        ),
+                        position: Animated(
+                            base: DVec2(0.0, 0.0),
+                            keyframes: [],
+                        ),
+                        scale: Animated(
+                            base: DVec2(100.0, 100.0),
+                            keyframes: [],
+                        ),
+                        rotation: Animated(
+                            base: Angle(0.0),
+                            keyframes: [],
+                        ),
+                        skew: Animated(
+                            base: 0.0,
+                            keyframes: [],
+                        ),
+                        skew_axis: Animated(
+                            base: 0.0,
+                            keyframes: [],
+                        ),
+                    ),
+                    opacity: Animated(
+                        base: 1.0,
+                        keyframes: [],
+                    ),
+                    kind: Group,
+                )),
+                version: 1,
+            ),
+            SerdeSlot(
+                value: Some(Node(
+                    name: "circle3",
+                    parent: Some(SerKey(
+                        idx: 19,
+                        version: 1,
+                    )),
+                    children: [],
+                    visible: true,
+                    locked: false,
+                    transform: AnimatedTransform(
+                        anchor: Animated(
+                            base: DVec2(0.0, 0.0),
+                            keyframes: [],
+                        ),
+                        position: Animated(
+                            base: DVec2(0.0, 0.0),
+                            keyframes: [],
+                        ),
+                        scale: Animated(
+                            base: DVec2(100.0, 100.0),
+                            keyframes: [],
+                        ),
+                        rotation: Animated(
+                            base: Angle(0.0),
+                            keyframes: [],
+                        ),
+                        skew: Animated(
+                            base: 0.0,
+                            keyframes: [],
+                        ),
+                        skew_axis: Animated(
+                            base: 0.0,
+                            keyframes: [],
+                        ),
+                    ),
+                    opacity: Animated(
+                        base: 1.0,
+                        keyframes: [],
+                    ),
+                    kind: Shape(Path(Animated(
+                        base: VectorPath(
+                            anchors: [
+                                Anchor(
+                                    pos: DVec2(28.0, 40.0),
+                                    tan_in: DVec2(0.0, -4.418277740478516),
+                                    tan_out: DVec2(0.0, 4.418277740478516),
+                                    mode: Symmetric,
+                                ),
+                                Anchor(
+                                    pos: DVec2(20.0, 48.0),
+                                    tan_in: DVec2(4.418277740478516, 0.0),
+                                    tan_out: DVec2(-4.418277740478516, 0.0),
+                                    mode: Symmetric,
+                                ),
+                                Anchor(
+                                    pos: DVec2(12.0, 40.0),
+                                    tan_in: DVec2(0.0, 4.418277740478516),
+                                    tan_out: DVec2(0.0, -4.418277740478516),
+                                    mode: Symmetric,
+                                ),
+                                Anchor(
+                                    pos: DVec2(20.0, 32.0),
+                                    tan_in: DVec2(-4.418277740478516, 0.0),
+                                    tan_out: DVec2(4.418277740478516, 0.0),
+                                    mode: Symmetric,
+                                ),
+                            ],
+                            closed: true,
+                        ),
+                        keyframes: [],
+                    ))),
+                )),
+                version: 1,
+            ),
+            SerdeSlot(
+                value: Some(Node(
+                    name: "circle3",
+                    parent: Some(SerKey(
+                        idx: 19,
+                        version: 1,
+                    )),
+                    children: [],
+                    visible: true,
+                    locked: false,
+                    transform: AnimatedTransform(
+                        anchor: Animated(
+                            base: DVec2(0.0, 0.0),
+                            keyframes: [],
+                        ),
+                        position: Animated(
+                            base: DVec2(0.0, 0.0),
+                            keyframes: [],
+                        ),
+                        scale: Animated(
+                            base: DVec2(100.0, 100.0),
+                            keyframes: [],
+                        ),
+                        rotation: Animated(
+                            base: Angle(0.0),
+                            keyframes: [],
+                        ),
+                        skew: Animated(
+                            base: 0.0,
+                            keyframes: [],
+                        ),
+                        skew_axis: Animated(
+                            base: 0.0,
+                            keyframes: [],
+                        ),
+                    ),
+                    opacity: Animated(
+                        base: 1.0,
+                        keyframes: [],
+                    ),
+                    kind: Style(Fill(
+                        paint: Solid(
+                            color: Animated(
+                                base: Color(
+                                    r: 0.7333333333333333,
+                                    g: 0.6666666666666666,
+                                    b: 0.6,
+                                    a: 1.0,
+                                ),
+                                keyframes: [],
+                            ),
+                        ),
+                        rule: NonZero,
+                    )),
+                )),
+                version: 1,
+            ),
+            SerdeSlot(
+                value: Some(Node(
+                    name: "path2",
+                    parent: None,
+                    children: [
+                        SerKey(
+                            idx: 23,
+                            version: 1,
+                        ),
+                        SerKey(
+                            idx: 24,
+                            version: 1,
+                        ),
+                    ],
+                    visible: true,
+                    locked: false,
+                    transform: AnimatedTransform(
+                        anchor: Animated(
+                            base: DVec2(0.0, 0.0),
+                            keyframes: [],
+                        ),
+                        position: Animated(
+                            base: DVec2(0.0, 0.0),
+                            keyframes: [],
+                        ),
+                        scale: Animated(
+                            base: DVec2(100.0, 100.0),
+                            keyframes: [],
+                        ),
+                        rotation: Animated(
+                            base: Angle(0.0),
+                            keyframes: [],
+                        ),
+                        skew: Animated(
+                            base: 0.0,
+                            keyframes: [],
+                        ),
+                        skew_axis: Animated(
+                            base: 0.0,
+                            keyframes: [],
+                        ),
+                    ),
+                    opacity: Animated(
+                        base: 1.0,
+                        keyframes: [],
+                    ),
+                    kind: Group,
+                )),
+                version: 1,
+            ),
+            SerdeSlot(
+                value: Some(Node(
+                    name: "path2",
+                    parent: Some(SerKey(
+                        idx: 22,
+                        version: 1,
+                    )),
+                    children: [],
+                    visible: true,
+                    locked: false,
+                    transform: AnimatedTransform(
+                        anchor: Animated(
+                            base: DVec2(0.0, 0.0),
+                            keyframes: [],
+                        ),
+                        position: Animated(
+                            base: DVec2(0.0, 0.0),
+                            keyframes: [],
+                        ),
+                        scale: Animated(
+                            base: DVec2(100.0, 100.0),
+                            keyframes: [],
+                        ),
+                        rotation: Animated(
+                            base: Angle(0.0),
+                            keyframes: [],
+                        ),
+                        skew: Animated(
+                            base: 0.0,
+                            keyframes: [],
+                        ),
+                        skew_axis: Animated(
+                            base: 0.0,
+                            keyframes: [],
+                        ),
+                    ),
+                    opacity: Animated(
+                        base: 1.0,
+                        keyframes: [],
+                    ),
+                    kind: Shape(Path(Animated(
+                        base: VectorPath(
+                            anchors: [
+                                Anchor(
+                                    pos: DVec2(30.0, 50.0),
+                                    tan_in: DVec2(0.0, 0.0),
+                                    tan_out: DVec2(0.0, 0.0),
+                                    mode: Corner,
+                                ),
+                                Anchor(
+                                    pos: DVec2(20.0, 40.0),
+                                    tan_in: DVec2(0.0, 0.0),
+                                    tan_out: DVec2(0.0, 0.0),
+                                    mode: Corner,
+                                ),
+                            ],
+                            closed: false,
+                        ),
+                        keyframes: [],
+                    ))),
+                )),
+                version: 1,
+            ),
+            SerdeSlot(
+                value: Some(Node(
+                    name: "path2",
+                    parent: Some(SerKey(
+                        idx: 22,
+                        version: 1,
+                    )),
+                    children: [],
+                    visible: true,
+                    locked: false,
+                    transform: AnimatedTransform(
+                        anchor: Animated(
+                            base: DVec2(0.0, 0.0),
+                            keyframes: [],
+                        ),
+                        position: Animated(
+                            base: DVec2(0.0, 0.0),
+                            keyframes: [],
+                        ),
+                        scale: Animated(
+                            base: DVec2(100.0, 100.0),
+                            keyframes: [],
+                        ),
+                        rotation: Animated(
+                            base: Angle(0.0),
+                            keyframes: [],
+                        ),
+                        skew: Animated(
+                            base: 0.0,
+                            keyframes: [],
+                        ),
+                        skew_axis: Animated(
+                            base: 0.0,
+                            keyframes: [],
+                        ),
+                    ),
+                    opacity: Animated(
+                        base: 1.0,
+                        keyframes: [],
+                    ),
+                    kind: Style(Stroke(
+                        paint: Solid(
+                            color: Animated(
+                                base: Color(
+                                    r: 0.7333333333333333,
+                                    g: 0.6666666666666666,
+                                    b: 0.6,
+                                    a: 1.0,
+                                ),
+                                keyframes: [],
+                            ),
+                        ),
+                        width: Animated(
+                            base: 4.0,
+                            keyframes: [],
+                        ),
+                        cap: Butt,
+                        join: Miter,
+                        dash: None,
+                    )),
+                )),
+                version: 1,
+            ),
+            SerdeSlot(
+                value: Some(Node(
+                    name: "circle2",
+                    parent: None,
+                    children: [
+                        SerKey(
+                            idx: 26,
+                            version: 1,
+                        ),
+                        SerKey(
+                            idx: 27,
+                            version: 1,
+                        ),
+                    ],
+                    visible: true,
+                    locked: false,
+                    transform: AnimatedTransform(
+                        anchor: Animated(
+                            base: DVec2(0.0, 0.0),
+                            keyframes: [],
+                        ),
+                        position: Animated(
+                            base: DVec2(0.0, 0.0),
+                            keyframes: [],
+                        ),
+                        scale: Animated(
+                            base: DVec2(100.0, 100.0),
+                            keyframes: [],
+                        ),
+                        rotation: Animated(
+                            base: Angle(0.0),
+                            keyframes: [],
+                        ),
+                        skew: Animated(
+                            base: 0.0,
+                            keyframes: [],
+                        ),
+                        skew_axis: Animated(
+                            base: 0.0,
+                            keyframes: [],
+                        ),
+                    ),
+                    opacity: Animated(
+                        base: 1.0,
+                        keyframes: [],
+                    ),
+                    kind: Group,
+                )),
+                version: 1,
+            ),
+            SerdeSlot(
+                value: Some(Node(
+                    name: "circle2",
+                    parent: Some(SerKey(
+                        idx: 25,
+                        version: 1,
+                    )),
+                    children: [],
+                    visible: true,
+                    locked: false,
+                    transform: AnimatedTransform(
+                        anchor: Animated(
+                            base: DVec2(0.0, 0.0),
+                            keyframes: [],
+                        ),
+                        position: Animated(
+                            base: DVec2(0.0, 0.0),
+                            keyframes: [],
+                        ),
+                        scale: Animated(
+                            base: DVec2(100.0, 100.0),
+                            keyframes: [],
+                        ),
+                        rotation: Animated(
+                            base: Angle(0.0),
+                            keyframes: [],
+                        ),
+                        skew: Animated(
+                            base: 0.0,
+                            keyframes: [],
+                        ),
+                        skew_axis: Animated(
+                            base: 0.0,
+                            keyframes: [],
+                        ),
+                    ),
+                    opacity: Animated(
+                        base: 1.0,
+                        keyframes: [],
+                    ),
+                    kind: Shape(Path(Animated(
+                        base: VectorPath(
+                            anchors: [
+                                Anchor(
+                                    pos: DVec2(60.0, 20.0),
+                                    tan_in: DVec2(0.0, -5.5228471755981445),
+                                    tan_out: DVec2(0.0, 5.522848129272461),
+                                    mode: Symmetric,
+                                ),
+                                Anchor(
+                                    pos: DVec2(50.0, 30.0),
+                                    tan_in: DVec2(5.522846221923828, 0.0),
+                                    tan_out: DVec2(-5.522846221923828, 0.0),
+                                    mode: Symmetric,
+                                ),
+                                Anchor(
+                                    pos: DVec2(40.0, 20.0),
+                                    tan_in: DVec2(0.0, 5.522848129272461),
+                                    tan_out: DVec2(0.0, -5.5228471755981445),
+                                    mode: Symmetric,
+                                ),
+                                Anchor(
+                                    pos: DVec2(50.0, 10.0),
+                                    tan_in: DVec2(-5.522846221923828, 0.0),
+                                    tan_out: DVec2(5.522846221923828, 0.0),
+                                    mode: Symmetric,
+                                ),
+                            ],
+                            closed: true,
+                        ),
+                        keyframes: [],
+                    ))),
+                )),
+                version: 1,
+            ),
+            SerdeSlot(
+                value: Some(Node(
+                    name: "circle2",
+                    parent: Some(SerKey(
+                        idx: 25,
+                        version: 1,
+                    )),
+                    children: [],
+                    visible: true,
+                    locked: false,
+                    transform: AnimatedTransform(
+                        anchor: Animated(
+                            base: DVec2(0.0, 0.0),
+                            keyframes: [],
+                        ),
+                        position: Animated(
+                            base: DVec2(0.0, 0.0),
+                            keyframes: [],
+                        ),
+                        scale: Animated(
+                            base: DVec2(100.0, 100.0),
+                            keyframes: [],
+                        ),
+                        rotation: Animated(
+                            base: Angle(0.0),
+                            keyframes: [],
+                        ),
+                        skew: Animated(
+                            base: 0.0,
+                            keyframes: [],
+                        ),
+                        skew_axis: Animated(
+                            base: 0.0,
+                            keyframes: [],
+                        ),
+                    ),
+                    opacity: Animated(
+                        base: 1.0,
+                        keyframes: [],
+                    ),
+                    kind: Style(Fill(
+                        paint: Solid(
+                            color: Animated(
+                                base: Color(
+                                    r: 0.7333333333333333,
+                                    g: 0.6666666666666666,
+                                    b: 0.6,
+                                    a: 1.0,
+                                ),
+                                keyframes: [],
+                            ),
+                        ),
+                        rule: NonZero,
+                    )),
+                )),
+                version: 1,
+            ),
+            SerdeSlot(
+                value: Some(Node(
+                    name: "path1",
+                    parent: None,
+                    children: [
+                        SerKey(
+                            idx: 29,
+                            version: 1,
+                        ),
+                        SerKey(
+                            idx: 30,
+                            version: 1,
+                        ),
+                    ],
+                    visible: true,
+                    locked: false,
+                    transform: AnimatedTransform(
+                        anchor: Animated(
+                            base: DVec2(0.0, 0.0),
+                            keyframes: [],
+                        ),
+                        position: Animated(
+                            base: DVec2(0.0, 0.0),
+                            keyframes: [],
+                        ),
+                        scale: Animated(
+                            base: DVec2(100.0, 100.0),
+                            keyframes: [],
+                        ),
+                        rotation: Animated(
+                            base: Angle(0.0),
+                            keyframes: [],
+                        ),
+                        skew: Animated(
+                            base: 0.0,
+                            keyframes: [],
+                        ),
+                        skew_axis: Animated(
+                            base: 0.0,
+                            keyframes: [],
+                        ),
+                    ),
+                    opacity: Animated(
+                        base: 1.0,
+                        keyframes: [],
+                    ),
+                    kind: Group,
+                )),
+                version: 1,
+            ),
+            SerdeSlot(
+                value: Some(Node(
+                    name: "path1",
+                    parent: Some(SerKey(
+                        idx: 28,
+                        version: 1,
+                    )),
+                    children: [],
+                    visible: true,
+                    locked: false,
+                    transform: AnimatedTransform(
+                        anchor: Animated(
+                            base: DVec2(0.0, 0.0),
+                            keyframes: [],
+                        ),
+                        position: Animated(
+                            base: DVec2(0.0, 0.0),
+                            keyframes: [],
+                        ),
+                        scale: Animated(
+                            base: DVec2(100.0, 100.0),
+                            keyframes: [],
+                        ),
+                        rotation: Animated(
+                            base: Angle(0.0),
+                            keyframes: [],
+                        ),
+                        skew: Animated(
+                            base: 0.0,
+                            keyframes: [],
+                        ),
+                        skew_axis: Animated(
+                            base: 0.0,
+                            keyframes: [],
+                        ),
+                    ),
+                    opacity: Animated(
+                        base: 1.0,
+                        keyframes: [],
+                    ),
+                    kind: Shape(Path(Animated(
+                        base: VectorPath(
+                            anchors: [
+                                Anchor(
+                                    pos: DVec2(50.0, 35.0),
+                                    tan_in: DVec2(0.0, 0.0),
+                                    tan_out: DVec2(0.0, 0.0),
+                                    mode: Corner,
+                                ),
+                                Anchor(
+                                    pos: DVec2(50.0, 20.0),
+                                    tan_in: DVec2(0.0, 0.0),
+                                    tan_out: DVec2(0.0, 0.0),
+                                    mode: Corner,
+                                ),
+                            ],
+                            closed: false,
+                        ),
+                        keyframes: [],
+                    ))),
+                )),
+                version: 1,
+            ),
+            SerdeSlot(
+                value: Some(Node(
+                    name: "path1",
+                    parent: Some(SerKey(
+                        idx: 28,
+                        version: 1,
+                    )),
+                    children: [],
+                    visible: true,
+                    locked: false,
+                    transform: AnimatedTransform(
+                        anchor: Animated(
+                            base: DVec2(0.0, 0.0),
+                            keyframes: [],
+                        ),
+                        position: Animated(
+                            base: DVec2(0.0, 0.0),
+                            keyframes: [],
+                        ),
+                        scale: Animated(
+                            base: DVec2(100.0, 100.0),
+                            keyframes: [],
+                        ),
+                        rotation: Animated(
+                            base: Angle(0.0),
+                            keyframes: [],
+                        ),
+                        skew: Animated(
+                            base: 0.0,
+                            keyframes: [],
+                        ),
+                        skew_axis: Animated(
+                            base: 0.0,
+                            keyframes: [],
+                        ),
+                    ),
+                    opacity: Animated(
+                        base: 1.0,
+                        keyframes: [],
+                    ),
+                    kind: Style(Stroke(
+                        paint: Solid(
+                            color: Animated(
+                                base: Color(
+                                    r: 0.7333333333333333,
+                                    g: 0.6666666666666666,
+                                    b: 0.6,
+                                    a: 1.0,
+                                ),
+                                keyframes: [],
+                            ),
+                        ),
+                        width: Animated(
+                            base: 4.0,
+                            keyframes: [],
+                        ),
+                        cap: Butt,
+                        join: Miter,
+                        dash: None,
+                    )),
+                )),
+                version: 1,
+            ),
+            SerdeSlot(
+                value: Some(Node(
+                    name: "circle1",
+                    parent: None,
+                    children: [
+                        SerKey(
+                            idx: 32,
+                            version: 1,
+                        ),
+                        SerKey(
+                            idx: 33,
+                            version: 1,
+                        ),
+                    ],
+                    visible: true,
+                    locked: false,
+                    transform: AnimatedTransform(
+                        anchor: Animated(
+                            base: DVec2(0.0, 0.0),
+                            keyframes: [],
+                        ),
+                        position: Animated(
+                            base: DVec2(0.0, 0.0),
+                            keyframes: [],
+                        ),
+                        scale: Animated(
+                            base: DVec2(100.0, 100.0),
+                            keyframes: [],
+                        ),
+                        rotation: Animated(
+                            base: Angle(0.0),
+                            keyframes: [],
+                        ),
+                        skew: Animated(
+                            base: 0.0,
+                            keyframes: [],
+                        ),
+                        skew_axis: Animated(
+                            base: 0.0,
+                            keyframes: [],
+                        ),
+                    ),
+                    opacity: Animated(
+                        base: 1.0,
+                        keyframes: [],
+                    ),
+                    kind: Group,
+                )),
+                version: 1,
+            ),
+            SerdeSlot(
+                value: Some(Node(
+                    name: "circle1",
+                    parent: Some(SerKey(
+                        idx: 31,
+                        version: 1,
+                    )),
+                    children: [],
+                    visible: true,
+                    locked: false,
+                    transform: AnimatedTransform(
+                        anchor: Animated(
+                            base: DVec2(0.0, 0.0),
+                            keyframes: [],
+                        ),
+                        position: Animated(
+                            base: DVec2(0.0, 0.0),
+                            keyframes: [],
+                        ),
+                        scale: Animated(
+                            base: DVec2(100.0, 100.0),
+                            keyframes: [],
+                        ),
+                        rotation: Animated(
+                            base: Angle(0.0),
+                            keyframes: [],
+                        ),
+                        skew: Animated(
+                            base: 0.0,
+                            keyframes: [],
+                        ),
+                        skew_axis: Animated(
+                            base: 0.0,
+                            keyframes: [],
+                        ),
+                    ),
+                    opacity: Animated(
+                        base: 1.0,
+                        keyframes: [],
+                    ),
+                    kind: Shape(Path(Animated(
+                        base: VectorPath(
+                            anchors: [
+                                Anchor(
+                                    pos: DVec2(75.0, 60.0),
+                                    tan_in: DVec2(0.0, -13.807117462158203),
+                                    tan_out: DVec2(0.0, 13.807121276855469),
+                                    mode: Smooth,
+                                ),
+                                Anchor(
+                                    pos: DVec2(50.0, 85.0),
+                                    tan_in: DVec2(13.807117462158203, 0.0),
+                                    tan_out: DVec2(-13.807117462158203, 0.0),
+                                    mode: Symmetric,
+                                ),
+                                Anchor(
+                                    pos: DVec2(25.0, 60.0),
+                                    tan_in: DVec2(0.0, 13.807121276855469),
+                                    tan_out: DVec2(0.0, -13.807117462158203),
+                                    mode: Smooth,
+                                ),
+                                Anchor(
+                                    pos: DVec2(50.0, 35.0),
+                                    tan_in: DVec2(-13.807117462158203, 0.0),
+                                    tan_out: DVec2(13.807117462158203, 0.0),
+                                    mode: Symmetric,
+                                ),
+                            ],
+                            closed: true,
+                        ),
+                        keyframes: [],
+                    ))),
+                )),
+                version: 1,
+            ),
+            SerdeSlot(
+                value: Some(Node(
+                    name: "circle1",
+                    parent: Some(SerKey(
+                        idx: 31,
+                        version: 1,
+                    )),
+                    children: [],
+                    visible: true,
+                    locked: false,
+                    transform: AnimatedTransform(
+                        anchor: Animated(
+                            base: DVec2(0.0, 0.0),
+                            keyframes: [],
+                        ),
+                        position: Animated(
+                            base: DVec2(0.0, 0.0),
+                            keyframes: [],
+                        ),
+                        scale: Animated(
+                            base: DVec2(100.0, 100.0),
+                            keyframes: [],
+                        ),
+                        rotation: Animated(
+                            base: Angle(0.0),
+                            keyframes: [],
+                        ),
+                        skew: Animated(
+                            base: 0.0,
+                            keyframes: [],
+                        ),
+                        skew_axis: Animated(
+                            base: 0.0,
+                            keyframes: [],
+                        ),
+                    ),
+                    opacity: Animated(
+                        base: 1.0,
+                        keyframes: [],
+                    ),
+                    kind: Style(Fill(
+                        paint: Solid(
+                            color: Animated(
+                                base: Color(
+                                    r: 0.8666666666666667,
+                                    g: 0.8,
+                                    b: 0.6666666666666666,
+                                    a: 1.0,
+                                ),
+                                keyframes: [],
+                            ),
+                        ),
+                        rule: NonZero,
+                    )),
+                )),
+                version: 1,
+            ),
+        ],
+        assets: [
+            SerdeSlot(
+                value: None,
+                version: 0,
+            ),
+        ],
+        asset_order: [],
+        main: SerKey(
+            idx: 1,
+            version: 1,
+        ),
+    ),
+    clips: [
+        SerdeSlot(
+            value: None,
+            version: 0,
+        ),
+    ],
+    machines: [
+        SerdeSlot(
+            value: None,
+            version: 0,
+        ),
+    ],
+    start_machine: None,
+    clip_order: [],
+    machine_order: [],
+)

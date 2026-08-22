@@ -191,7 +191,7 @@ impl Plugin for AppPlugin {
                 GamePlugin,
                 DevToolsPlugin,
             ))
-            .add_systems(Startup, setup_camera)
+            .add_systems(Startup, (setup_camera, crate::game::load_card_art))
             .add_systems(
                 Update,
                 (

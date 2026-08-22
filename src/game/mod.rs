@@ -1,13 +1,16 @@
+mod art;
 mod card_defs;
 
 use bevy::ecs::query::QueryFilter;
 #[cfg(test)]
 use bevy::ecs::world::CommandQueue;
 
+pub use art::{CardArt, load_card_art};
 pub use card_defs::*;
 
 use std::collections::HashMap;
 
+use bevy::color::Mix;
 use bevy::prelude::*;
 use bevy::window::PrimaryWindow;
 use game_utils_bevy::game_feel::{GameFeel, SlowMotion};
@@ -27,6 +30,7 @@ pub const CARD_SIZE: Vec2 = Vec2::new(96.0, 128.0);
 pub const BOARD_MIN: Vec2 = Vec2::new(-480.0, -280.0);
 pub const BOARD_MAX: Vec2 = Vec2::new(480.0, 280.0);
 pub const NEARBY: f32 = 95.0;
+pub const CARD_BG_PATH: &str = "images/cards/card_bg.ren";
 
 #[derive(Component)]
 pub struct GameCleanup;
@@ -195,6 +199,7 @@ fn setup_game(
     mut session: ResMut<GameSession>,
     mut save: ResMut<SaveData>,
     manager: Res<SaveManager>,
+    art: Res<CardArt>,
     mut pending_spawn: ResMut<PendingSpawns>,
     mut pending_despawn: ResMut<PendingDespawns>,
     mut pending_passive: ResMut<PendingPassives>,
@@ -224,7 +229,7 @@ fn setup_game(
     spawn_card(
         &mut commands,
         &mut session,
-        None,
+        Some(&art),
         CardType::Gardener,
         Vec2::new(-360.0, 0.0),
         false,
@@ -232,7 +237,7 @@ fn setup_game(
     spawn_card(
         &mut commands,
         &mut session,
-        None,
+        Some(&art),
         CardType::BioSubstrate,
         Vec2::new(-180.0, 90.0),
         false,
@@ -240,7 +245,7 @@ fn setup_game(
     spawn_card(
         &mut commands,
         &mut session,
-        None,
+        Some(&art),
         CardType::BioSubstrate,
         Vec2::new(-180.0, -90.0),
         false,
@@ -248,7 +253,7 @@ fn setup_game(
     spawn_card(
         &mut commands,
         &mut session,
-        None,
+        Some(&art),
         CardType::SporePod,
         Vec2::new(20.0, 90.0),
         false,
@@ -256,7 +261,7 @@ fn setup_game(
     spawn_card(
         &mut commands,
         &mut session,
-        None,
+        Some(&art),
         CardType::NutrientSlime,
         Vec2::new(20.0, 0.0),
         false,
@@ -264,7 +269,7 @@ fn setup_game(
     spawn_card(
         &mut commands,
         &mut session,
-        None,
+        Some(&art),
         CardType::NutrientSlime,
         Vec2::new(20.0, -90.0),
         false,
@@ -314,7 +319,7 @@ fn offset_near(origin: Vec2) -> Vec2 {
 fn spawn_card(
     commands: &mut Commands,
     session: &mut GameSession,
-    assets: Option<&AssetServer>,
+    art: Option<&CardArt>,
     card_type: CardType,
     pos: Vec2,
     planted: bool,
@@ -327,14 +332,17 @@ fn spawn_card(
     }
 
     let pos = clamp_board(pos);
-    let mut sprite = Sprite {
-        color: card_type.color(),
+    // original look: white card frame tinted by type color, icon art in the
+    // upper window, name/status in the two lower bands
+    let mut body = Sprite {
+        color: Color::WHITE.mix(&card_type.color(), 0.45),
         custom_size: Some(CARD_SIZE),
         ..default()
     };
-    if let (Some(server), Some(path)) = (assets, card_type.asset_path()) {
-        sprite.image = server.load(path);
-        sprite.color = Color::WHITE;
+    if let Some(bg) = art.and_then(|a| a.bg.as_ref()) {
+        body.image = bg.clone();
+    } else {
+        body.color = card_type.color();
     }
 
     let e = commands
@@ -348,39 +356,45 @@ fn spawn_card(
                 is_working: false,
                 action: None,
             },
-            sprite,
+            body,
             Transform::from_translation(pos.extend(1.0)),
         ))
         .with_children(|p| {
+            // icon art in the upper window (fallback: soft disc)
+            let icon = match art.and_then(|a| a.icons.get(&card_type)) {
+                Some(handle) => Sprite {
+                    image: handle.clone(),
+                    custom_size: Some(Vec2::splat(58.0)),
+                    ..default()
+                },
+                None => Sprite {
+                    color: Color::srgba(1.0, 1.0, 1.0, 0.12),
+                    custom_size: Some(Vec2::splat(46.0)),
+                    ..default()
+                },
+            };
+            p.spawn((icon, Transform::from_xyz(0.0, 20.0, 0.5)));
             p.spawn((
                 CardTitle,
                 Text2d::new(card_type.label()),
                 TextFont {
-                    font_size: FontSize::Px(13.0),
+                    font_size: FontSize::Px(12.0),
                     ..default()
                 },
-                TextColor(Color::WHITE),
+                TextColor(Color::srgb(0.13, 0.16, 0.13)),
                 TextLayout::justify(Justify::Center),
-                Transform::from_xyz(0.0, 42.0, 1.0),
+                Transform::from_xyz(0.0, -26.0, 1.0),
             ));
             p.spawn((
                 CardStatus,
                 Text2d::new(""),
                 TextFont {
-                    font_size: FontSize::Px(11.0),
+                    font_size: FontSize::Px(9.0),
                     ..default()
                 },
-                TextColor(Color::srgb(0.9, 0.95, 0.85)),
+                TextColor(Color::srgb(0.25, 0.3, 0.25)),
                 TextLayout::justify(Justify::Center),
-                Transform::from_xyz(0.0, -44.0, 1.0),
-            ));
-            p.spawn((
-                Sprite {
-                    color: Color::srgba(1.0, 1.0, 1.0, 0.12),
-                    custom_size: Some(Vec2::splat(46.0)),
-                    ..default()
-                },
-                Transform::from_xyz(0.0, 2.0, 0.5),
+                Transform::from_xyz(0.0, -46.0, 1.0),
             ));
         })
         .id();
@@ -1248,17 +1262,10 @@ fn apply_pending_spawns(
     mut commands: Commands,
     mut session: ResMut<GameSession>,
     mut pending: ResMut<PendingSpawns>,
-    assets: Res<AssetServer>,
+    art: Res<CardArt>,
 ) {
     for (t, pos, planted) in pending.0.drain(..) {
-        spawn_card(
-            &mut commands,
-            &mut session,
-            Some(assets.as_ref()),
-            t,
-            pos,
-            planted,
-        );
+        spawn_card(&mut commands, &mut session, Some(&art), t, pos, planted);
     }
 }
 
@@ -1579,6 +1586,7 @@ fn process_restart(
     session: ResMut<GameSession>,
     save: ResMut<SaveData>,
     manager: Res<SaveManager>,
+    art: Res<CardArt>,
     pending_spawn: ResMut<PendingSpawns>,
     pending_despawn: ResMut<PendingDespawns>,
     pending_passive: ResMut<PendingPassives>,
@@ -1602,6 +1610,7 @@ fn process_restart(
         session,
         save,
         manager,
+        art,
         pending_spawn,
         pending_despawn,
         pending_passive,
@@ -1646,6 +1655,8 @@ mod tests {
         app.insert_resource(FreezeFrame::default());
         app.insert_resource(SlowMotion::default());
         app.insert_resource(ChromaticAberration::default());
+        // art is baked by load_card_art (registered in app.rs, not tests)
+        app.insert_resource(CardArt::default());
         app.add_plugins(bevy::app::TaskPoolPlugin::default());
         app.add_plugins(bevy::asset::AssetPlugin::default());
         app.init_asset::<Image>();

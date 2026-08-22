@@ -215,6 +215,9 @@ name = "arrayvec"
 version = "0.7.8"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "d3fb67a6e08acf24fdeccbac2cb6ac4305825bd1f117462e0e6f2f193345ad56"
+dependencies = [
+ "serde",
+]
 
 [[package]]
 name = "as-raw-xcb-connection"
@@ -1836,9 +1839,9 @@ dependencies = [
 
 [[package]]
 name = "cc"
-version = "1.4.3"
+version = "1.4.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "509591b7bcd67f4ef775afad7662703b4935daaa6ec0e5605cfb1090b32a2b6d"
+checksum = "0ad534f4357a5264cce5019c989cf66a4f0dc4e0d1b1d15f8aacec0ff7360273"
 dependencies = [
  "find-msvc-tools",
  "jobserver",
@@ -2464,9 +2467,9 @@ dependencies = [
 
 [[package]]
 name = "font-types"
-version = "0.12.3"
+version = "0.12.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "75382bc7392ef10aad10935f92fc3db36d2d4dad0e5d96d8d65e04f89a07ec39"
+checksum = "e64eb721ca85a34323425f4041adc5d82704d3782d5f8f03793bc012419dce23"
 dependencies = [
  "bytemuck",
 ]
@@ -2596,7 +2599,7 @@ dependencies = [
 [[package]]
 name = "game-utils"
 version = "0.1.2"
-source = "git+https://github.com/mlm-games/game-utils#7345697436e67969e7db6d45ca9e5b7a78b30b25"
+source = "git+https://github.com/mlm-games/game-utils#f2176b965cca0a1e38ef28db1e5ceb12f412d134"
 dependencies = [
  "directories",
  "fluent-bundle",
@@ -2610,12 +2613,12 @@ dependencies = [
 [[package]]
 name = "game-utils-bevy"
 version = "0.1.2"
-source = "git+https://github.com/mlm-games/game-utils#7345697436e67969e7db6d45ca9e5b7a78b30b25"
+source = "git+https://github.com/mlm-games/game-utils#f2176b965cca0a1e38ef28db1e5ceb12f412d134"
 dependencies = [
  "bevy",
  "game-utils",
  "rand",
- "repose-core 0.27.12",
+ "repose-core",
  "serde",
 ]
 
@@ -3083,6 +3086,12 @@ dependencies = [
 ]
 
 [[package]]
+name = "itoa"
+version = "1.0.18"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "8f42a60cbdf9a97f5d2305f08a87dc4e09308d1276d28c869c684d7777685682"
+
+[[package]]
 name = "jni"
 version = "0.21.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -3195,6 +3204,19 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "e2db585e1d738fc771bf08a151420d3ed193d9d895a36df7f6f8a9456b911ddc"
 
 [[package]]
+name = "kurbo"
+version = "0.13.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "4b60dfc32f652b926df6192e55525b16d186c69d47876c3ead4da5cc9f8450e2"
+dependencies = [
+ "arrayvec",
+ "euclid",
+ "polycool",
+ "serde",
+ "smallvec",
+]
+
+[[package]]
 name = "lazy_static"
 version = "1.5.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -3260,6 +3282,19 @@ name = "linebender_resource_handle"
 version = "0.1.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "d4a5ff6bcca6c4867b1c4fd4ef63e4db7436ef363e0ad7531d1558856bae64f4"
+
+[[package]]
+name = "linesweeper"
+version = "0.4.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "9c19728333c060c6569a53c9a0e56c4be0df52cb4e6e07a8fbe16084cecce769"
+dependencies = [
+ "arrayvec",
+ "kurbo",
+ "polycool",
+ "rustc-hash 2.1.3",
+ "smallvec",
+]
 
 [[package]]
 name = "linux-raw-sys"
@@ -3403,9 +3438,9 @@ checksum = "bc0287524726960e07b119cebd01678f852f147742ae0d925e6a520dca956126"
 
 [[package]]
 name = "naga"
-version = "30.0.0"
+version = "30.0.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "23bf0a141a9ab6f07dbb492db53245e464bc9db42f407772d9ae03d83a2c1033"
+checksum = "a616d2fb8c89516ac2723a581f69d6c18576046bed761bd6b305e5618e6ae130"
 dependencies = [
  "arrayvec",
  "bit-set",
@@ -3430,9 +3465,9 @@ dependencies = [
 
 [[package]]
 name = "naga-types"
-version = "30.0.0"
+version = "30.0.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "658200ddc25c6c7b860747516d132d1b284c0fafb7a380233acee9a72fb30e11"
+checksum = "590afbf58a6f4f62873cd5cff4468061844bafa1cdf399cc954537c22d768d49"
 dependencies = [
  "hashbrown 0.17.1",
  "indexmap",
@@ -4027,9 +4062,9 @@ dependencies = [
 
 [[package]]
 name = "ordered-float"
-version = "5.3.0"
+version = "5.5.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "b7d950ca161dc355eaf28f82b11345ed76c6e1f6eb1f4f4479e0323b9e2fbd0e"
+checksum = "8c7c9e0d9b23589f26070720bac724174bfec1083e82f7854cdd0267518343c0"
 dependencies = [
  "num-traits",
 ]
@@ -4231,6 +4266,15 @@ name = "pollster"
 version = "0.4.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "2f3a9f18d041e6d0e102a0a46750538147e5e8992d3b4873aaafee2520b00ce3"
+
+[[package]]
+name = "polycool"
+version = "0.4.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "50596ddc09eb5ad5f75cacd40209568e66df71baf86e1499a0e99c4cff12a5a6"
+dependencies = [
+ "arrayvec",
+]
 
 [[package]]
 name = "portable-atomic"
@@ -4524,6 +4568,162 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "d6f6ff9a378485b298a5286656da665ba74413d36db0979633275d2e708145d4"
 
 [[package]]
+name = "renamite-animation"
+version = "0.1.0"
+source = "git+https://github.com/mlm-games/renamite?rev=a98ec7cf0e8977e7a9c25166cc559dd882725329#a98ec7cf0e8977e7a9c25166cc559dd882725329"
+dependencies = [
+ "glam 0.33.5",
+ "renamite-geometry",
+ "serde",
+]
+
+[[package]]
+name = "renamite-behavior-common"
+version = "0.1.0"
+source = "git+https://github.com/mlm-games/renamite?rev=a98ec7cf0e8977e7a9c25166cc559dd882725329#a98ec7cf0e8977e7a9c25166cc559dd882725329"
+dependencies = [
+ "glam 0.33.5",
+ "renamite-animation",
+ "renamite-history",
+ "renamite-machine",
+ "renamite-model",
+ "serde",
+ "smallvec",
+ "thiserror 2.0.20",
+]
+
+[[package]]
+name = "renamite-geometry"
+version = "0.1.0"
+source = "git+https://github.com/mlm-games/renamite?rev=a98ec7cf0e8977e7a9c25166cc559dd882725329#a98ec7cf0e8977e7a9c25166cc559dd882725329"
+dependencies = [
+ "glam 0.33.5",
+ "kurbo",
+ "linesweeper",
+ "serde",
+ "thiserror 2.0.20",
+]
+
+[[package]]
+name = "renamite-history"
+version = "0.1.0"
+source = "git+https://github.com/mlm-games/renamite?rev=a98ec7cf0e8977e7a9c25166cc559dd882725329#a98ec7cf0e8977e7a9c25166cc559dd882725329"
+dependencies = [
+ "glam 0.33.5",
+ "renamite-animation",
+ "renamite-geometry",
+ "renamite-machine",
+ "renamite-model",
+ "serde",
+ "slotmap",
+ "smallvec",
+ "thiserror 2.0.20",
+]
+
+[[package]]
+name = "renamite-io-ren"
+version = "0.1.0"
+source = "git+https://github.com/mlm-games/renamite?rev=a98ec7cf0e8977e7a9c25166cc559dd882725329#a98ec7cf0e8977e7a9c25166cc559dd882725329"
+dependencies = [
+ "renamite-machine",
+ "renamite-model",
+ "ron",
+ "serde",
+ "thiserror 2.0.20",
+]
+
+[[package]]
+name = "renamite-machine"
+version = "0.1.0"
+source = "git+https://github.com/mlm-games/renamite?rev=a98ec7cf0e8977e7a9c25166cc559dd882725329#a98ec7cf0e8977e7a9c25166cc559dd882725329"
+dependencies = [
+ "glam 0.33.5",
+ "renamite-animation",
+ "renamite-geometry",
+ "renamite-model",
+ "serde",
+ "slotmap",
+ "thiserror 2.0.20",
+]
+
+[[package]]
+name = "renamite-model"
+version = "0.1.0"
+source = "git+https://github.com/mlm-games/renamite?rev=a98ec7cf0e8977e7a9c25166cc559dd882725329#a98ec7cf0e8977e7a9c25166cc559dd882725329"
+dependencies = [
+ "glam 0.33.5",
+ "kurbo",
+ "renamite-animation",
+ "renamite-geometry",
+ "renamite-text",
+ "serde",
+ "serde_json",
+ "slotmap",
+ "thiserror 2.0.20",
+]
+
+[[package]]
+name = "renamite-player"
+version = "0.1.0"
+source = "git+https://github.com/mlm-games/renamite?rev=a98ec7cf0e8977e7a9c25166cc559dd882725329#a98ec7cf0e8977e7a9c25166cc559dd882725329"
+dependencies = [
+ "glam 0.33.5",
+ "kurbo",
+ "renamite-animation",
+ "renamite-geometry",
+ "renamite-io-ren",
+ "renamite-machine",
+ "renamite-model",
+ "thiserror 2.0.20",
+]
+
+[[package]]
+name = "renamite-render-bridge"
+version = "0.1.0"
+source = "git+https://github.com/mlm-games/renamite?rev=a98ec7cf0e8977e7a9c25166cc559dd882725329#a98ec7cf0e8977e7a9c25166cc559dd882725329"
+dependencies = [
+ "glam 0.33.5",
+ "kurbo",
+ "lyon_path",
+ "lyon_tessellation",
+ "renamite-behavior-common",
+ "renamite-geometry",
+ "renamite-model",
+ "repose-canvas",
+ "repose-core",
+ "rustc-hash 2.1.3",
+ "slotmap",
+]
+
+[[package]]
+name = "renamite-render-offscreen"
+version = "0.1.0"
+source = "git+https://github.com/mlm-games/renamite?rev=a98ec7cf0e8977e7a9c25166cc559dd882725329#a98ec7cf0e8977e7a9c25166cc559dd882725329"
+dependencies = [
+ "anyhow",
+ "glam 0.33.5",
+ "image",
+ "pollster",
+ "renamite-behavior-common",
+ "renamite-model",
+ "renamite-render-bridge",
+ "repose-core",
+ "repose-render-wgpu",
+ "wgpu",
+]
+
+[[package]]
+name = "renamite-text"
+version = "0.1.0"
+source = "git+https://github.com/mlm-games/renamite?rev=a98ec7cf0e8977e7a9c25166cc559dd882725329#a98ec7cf0e8977e7a9c25166cc559dd882725329"
+dependencies = [
+ "kurbo",
+ "serde",
+ "thiserror 2.0.20",
+ "ttf-parser",
+]
+
+[[package]]
 name = "renderdoc-sys"
 version = "1.1.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -4531,12 +4731,12 @@ checksum = "19b30a45b0cd0bcca8037f3d0dc3421eaf95327a17cad11964fb8179b4fc4832"
 
 [[package]]
 name = "repose-app"
-version = "0.28.1"
+version = "0.28.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "e5f158a66789be671a10f09282faa2b828603d5a3b4dc9c8b8a40c9c9a3fcd6e"
+checksum = "9943d48dad1564d911ab9ea3e65470eface633a243837846cfef782d8177d9b9"
 dependencies = [
  "log",
- "repose-core 0.28.1",
+ "repose-core",
  "repose-text",
  "repose-ui",
  "rustc-hash 2.1.3",
@@ -4554,7 +4754,7 @@ dependencies = [
  "log",
  "parking_lot",
  "repose-app",
- "repose-core 0.28.1",
+ "repose-core",
  "repose-render-wgpu",
  "repose-text",
  "repose-ui",
@@ -4563,33 +4763,25 @@ dependencies = [
 ]
 
 [[package]]
-name = "repose-core"
-version = "0.27.12"
+name = "repose-canvas"
+version = "0.28.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "88110fd9526fafdda31e22d77b0398034510a627ed6f6477b6aefae54d9c49a8"
+checksum = "ddfca8ebe5f9c97d9f547707a3f2ea39fd92cc8f68c59577c5846a5ad472cadc"
 dependencies = [
- "bitflags 2.13.1",
- "log",
- "parking_lot",
- "repose-macros 0.27.12",
- "rustc-hash 2.1.3",
- "slotmap",
- "smallvec",
- "taffy 0.12.2",
- "thiserror 2.0.20",
- "web-time",
+ "repose-core",
+ "repose-ui",
 ]
 
 [[package]]
 name = "repose-core"
-version = "0.28.1"
+version = "0.28.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "a56b3a19154f17f976cede628f538367f9937cd82ec25ce53be1e99e0a667ab3"
+checksum = "da8f785866940ef5c7fc1d4b904b2e5eb059c0cc72fa81c2fe9e88f750ae24d6"
 dependencies = [
  "bitflags 2.13.1",
  "log",
  "parking_lot",
- "repose-macros 0.28.1",
+ "repose-macros",
  "rustc-hash 2.1.3",
  "slotmap",
  "smallvec",
@@ -4600,20 +4792,9 @@ dependencies = [
 
 [[package]]
 name = "repose-macros"
-version = "0.27.12"
+version = "0.28.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "35879a0076ec47e94f59a055b656316f6238ccff92b07639d7e489bb4fff4dcf"
-dependencies = [
- "proc-macro2",
- "quote",
- "syn 2.0.119",
-]
-
-[[package]]
-name = "repose-macros"
-version = "0.28.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "7e1c8442d0fba940586ca7002ac500a360f0b9472eb0b0c2331ef4b19a4f8e82"
+checksum = "41aea678ba54e444fd9ee2c05819b26095018d6303b259dfeced6e6e4bc9c924"
 dependencies = [
  "proc-macro2",
  "quote",
@@ -4622,11 +4803,11 @@ dependencies = [
 
 [[package]]
 name = "repose-material"
-version = "0.28.1"
+version = "0.28.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "d57c274ff22ef28764fc8b22b91e9bfc4662c3720a4be2dbf76d54f04aa740e9"
+checksum = "ae47d908548b299beb03ae212aa555813ade6954c1a161158deb8c485736c635"
 dependencies = [
- "repose-core 0.28.1",
+ "repose-core",
  "repose-text",
  "repose-ui",
  "web-time",
@@ -4634,9 +4815,9 @@ dependencies = [
 
 [[package]]
 name = "repose-render-wgpu"
-version = "0.28.1"
+version = "0.28.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "8382c5fddb6adaa7fa497920de826937b4b84405e040c487499cd3021d185222"
+checksum = "9e3a67578b737b65eb5907db17bfd884e5390c532ab268288071852d981fe185"
 dependencies = [
  "anyhow",
  "bytemuck",
@@ -4645,7 +4826,7 @@ dependencies = [
  "lyon_path",
  "lyon_tessellation",
  "pollster",
- "repose-core 0.28.1",
+ "repose-core",
  "repose-text",
  "wgpu",
  "winit",
@@ -4653,9 +4834,9 @@ dependencies = [
 
 [[package]]
 name = "repose-text"
-version = "0.28.1"
+version = "0.28.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "e527f777a65eed8c93bc8f46e3a56f48f5c5efcdeb09f645f4f771c8258aeee7"
+checksum = "7443eb4bb836dab401cbf4091aefbf1b3bcee91be598cbaa71b8555957ce301d"
 dependencies = [
  "font-awl",
  "log",
@@ -4669,13 +4850,13 @@ dependencies = [
 
 [[package]]
 name = "repose-tree"
-version = "0.28.1"
+version = "0.28.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "c61f55fd43f547e8b593300886070d9eabdff61429b387852d77b866777bd415"
+checksum = "ce4215ae385fe7ae4def2c6f71bd996f502b3afc62fc6d6868e5cee9a7539d1d"
 dependencies = [
  "log",
  "rapidhash",
- "repose-core 0.28.1",
+ "repose-core",
  "rustc-hash 2.1.3",
  "slotmap",
  "smallvec",
@@ -4683,12 +4864,12 @@ dependencies = [
 
 [[package]]
 name = "repose-ui"
-version = "0.28.1"
+version = "0.28.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "9efc3f854865608ae13a711971124ebc8fc194f5c7332c8e500f1eece02e24b5"
+checksum = "1e07af24b02d9a4effaba4d0e765574cd58a5cc016977f1afea42b4fdcc3af8d"
 dependencies = [
  "log",
- "repose-core 0.28.1",
+ "repose-core",
  "repose-text",
  "repose-tree",
  "rustc-hash 2.1.3",
@@ -4887,6 +5068,19 @@ dependencies = [
 ]
 
 [[package]]
+name = "serde_json"
+version = "1.0.151"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "c841b55ecdae098c80dcae9cf767f6f8a0c2cdb3416bbef72181df4d0fe73f14"
+dependencies = [
+ "itoa",
+ "memchr",
+ "serde",
+ "serde_core",
+ "zmij",
+]
+
+[[package]]
 name = "sharded-slab"
 version = "0.1.7"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -4957,6 +5151,7 @@ version = "1.1.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "bdd58c3c93c3d278ca835519292445cb4b0d4dc59ccfdf7ceadaab3f8aeb4038"
 dependencies = [
+ "serde",
  "version_check",
 ]
 
@@ -4965,6 +5160,9 @@ name = "smallvec"
 version = "1.15.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "8ed6a63f02c8539c91a8685a86f4099661ba3da017932f6ebbea6de3f0fa7c90"
+dependencies = [
+ "serde",
+]
 
 [[package]]
 name = "smithay-client-toolkit"
@@ -5196,6 +5394,7 @@ dependencies = [
 name = "tiny-settlements"
 version = "0.1.0"
 dependencies = [
+ "anyhow",
  "bevy",
  "bevy_rapier2d",
  "game-utils",
@@ -5204,8 +5403,12 @@ dependencies = [
  "getrandom 0.3.4",
  "getrandom 0.4.3",
  "rand",
+ "renamite-io-ren",
+ "renamite-player",
+ "renamite-render-bridge",
+ "renamite-render-offscreen",
  "repose-bevy",
- "repose-core 0.28.1",
+ "repose-core",
  "repose-material",
  "repose-render-wgpu",
  "repose-ui",
@@ -5762,9 +5965,9 @@ dependencies = [
 
 [[package]]
 name = "wgpu"
-version = "30.0.0"
+version = "30.0.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "6d8f4bd44d92da5270f03409dba9f952dab24f128e05d6a554926101d1bf9114"
+checksum = "527ccdf43dd5b2e8676eed9984ce00e2bbb0a1b85b70c1969dcb6cd2eb55ab9e"
 dependencies = [
  "arrayvec",
  "bitflags 2.13.1",
@@ -5792,9 +5995,9 @@ dependencies = [
 
 [[package]]
 name = "wgpu-core"
-version = "30.0.0"
+version = "30.0.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "08763620e76fc980bca7bf84de82568614487a53172dd968d89187282eb87fa2"
+checksum = "14c018fce9b6270aa203c2fdd56f3cce996713534bd757e4ea58c8560b121f14"
 dependencies = [
  "arrayvec",
  "bit-set",
@@ -5827,45 +6030,45 @@ dependencies = [
 
 [[package]]
 name = "wgpu-core-deps-apple"
-version = "30.0.0"
+version = "30.0.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "3283b6da70d7fc892de95840215aa36381b5d0cbc479e88ee2b173c7b992b225"
+checksum = "061f3d319a40d39d00b1ecc2c33b89fe21d4e6fe01859df3500a3a8ecccd6b68"
 dependencies = [
  "wgpu-hal",
 ]
 
 [[package]]
 name = "wgpu-core-deps-emscripten"
-version = "30.0.0"
+version = "30.0.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "85dcf2b2e5c2afb9eda64c570a87a4e570304bf39e52eddbaaf222d655b656ad"
+checksum = "d98b86cf4abf524a902dd35f18ca6a3f08fc2ae9847c8f10b48e30491b1f0b86"
 dependencies = [
  "wgpu-hal",
 ]
 
 [[package]]
 name = "wgpu-core-deps-wasm"
-version = "30.0.0"
+version = "30.0.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "2b6c13228950f36a56023976a6c4ee6714b27fb40e3d52a33f7d3bb6d109c0b1"
+checksum = "d260ca2ca8adc654f513a869bf3cac0b47f5b8d3f87803d6942015f8de597aae"
 dependencies = [
  "wgpu-hal",
 ]
 
 [[package]]
 name = "wgpu-core-deps-windows-linux-android"
-version = "30.0.0"
+version = "30.0.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "f76bc9c1c186ff3d9054e0d224c93c8c1c79d6653907c5249a5c1ea1a2cb1e43"
+checksum = "7586165fd5f6d881cb9ce4bb71f40d6caab2c0f1837e3fc1d9788a197fb6004f"
 dependencies = [
  "wgpu-hal",
 ]
 
 [[package]]
 name = "wgpu-hal"
-version = "30.0.0"
+version = "30.0.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "cf765132d8d5f50e192e7880464890c13f4e7457aafe8e5466e8174586e9f101"
+checksum = "b6b7fb58561a792bc237628ba0792e332de418fefe145f13b5ed8201e6d52f58"
 dependencies = [
  "android_system_properties",
  "arrayvec",
@@ -5919,9 +6122,9 @@ dependencies = [
 
 [[package]]
 name = "wgpu-naga-bridge"
-version = "30.0.0"
+version = "30.0.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "c9eaac644e5008925c78567d272b9d66ef83da55a53cc17fc7daade7bb6e66e5"
+checksum = "d2f62e73117bb7a62bfd9c5a5841438a823f6566c6442a808ee269d2d055c081"
 dependencies = [
  "naga",
  "wgpu-types",
@@ -5929,9 +6132,9 @@ dependencies = [
 
 [[package]]
 name = "wgpu-types"
-version = "30.0.0"
+version = "30.0.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "1a9c93c2b35edde326df60ffdee4c0f5864eac3011d6768b70d43f028ad93565"
+checksum = "99dad6f1fbdbbdb4c278a6508b059d44688f5cebddf78d005a46a31340269286"
 dependencies = [
  "bitflags 2.13.1",
  "bytemuck",
@@ -6487,6 +6690,12 @@ dependencies = [
  "quote",
  "syn 3.0.3",
 ]
+
+[[package]]
+name = "zmij"
+version = "1.0.23"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "29666d0abbfad1e3dc4dcf6144730dd3a3ab225bbbdac83319345b1b44ccfc1b"
 
 [[package]]
 name = "zune-core"

@@ -14,6 +14,8 @@ impl Plugin for ScreensPlugin {
             OnEnter(AppState::Loading),
             (|mut c: Commands, asset_server: Res<AssetServer>| {
                 c.insert_resource(LoadingTimer(Timer::from_seconds(0.5, TimerMode::Once)));
+                // card art is baked at Startup from .ren files; only the font
+                // needs async loading
                 let handles = vec![asset_server.load::<Font>("fonts/default.ttf").untyped()];
                 c.insert_resource(AssetsLoading(handles));
             },)
