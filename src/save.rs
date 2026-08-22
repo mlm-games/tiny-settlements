@@ -2,7 +2,7 @@ use bevy::prelude::*;
 use game_utils::save::Versioned;
 use serde::{Deserialize, Serialize};
 
-pub const SAVE_VERSION: u32 = 1;
+pub const SAVE_VERSION: u32 = 2;
 
 #[derive(Resource, Clone, Serialize, Deserialize)]
 pub struct SaveData {
@@ -12,6 +12,15 @@ pub struct SaveData {
     pub wins: u32,
     pub times_played: u32,
     pub settings: SettingsData,
+
+    #[serde(default)]
+    pub discovered_cards: Vec<String>,
+    #[serde(default)]
+    pub total_commissions_completed: u32,
+    #[serde(default)]
+    pub best_run_discoveries: u32,
+    #[serde(default)]
+    pub total_dew_earned: u64,
 }
 
 #[derive(Clone, Serialize, Deserialize)]
@@ -41,6 +50,10 @@ impl Default for SaveData {
             wins: 0,
             times_played: 0,
             settings: SettingsData::default(),
+            discovered_cards: Vec::new(),
+            total_commissions_completed: 0,
+            best_run_discoveries: 0,
+            total_dew_earned: 0,
         }
     }
 }

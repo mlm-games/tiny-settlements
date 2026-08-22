@@ -44,6 +44,7 @@ pub enum UiAction {
     SaveSettings,
     NextLanguage,
     SetLanguage(String),
+    BuyPack(crate::game::PackId),
 }
 
 #[derive(bevy::prelude::Resource, Clone)]
@@ -90,7 +91,7 @@ pub fn compose_root(
             ),
         )),
         AppState::InGame => {
-            let hud = ingame_hud(&st);
+            let hud = ingame_hud(&st, actions.clone());
             ZStack(Modifier::new().fill_max_size()).child((
                 hud,
                 AnimatedVisibility(
@@ -495,7 +496,7 @@ fn credits_ui(st: &SharedUi, actions: Arc<Mutex<Vec<UiAction>>>) -> View {
     .child(inner)
 }
 
-fn ingame_hud(st: &SharedUi) -> View {
+fn ingame_hud(st: &SharedUi, actions: Arc<Mutex<Vec<UiAction>>>) -> View {
     let tr = &st.translations;
     let focus_frac = if st.max_focus > 0.0 {
         (st.focus / st.max_focus).clamp(0.0, 1.0)
@@ -504,49 +505,119 @@ fn ingame_hud(st: &SharedUi) -> View {
     };
     let focus_pct = (focus_frac * 100.0) as i32;
 
-    let mut children = vec![
-        RText(format!(
-            "{}: {}",
-            t(tr, "biodiversity", "Biodiversity"),
-            st.biodiversity
-        ))
-        .size(22.0)
-        .color(RColor::WHITE),
+    let mut children: Vec<View> = vec![
+        // Top stats row: Biodiversity | Dew | Discoveries | Focus bar
+        Row(Modifier::new().gap(12.0).align_items(AlignItems::CENTER)).child((
+            RText(format!(
+                "{}: {}",
+                t(tr, "biodiversity", "Biodiversity"),
+                st.biodiversity
+            ))
+            .size(18.0)
+            .color(RColor::WHITE),
+            RText(format!("Dew: {}", st.dew)).size(18.0).color(col(120, 200, 255)),
+            RText(format!(
+                "Discoveries: {}/{}",
+                st.discoveries, st.total_discoveries
+            ))
+            .size(14.0)
+            .color(col(180, 220, 180)),
+        )),
         spacer(4.0),
         RText(format!("{}: {}", t(tr, "toxins", "Toxins"), st.toxins))
-            .size(16.0)
+            .size(14.0)
             .color(col(220, 120, 120)),
-        RText(format!(
-            "{}: {}%",
-            t(tr, "focus", "Gardener Focus"),
-            focus_pct
-        ))
-        .size(16.0)
-        .color(col(200, 230, 180)),
-        Column(
-            Modifier::new()
-                .width(220.0)
-                .height(10.0)
-                .background(col(30, 40, 32))
-                .clip_rounded(5.0),
-        )
-        .child(Column(
-            Modifier::new()
-                .width((220.0 * focus_frac).max(1.0))
-                .height(10.0)
-                .background(col(120, 200, 110))
-                .clip_rounded(5.0)
-                .align_self(AlignSelf::FLEX_START),
+        Row(Modifier::new().gap(8.0).align_items(AlignItems::CENTER)).child((
+            RText(format!(
+                "{}: {}%",
+                t(tr, "focus", "Gardener Focus"),
+                focus_pct
+            ))
+            .size(14.0)
+            .color(col(200, 230, 180)),
+            Column(
+                Modifier::new()
+                    .width(140.0)
+                    .height(8.0)
+                    .background(col(30, 40, 32))
+                    .clip_rounded(4.0),
+            )
+            .child(Column(
+                Modifier::new()
+                    .width((140.0 * focus_frac).max(1.0))
+                    .height(8.0)
+                    .background(col(120, 200, 110))
+                    .clip_rounded(4.0)
+                    .align_self(AlignSelf::FLEX_START),
+            )),
         )),
         spacer(6.0),
+    ];
+
+    // Commissions
+    if !st.commissions.is_empty() {
+        children.push(
+            RText("COMMISSIONS".to_string())
+                .size(13.0)
+                .color(col(220, 210, 150)),
+        );
+        for c in &st.commissions {
+            let label = format!("• {}  {}/{} (+{} Dew)", c.title, c.progress, c.need, c.reward);
+            children.push(RText(label).size(12.0).color(col(200, 210, 200)));
+        }
+        children.push(spacer(6.0));
+    }
+
+    // Seed Satchels
+    if !st.packs.is_empty() {
+        children.push(
+            RText("SEED SATCHELS".to_string())
+                .size(13.0)
+                .color(col(180, 200, 255)),
+        );
+        let mut row_children: Vec<View> = Vec::new();
+        for pack in &st.packs {
+            let label = if pack.unlocked {
+                format!("{} — {}", pack.name, pack.cost)
+            } else {
+                format!("{} — Locked", pack.name)
+            };
+            let pid = pack.id;
+            let can_buy = pack.unlocked && pack.can_afford && !st.game_over;
+            let acts = actions.clone();
+            // Use custom button; disabled visually if can't buy
+            let btn = FilledTonalButton(
+                Modifier::new().width(150.0).height(36.0).margin(2.0),
+                move || {
+                    if can_buy {
+                        push(&acts, UiAction::BuyPack(pid));
+                    }
+                },
+                ButtonConfig::default(),
+                move || {
+                    let col = if can_buy {
+                        RColor::WHITE
+                    } else {
+                        RColor::from_rgba(180, 180, 180, 255)
+                    };
+                    RText(label.clone()).size(12.0).color(col)
+                },
+            );
+            row_children.push(btn);
+        }
+        children.push(Row(Modifier::new().gap(6.0).align_items(AlignItems::CENTER)).child(row_children));
+        children.push(spacer(4.0));
+    }
+
+    children.push(
         RText(t(
             tr,
             "controls-hint",
-            "Drag cards to combine | Gardener to plant/apply | Esc pause | R restart",
+            "Drag cards to combine | Gardener to plant/apply | Drop on Seed Exchange to sell | Esc pause | R restart",
         ))
-        .size(13.0)
+        .size(11.0)
         .color(col(170, 180, 170)),
-    ];
+    );
 
     if st.toxins >= 3 && !st.game_over {
         children.push(
@@ -555,16 +626,16 @@ fn ingame_hud(st: &SharedUi) -> View {
                 "toxin-warning",
                 "Warning: toxins are destabilizing the ecosystem",
             ))
-            .size(14.0)
+            .size(12.0)
             .color(col(255, 140, 140)),
         );
     }
 
     if !st.status_line.is_empty() && !st.game_over {
-        children.push(spacer(8.0));
+        children.push(spacer(6.0));
         children.push(
             RText(st.status_line.clone())
-                .size(16.0)
+                .size(14.0)
                 .color(col(220, 210, 150)),
         );
     }
@@ -572,7 +643,7 @@ fn ingame_hud(st: &SharedUi) -> View {
     Column(
         Modifier::new()
             .fill_max_size()
-            .padding(16.0)
+            .padding(12.0)
             .align_items(AlignItems::FLEX_START)
             .justify_content(JustifyContent::FLEX_START),
     )

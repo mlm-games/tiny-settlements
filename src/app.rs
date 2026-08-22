@@ -85,6 +85,23 @@ pub enum OverlayMenu {
 #[derive(Resource, Default)]
 pub struct PendingUnpause(pub Option<Timer>);
 
+#[derive(Clone, Debug)]
+pub struct CommissionHud {
+    pub title: String,
+    pub progress: u32,
+    pub need: u32,
+    pub reward: u32,
+}
+
+#[derive(Clone, Debug)]
+pub struct PackHud {
+    pub id: crate::game::PackId,
+    pub name: String,
+    pub cost: u32,
+    pub unlocked: bool,
+    pub can_afford: bool,
+}
+
 #[derive(Resource, Clone)]
 pub struct SharedUi {
     pub phase: AppState,
@@ -111,6 +128,12 @@ pub struct SharedUi {
     pub saved_language: String,
     pub available_languages: Vec<String>,
     pub translations: HashMap<String, String>,
+    pub dew: u32,
+    pub discoveries: u32,
+    pub total_discoveries: u32,
+    pub total_commissions_completed: u32,
+    pub commissions: Vec<CommissionHud>,
+    pub packs: Vec<PackHud>,
 }
 
 impl Default for SharedUi {
@@ -140,6 +163,12 @@ impl Default for SharedUi {
             saved_language: "en".to_string(),
             available_languages: vec!["en".to_string()],
             translations: HashMap::new(),
+            dew: 0,
+            discoveries: 0,
+            total_discoveries: 23,
+            total_commissions_completed: 0,
+            commissions: Vec::new(),
+            packs: Vec::new(),
         }
     }
 }
@@ -185,7 +214,7 @@ impl Plugin for AppPlugin {
                     "mlm-games",
                     "tiny-settlements",
                     "save.ron",
-                    1,
+                    2,
                 )),
                 ScreensPlugin,
                 GamePlugin,
@@ -331,6 +360,7 @@ fn process_ui_actions(
     mut pending_unpause: ResMut<PendingUnpause>,
     mut locale: ResMut<LocaleResources>,
     mut restart: ResMut<RestartFlag>,
+    mut pack_queue: ResMut<crate::game::PackPurchaseQueue>,
 ) {
     let Ok(mut q) = bridge.actions.lock() else {
         return;
@@ -418,6 +448,9 @@ fn process_ui_actions(
                 if locale.available.contains(lang) {
                     locale.set_locale(lang);
                 }
+            }
+            UiAction::BuyPack(id) => {
+                pack_queue.0.push(id);
             }
         }
     }

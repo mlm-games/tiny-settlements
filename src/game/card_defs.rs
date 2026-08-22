@@ -202,6 +202,94 @@ impl CardType {
         )
     }
 
+    pub const fn sell_value(self) -> Option<u32> {
+        match self {
+            Self::BioSubstrate => Some(1),
+            Self::SporePod => Some(2),
+            Self::NutrientSlime => Some(1),
+            Self::ProcessedNutrients => Some(2),
+            Self::VineSeed => Some(3),
+            Self::FlutterwingSpore => Some(4),
+            Self::FertilizedVinePod => Some(5),
+            Self::LuminaCrystal => Some(5),
+            Self::GrazingSlugEgg => Some(4),
+            Self::RichMulch => Some(3),
+            Self::WasteToxin => Some(0),
+            Self::Gardener
+            | Self::BasicFungi
+            | Self::YoungVine
+            | Self::MatureVine
+            | Self::FlutterwingLarva
+            | Self::MatureFlutterwing
+            | Self::SymbioticAlgae
+            | Self::GrazingSlug
+            | Self::FertileSubstrate
+            | Self::ApexSpore
+            | Self::GrowingApex
+            | Self::GenesisBloom
+            | Self::None => None,
+        }
+    }
+
+    pub fn stable_id(self) -> &'static str {
+        match self {
+            Self::None => "none",
+            Self::Gardener => "gardener",
+            Self::BioSubstrate => "bio_substrate",
+            Self::SporePod => "spore_pod",
+            Self::NutrientSlime => "nutrient_slime",
+            Self::BasicFungi => "basic_fungi",
+            Self::ProcessedNutrients => "processed_nutrients",
+            Self::VineSeed => "vine_seed",
+            Self::YoungVine => "young_vine",
+            Self::MatureVine => "mature_vine",
+            Self::FlutterwingSpore => "flutterwing_spore",
+            Self::FlutterwingLarva => "flutterwing_larva",
+            Self::MatureFlutterwing => "mature_flutterwing",
+            Self::FertilizedVinePod => "fertilized_vine_pod",
+            Self::SymbioticAlgae => "symbiotic_algae",
+            Self::LuminaCrystal => "lumina_crystal",
+            Self::GrazingSlugEgg => "grazing_slug_egg",
+            Self::GrazingSlug => "grazing_slug",
+            Self::RichMulch => "rich_mulch",
+            Self::FertileSubstrate => "fertile_substrate",
+            Self::WasteToxin => "waste_toxin",
+            Self::ApexSpore => "apex_spore",
+            Self::GrowingApex => "growing_apex",
+            Self::GenesisBloom => "genesis_bloom",
+        }
+    }
+
+    pub fn from_stable_id(id: &str) -> Option<Self> {
+        Some(match id {
+            "none" => Self::None,
+            "gardener" => Self::Gardener,
+            "bio_substrate" => Self::BioSubstrate,
+            "spore_pod" => Self::SporePod,
+            "nutrient_slime" => Self::NutrientSlime,
+            "basic_fungi" => Self::BasicFungi,
+            "processed_nutrients" => Self::ProcessedNutrients,
+            "vine_seed" => Self::VineSeed,
+            "young_vine" => Self::YoungVine,
+            "mature_vine" => Self::MatureVine,
+            "flutterwing_spore" => Self::FlutterwingSpore,
+            "flutterwing_larva" => Self::FlutterwingLarva,
+            "mature_flutterwing" => Self::MatureFlutterwing,
+            "fertilized_vine_pod" => Self::FertilizedVinePod,
+            "symbiotic_algae" => Self::SymbioticAlgae,
+            "lumina_crystal" => Self::LuminaCrystal,
+            "grazing_slug_egg" => Self::GrazingSlugEgg,
+            "grazing_slug" => Self::GrazingSlug,
+            "rich_mulch" => Self::RichMulch,
+            "fertile_substrate" => Self::FertileSubstrate,
+            "waste_toxin" => Self::WasteToxin,
+            "apex_spore" => Self::ApexSpore,
+            "growing_apex" => Self::GrowingApex,
+            "genesis_bloom" => Self::GenesisBloom,
+            _ => return None,
+        })
+    }
+
     /// Texture path under `assets/`, when card art exists for this type.
     #[allow(dead_code)]
     pub fn asset_path(self) -> Option<&'static str> {
