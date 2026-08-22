@@ -159,6 +159,23 @@ pub fn pack_definition(id: PackId) -> &'static PackDefinition {
     PACKS.iter().find(|p| p.id == id).expect("unknown pack")
 }
 
+pub fn pack_id_from_str(s: &str) -> Option<PackId> {
+    match s {
+        "soil_and_spore" => Some(PackId::SoilAndSpore),
+        "pollinator" => Some(PackId::Pollinator),
+        "symbiosis" => Some(PackId::Symbiosis),
+        _ => None,
+    }
+}
+
+pub fn pack_id_to_str(id: PackId) -> &'static str {
+    match id {
+        PackId::SoilAndSpore => "soil_and_spore",
+        PackId::Pollinator => "pollinator",
+        PackId::Symbiosis => "symbiosis",
+    }
+}
+
 pub fn is_pack_unlocked(
     def: &PackDefinition,
     discoveries: u16,

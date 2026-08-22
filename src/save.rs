@@ -6,13 +6,14 @@ pub const SAVE_VERSION: u32 = 2;
 
 #[derive(Resource, Clone, Serialize, Deserialize)]
 pub struct SaveData {
-    #[serde(default)]
+    #[serde(default = "default_version")]
     pub version: u32,
     pub high_biodiversity: u32,
     pub wins: u32,
     pub times_played: u32,
     pub settings: SettingsData,
 
+    // Phase 1 meta (serde default = empty for v1 saves)
     #[serde(default)]
     pub discovered_cards: Vec<String>,
     #[serde(default)]
@@ -21,6 +22,10 @@ pub struct SaveData {
     pub best_run_discoveries: u32,
     #[serde(default)]
     pub total_dew_earned: u64,
+}
+
+fn default_version() -> u32 {
+    SAVE_VERSION
 }
 
 #[derive(Clone, Serialize, Deserialize)]

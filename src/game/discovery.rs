@@ -47,6 +47,38 @@ impl DiscoveryState {
         // Keep in sync with CardType enum.
         23
     }
+
+    pub fn total_possible(&self) -> u32 {
+        Self::total_unique_cards()
+    }
+
+    pub fn all_types() -> Vec<CardType> {
+        vec![
+            CardType::Gardener,
+            CardType::BioSubstrate,
+            CardType::SporePod,
+            CardType::NutrientSlime,
+            CardType::BasicFungi,
+            CardType::ProcessedNutrients,
+            CardType::VineSeed,
+            CardType::YoungVine,
+            CardType::MatureVine,
+            CardType::FlutterwingSpore,
+            CardType::FlutterwingLarva,
+            CardType::MatureFlutterwing,
+            CardType::FertilizedVinePod,
+            CardType::SymbioticAlgae,
+            CardType::LuminaCrystal,
+            CardType::GrazingSlugEgg,
+            CardType::GrazingSlug,
+            CardType::RichMulch,
+            CardType::FertileSubstrate,
+            CardType::WasteToxin,
+            CardType::ApexSpore,
+            CardType::GrowingApex,
+            CardType::GenesisBloom,
+        ]
+    }
 }
 
 #[cfg(test)]

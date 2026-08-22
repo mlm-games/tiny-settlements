@@ -49,6 +49,29 @@ const TRANSLATION_KEYS: &[&str] = &[
     "restart-hint",
     "you-win",
     "you-lose",
+    // Phase 1
+    "dew",
+    "discoveries",
+    "commissions",
+    "satchels",
+    "journal",
+    "journal-open",
+    "journal-close",
+    "reward",
+    "locked",
+    "buy",
+    "sold",
+    "pack-soil",
+    "pack-pollinator",
+    "pack-symbiosis",
+    "pack-draws",
+    "need-discoveries",
+    "need-commissions",
+    "exchange-hint",
+    "toast-discovered",
+    "commission-complete",
+    "empty-commissions",
+    "not-enough-dew",
 ];
 
 const LOCALES: &[(&str, &str)] = &[
@@ -85,7 +108,7 @@ pub enum OverlayMenu {
 #[derive(Resource, Default)]
 pub struct PendingUnpause(pub Option<Timer>);
 
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, Default)]
 pub struct CommissionHud {
     pub title: String,
     pub progress: u32,
@@ -93,6 +116,38 @@ pub struct CommissionHud {
     pub reward: u32,
 }
 
+// Phase 1 UI DTOs (new, template-accurate)
+#[derive(Clone, Debug, Default)]
+pub struct CommissionUi {
+    pub id: String,
+    pub title: String,
+    pub detail: String,
+    pub progress: u32,
+    pub target: u32,
+    pub reward_dew: u32,
+    pub complete: bool,
+}
+
+#[derive(Clone, Debug, Default)]
+pub struct PackUi {
+    pub id: String, // "soil_and_spore" | "pollinator" | "symbiosis"
+    pub name: String,
+    pub cost: u32,
+    pub draws: u32,
+    pub unlocked: bool,
+    pub affordable: bool,
+    pub locked_reason: String,
+}
+
+#[derive(Clone, Debug, Default)]
+pub struct JournalEntryUi {
+    pub id: String,
+    pub name: String,
+    pub discovered: bool,
+    pub blurb: String,
+}
+
+// Keep PackHud as alias for backward compat with game/mod.rs (will be phased out)
 #[derive(Clone, Debug)]
 pub struct PackHud {
     pub id: crate::game::PackId,
@@ -128,12 +183,22 @@ pub struct SharedUi {
     pub saved_language: String,
     pub available_languages: Vec<String>,
     pub translations: HashMap<String, String>,
+    // Phase 1 run HUD (legacy fields kept for compat)
     pub dew: u32,
     pub discoveries: u32,
     pub total_discoveries: u32,
     pub total_commissions_completed: u32,
     pub commissions: Vec<CommissionHud>,
     pub packs: Vec<PackHud>,
+    // Phase 1 deep UI (template-accurate)
+    pub discoveries_total: u32,
+    pub commissions_done_run: u32,
+    pub toast: String,
+    pub toast_timer: f32,
+    pub show_journal: bool,
+    pub commissions_ui: Vec<CommissionUi>,
+    pub packs_ui: Vec<PackUi>,
+    pub journal: Vec<JournalEntryUi>,
 }
 
 impl Default for SharedUi {
@@ -169,6 +234,14 @@ impl Default for SharedUi {
             total_commissions_completed: 0,
             commissions: Vec::new(),
             packs: Vec::new(),
+            discoveries_total: 24,
+            commissions_done_run: 0,
+            toast: String::new(),
+            toast_timer: 0.0,
+            show_journal: false,
+            commissions_ui: Vec::new(),
+            packs_ui: Vec::new(),
+            journal: Vec::new(),
         }
     }
 }
@@ -228,6 +301,7 @@ impl Plugin for AppPlugin {
                 (
                     apply_saved_settings,
                     sync_shared_ui,
+                    tick_toast,
                     sync_post_process_settings::<AppState>,
                     process_ui_actions,
                     handle_pause_input,
@@ -295,6 +369,10 @@ fn sync_shared_ui(
     mut channels: ResMut<AudioChannels>,
     loading: Option<Res<AssetsLoading>>,
     asset_server: Res<AssetServer>,
+    // Phase 1 optional resources (only present InGame, hence Option)
+    economy: Option<Res<crate::game::RunEconomy>>,
+    discovery: Option<Res<crate::game::DiscoveryState>>,
+    commissions: Option<Res<crate::game::CommissionBoard>>,
 ) {
     let Ok(mut ui) = bridge.shared.lock() else {
         return;
@@ -327,6 +405,119 @@ fn sync_shared_ui(
     channels.master = save.settings.master_volume;
     channels.sfx = save.settings.sfx_volume;
     channels.music = save.settings.music_volume;
+
+    // Phase 1 HUD snapshot
+    if let Some(eco) = economy.as_deref() {
+        ui.dew = eco.dew;
+    }
+    if let Some(disc) = discovery.as_deref() {
+        ui.discoveries = disc.count() as u32;
+        ui.total_discoveries = disc.total_possible();
+        ui.discoveries_total = disc.total_possible();
+        // Build journal entries (discovered first)
+        let mut entries: Vec<JournalEntryUi> = Vec::new();
+        for ctype in crate::game::DiscoveryState::all_types() {
+            let discovered = disc.contains(ctype);
+            entries.push(JournalEntryUi {
+                id: ctype.stable_id().to_string(),
+                name: ctype.label().to_string(),
+                discovered,
+                blurb: if discovered {
+                    format!("Discovered {}", ctype.label())
+                } else {
+                    String::new()
+                },
+            });
+        }
+        // Sort discovered first
+        entries.sort_by(|a, b| b.discovered.cmp(&a.discovered));
+        ui.journal = entries;
+    }
+    if let Some(com) = commissions.as_deref() {
+        ui.commissions_done_run = com.total_completed;
+        ui.total_commissions_completed = com.total_completed.max(save.total_commissions_completed);
+        // Map to both legacy and new UI DTOs
+        ui.commissions = com
+            .active
+            .iter()
+            .map(|c| CommissionHud {
+                title: c.title.to_string(),
+                progress: c.progress,
+                need: c.need,
+                reward: c.reward_dew,
+            })
+            .collect();
+        ui.commissions_ui = com
+            .active
+            .iter()
+            .map(|c| CommissionUi {
+                id: c.template_id.to_string(),
+                title: c.title.to_string(),
+                detail: format!("{} {}/{}", c.title, c.progress, c.need),
+                progress: c.progress,
+                target: c.need,
+                reward_dew: c.reward_dew,
+                complete: c.completed,
+            })
+            .collect();
+    }
+    // Packs rows (use helper or inline)
+    {
+        let dew = economy.as_deref().map(|e| e.dew).unwrap_or(0);
+        let disc = discovery.as_deref().map(|d| d.count() as u32).unwrap_or(0);
+        let done = commissions
+            .as_deref()
+            .map(|c| c.total_completed)
+            .unwrap_or(0)
+            .max(save.total_commissions_completed);
+        let mut packs_legacy: Vec<PackHud> = Vec::new();
+        let mut packs_ui: Vec<PackUi> = Vec::new();
+        for def in crate::game::PACKS {
+            let unlocked =
+                disc >= def.required_discoveries as u32 && done >= def.required_commissions as u32;
+            let affordable = dew >= def.cost;
+            let locked_reason = if disc < def.required_discoveries as u32 {
+                format!("Discover {} more", def.required_discoveries as u32 - disc)
+            } else if done < def.required_commissions as u32 {
+                format!(
+                    "Complete {} more commissions",
+                    def.required_commissions as u32 - done
+                )
+            } else {
+                String::new()
+            };
+            packs_legacy.push(PackHud {
+                id: def.id,
+                name: def.name.to_string(),
+                cost: def.cost,
+                unlocked,
+                can_afford: affordable,
+            });
+            packs_ui.push(PackUi {
+                id: crate::game::pack_id_to_str(def.id).to_string(),
+                name: def.name.to_string(),
+                cost: def.cost,
+                draws: def.draws as u32,
+                unlocked,
+                affordable,
+                locked_reason,
+            });
+        }
+        ui.packs = packs_legacy;
+        ui.packs_ui = packs_ui;
+    }
+}
+
+fn tick_toast(real: Res<Time<Real>>, bridge: Res<UiBridge>) {
+    let Ok(mut ui) = bridge.shared.lock() else {
+        return;
+    };
+    if ui.toast_timer > 0.0 {
+        ui.toast_timer = (ui.toast_timer - real.delta_secs()).max(0.0);
+        if ui.toast_timer <= 0.0 {
+            ui.toast.clear();
+        }
+    }
 }
 
 fn tick_pending_unpause(
@@ -449,8 +640,26 @@ fn process_ui_actions(
                     locale.set_locale(lang);
                 }
             }
-            UiAction::BuyPack(id) => {
-                pack_queue.0.push(id);
+            UiAction::BuyPack(ref id) => {
+                if let Some(pack) = crate::game::pack_id_from_str(id) {
+                    pack_queue.0.push(pack);
+                }
+            }
+            UiAction::OpenJournal => {
+                if let Ok(mut ui) = bridge.shared.lock() {
+                    ui.show_journal = true;
+                }
+            }
+            UiAction::CloseJournal => {
+                if let Ok(mut ui) = bridge.shared.lock() {
+                    ui.show_journal = false;
+                }
+            }
+            UiAction::DismissToast => {
+                if let Ok(mut ui) = bridge.shared.lock() {
+                    ui.toast.clear();
+                    ui.toast_timer = 0.0;
+                }
             }
         }
     }
@@ -463,6 +672,7 @@ fn handle_pause_input(
     mut overlay: ResMut<OverlayMenu>,
     mut pending_unpause: ResMut<PendingUnpause>,
     transition: Res<Transition<AppState>>,
+    bridge: Res<UiBridge>,
 ) {
     if *state.get() != AppState::InGame {
         return;
@@ -472,6 +682,19 @@ fn handle_pause_input(
     }
     if !keys.just_pressed(KeyCode::Escape) {
         return;
+    }
+    // Journal has priority over pause
+    if let Ok(mut ui) = bridge.shared.try_lock() {
+        if ui.show_journal {
+            ui.show_journal = false;
+            return;
+        }
+        if ui.toast_timer > 0.0 {
+            ui.toast.clear();
+            ui.toast_timer = 0.0;
+            // don't consume Esc for pause if toast was showing? still close toast first
+            return;
+        }
     }
     match *overlay {
         OverlayMenu::None if !paused.0 => {

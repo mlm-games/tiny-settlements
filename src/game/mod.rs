@@ -24,6 +24,7 @@ pub use events::{GameEvent, PackId, PendingGameEvents};
 pub use packs::{
     PackDefinition, PackEntry, PackPurchaseQueue, RunRng, PACKS, POLLINATOR_ENTRIES,
     SOIL_ENTRIES, SYMBIOSIS_ENTRIES, draw_for_pack, is_pack_unlocked, pack_definition,
+    pack_id_from_str, pack_id_to_str,
 };
 
 use std::collections::HashMap;
@@ -1527,6 +1528,7 @@ fn drain_game_events(
     mut discovery: ResMut<DiscoveryState>,
     mut counters: ResMut<RunCounters>,
     mut save: ResMut<SaveData>,
+    bridge: Res<crate::menus::UiBridge>,
 ) {
     if events.0.is_empty() {
         return;
@@ -1543,6 +1545,11 @@ fn drain_game_events(
                     save.discovered_cards = ids;
                     if discovery.count() as u32 > save.best_run_discoveries {
                         save.best_run_discoveries = discovery.count() as u32;
+                    }
+                    // toast for new discovery (non-modal)
+                    if let Ok(mut ui) = bridge.shared.try_lock() {
+                        ui.toast = format!("Discovered: {}", card.label());
+                        ui.toast_timer = 2.8;
                     }
                 }
                 *counters.created.entry(card).or_insert(0) += 1;
@@ -1593,6 +1600,7 @@ fn tick_commissions(
     counters: Res<RunCounters>,
     cards: Query<&Card>,
     discovery: Res<DiscoveryState>,
+    bridge: Res<crate::menus::UiBridge>,
 ) {
     if board.active.is_empty() {
         return;
@@ -1632,6 +1640,10 @@ fn tick_commissions(
         let title = board.active[idx].title.to_string();
         session.hint = format!("Commission complete: {} (+{} Dew)", title, reward);
         session.hint_timer = 3.5;
+        if let Ok(mut ui) = bridge.shared.try_lock() {
+            ui.toast = format!("Commission complete! +{} Dew", reward);
+            ui.toast_timer = 3.2;
+        }
         // replace with new template
         board.replace_completed(&mut rng.0, idx);
         // reset completed flag for new entry (from_template already false)
@@ -1790,7 +1802,7 @@ fn sync_hud(
     board: Res<CommissionBoard>,
     bridge: Res<crate::menus::UiBridge>,
     save: Res<SaveData>,
-    rng: Res<RunRng>,
+    _rng: Res<RunRng>,
 ) {
     let Ok(mut ui) = bridge.shared.lock() else {
         return;
@@ -1807,11 +1819,13 @@ fn sync_hud(
     ui.game_over = session.game_over;
     ui.victory = session.victory;
     ui.end_reason = session.end_reason.clone();
-    // Phase 1 economy & discovery
+    // Phase 1 economy & discovery (legacy)
     ui.dew = economy.dew;
     ui.discoveries = discovery.count() as u32;
     ui.total_discoveries = DiscoveryState::total_unique_cards();
+    ui.discoveries_total = DiscoveryState::total_unique_cards();
     ui.total_commissions_completed = save.total_commissions_completed.max(board.total_completed);
+    ui.commissions_done_run = board.total_completed;
     ui.commissions = board
         .active
         .iter()
@@ -1822,10 +1836,25 @@ fn sync_hud(
             reward: a.reward_dew,
         })
         .collect();
-    // pack HUD
+    // deep UI DTOs
+    ui.commissions_ui = board
+        .active
+        .iter()
+        .map(|a| crate::app::CommissionUi {
+            id: a.template_id.to_string(),
+            title: a.title.to_string(),
+            detail: format!("{} {}/{}", a.title, a.progress, a.need),
+            progress: a.progress,
+            target: a.need,
+            reward_dew: a.reward_dew,
+            complete: a.completed,
+        })
+        .collect();
+    // pack HUD (legacy + deep)
     let disc = discovery.count();
     let comms = ui.total_commissions_completed as u16;
     let mut packs = Vec::new();
+    let mut packs_ui = Vec::new();
     for def in PACKS {
         let unlocked = is_pack_unlocked(def, disc, comms);
         let can_afford = economy.can_afford(def.cost);
@@ -1836,8 +1865,51 @@ fn sync_hud(
             unlocked,
             can_afford,
         });
+        let locked_reason = if (disc as u32) < def.required_discoveries as u32 {
+            format!("Discover {} more", def.required_discoveries as u32 - disc as u32)
+        } else if done_need(&*board, &*save, def) {
+            // helper inline
+            format!(
+                "Complete {} more commissions",
+                def.required_commissions as u32 - board.total_completed.max(save.total_commissions_completed)
+            )
+        } else {
+            String::new()
+        };
+        packs_ui.push(crate::app::PackUi {
+            id: crate::game::pack_id_to_str(def.id).to_string(),
+            name: def.name.to_string(),
+            cost: def.cost,
+            draws: def.draws as u32,
+            unlocked,
+            affordable: can_afford,
+            locked_reason,
+        });
     }
     ui.packs = packs;
+    ui.packs_ui = packs_ui;
+    // journal (mirror app sync, but ensure InGame updates)
+    let mut journal: Vec<crate::app::JournalEntryUi> = Vec::new();
+    for ctype in DiscoveryState::all_types() {
+        let discovered = discovery.contains(ctype);
+        journal.push(crate::app::JournalEntryUi {
+            id: ctype.stable_id().to_string(),
+            name: ctype.label().to_string(),
+            discovered,
+            blurb: if discovered {
+                format!("Discovered {}", ctype.label())
+            } else {
+                String::new()
+            },
+        });
+    }
+    journal.sort_by(|a, b| b.discovered.cmp(&a.discovered));
+    ui.journal = journal;
+}
+
+fn done_need(board: &CommissionBoard, save: &SaveData, def: &PackDefinition) -> bool {
+    let done = board.total_completed.max(save.total_commissions_completed);
+    done < def.required_commissions as u32
 }
 
 /// Flush a win to disk exactly once per victory, including Phase 1 persistent stats.
