@@ -16,6 +16,12 @@ pub enum BlueprintId {
     PollinatorLodge,
     DewBasin,
     SeedArchive,
+    Greenhouse,
+    RainBarrel,
+    BeeHotel,
+    MushroomCellar,
+    ObservationStation,
+    IrrigationChannel,
 }
 
 impl BlueprintId {
@@ -27,6 +33,12 @@ impl BlueprintId {
             Self::PollinatorLodge => "pollinator_lodge",
             Self::DewBasin => "dew_basin",
             Self::SeedArchive => "seed_archive",
+            Self::Greenhouse => "greenhouse",
+            Self::RainBarrel => "rain_barrel",
+            Self::BeeHotel => "bee_hotel",
+            Self::MushroomCellar => "mushroom_cellar",
+            Self::ObservationStation => "observation_station",
+            Self::IrrigationChannel => "irrigation_channel",
         }
     }
 
@@ -38,6 +50,12 @@ impl BlueprintId {
             "pollinator_lodge" => Self::PollinatorLodge,
             "dew_basin" => Self::DewBasin,
             "seed_archive" => Self::SeedArchive,
+            "greenhouse" => Self::Greenhouse,
+            "rain_barrel" => Self::RainBarrel,
+            "bee_hotel" => Self::BeeHotel,
+            "mushroom_cellar" => Self::MushroomCellar,
+            "observation_station" => Self::ObservationStation,
+            "irrigation_channel" => Self::IrrigationChannel,
             _ => return None,
         })
     }
@@ -148,6 +166,80 @@ const ARCHIVE_INGREDIENTS: &[Ingredient] = &[
     },
 ];
 
+const GREENHOUSE_INGREDIENTS: &[Ingredient] = &[
+    Ingredient {
+        card: CardType::NurseryTray,
+        amount: 1,
+    },
+    Ingredient {
+        card: CardType::BioSubstrate,
+        amount: 2,
+    },
+];
+
+const RAINBARREL_INGREDIENTS: &[Ingredient] = &[
+    Ingredient {
+        card: CardType::DewBasin,
+        amount: 1,
+    },
+    Ingredient {
+        card: CardType::NutrientSlime,
+        amount: 1,
+    },
+];
+
+const BEEHOTEL_INGREDIENTS: &[Ingredient] = &[
+    Ingredient {
+        card: CardType::PollinatorLodge,
+        amount: 1,
+    },
+    Ingredient {
+        card: CardType::FlutterwingSpore,
+        amount: 1,
+    },
+];
+
+const MUSHROOMCELLAR_INGREDIENTS: &[Ingredient] = &[
+    Ingredient {
+        card: CardType::MyceliumBed,
+        amount: 1,
+    },
+    Ingredient {
+        card: CardType::SporePod,
+        amount: 1,
+    },
+    Ingredient {
+        card: CardType::RichMulch,
+        amount: 1,
+    },
+];
+
+const OBSERVATION_INGREDIENTS: &[Ingredient] = &[
+    Ingredient {
+        card: CardType::SeedArchive,
+        amount: 1,
+    },
+    Ingredient {
+        card: CardType::LuminaCrystal,
+        amount: 1,
+    },
+];
+
+const IRRIGATION_INGREDIENTS: &[Ingredient] = &[
+    Ingredient {
+        card: CardType::WaterTender,
+        amount: 1,
+    },
+    Ingredient {
+        card: CardType::FertileSubstrate,
+        amount: 1,
+    },
+    Ingredient {
+        card: CardType::NutrientSlime,
+        amount: 1,
+    },
+];
+
 pub const BLUEPRINTS: &[BlueprintDef] = &[
     BlueprintDef {
         id: BlueprintId::NurseryTray,
@@ -214,6 +306,66 @@ pub const BLUEPRINTS: &[BlueprintDef] = &[
             discoveries: 10,
             commissions: 3,
         },
+    },
+    BlueprintDef {
+        id: BlueprintId::Greenhouse,
+        name: "Greenhouse",
+        clue: "Glass and warmth preserve life through winter.",
+        output: CardType::Greenhouse,
+        ingredients: GREENHOUSE_INGREDIENTS,
+        dew_cost: 6,
+        build_seconds: 16.0,
+        unlock: BlueprintUnlock::DiscoverAll(&[CardType::NurseryTray, CardType::FertileSubstrate]),
+    },
+    BlueprintDef {
+        id: BlueprintId::RainBarrel,
+        name: "Rain Barrel",
+        clue: "A basin to catch the sky.",
+        output: CardType::RainBarrel,
+        ingredients: RAINBARREL_INGREDIENTS,
+        dew_cost: 4,
+        build_seconds: 12.0,
+        unlock: BlueprintUnlock::Discover(CardType::DewBasin),
+    },
+    BlueprintDef {
+        id: BlueprintId::BeeHotel,
+        name: "Bee Hotel",
+        clue: "A haven for wings.",
+        output: CardType::BeeHotel,
+        ingredients: BEEHOTEL_INGREDIENTS,
+        dew_cost: 5,
+        build_seconds: 14.0,
+        unlock: BlueprintUnlock::Discover(CardType::PollinatorLodge),
+    },
+    BlueprintDef {
+        id: BlueprintId::MushroomCellar,
+        name: "Mushroom Cellar",
+        clue: "Dark and damp, perfect for fungi.",
+        output: CardType::MushroomCellar,
+        ingredients: MUSHROOMCELLAR_INGREDIENTS,
+        dew_cost: 5,
+        build_seconds: 14.0,
+        unlock: BlueprintUnlock::Discover(CardType::MyceliumBed),
+    },
+    BlueprintDef {
+        id: BlueprintId::ObservationStation,
+        name: "Observation Station",
+        clue: "Watch the sky and know what comes.",
+        output: CardType::ObservationStation,
+        ingredients: OBSERVATION_INGREDIENTS,
+        dew_cost: 10,
+        build_seconds: 18.0,
+        unlock: BlueprintUnlock::DiscoveriesAndCommissions { discoveries: 12, commissions: 4 },
+    },
+    BlueprintDef {
+        id: BlueprintId::IrrigationChannel,
+        name: "Irrigation Channel",
+        clue: "Water shared is growth shared.",
+        output: CardType::IrrigationChannel,
+        ingredients: IRRIGATION_INGREDIENTS,
+        dew_cost: 8,
+        build_seconds: 16.0,
+        unlock: BlueprintUnlock::Discover(CardType::WaterTender),
     },
 ];
 
@@ -302,6 +454,7 @@ pub fn installation_production_mult(card: CardType, producer: CardType) -> f32 {
         (CardType::NurseryTray, t) if t.is_plant() => 1.30,
         (CardType::MyceliumBed, CardType::BasicFungi) => 1.35,
         (CardType::PollinatorLodge, CardType::MatureVine) => 1.20,
+        (CardType::Greenhouse, t) if t.is_plant() => 1.20,
         _ => 1.0,
     }
 }
@@ -309,6 +462,8 @@ pub fn installation_production_mult(card: CardType, producer: CardType) -> f32 {
 pub fn installation_growth_mult(card: CardType, growing: CardType) -> f32 {
     match card {
         CardType::NurseryTray if growing.is_seed_or_spore() || growing.is_plant() => 1.30,
+        CardType::Greenhouse if growing.is_seed_or_spore() || growing.is_plant() => 1.40,
+        CardType::RainBarrel if growing.is_plant() => 1.15,
         _ => 1.0,
     }
 }

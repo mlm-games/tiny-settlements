@@ -182,6 +182,9 @@ pub struct HabitatUi {
     pub substrate: String,
     pub plant: Option<String>,
     pub companion: Option<String>,
+    pub installation: Option<String>,
+    pub worker: Option<String>,
+    pub worker_fatigued: bool,
     pub synergy_name: Option<String>,
     pub production_mult: f32,
     pub is_monoculture: bool,
@@ -257,6 +260,10 @@ pub struct SharedUi {
     pub weather_active: bool,
     pub eco_growth_mult: f32,
     pub eco_production_mult: f32,
+    // Phase 5 workers/upkeep
+    pub upkeep: u32,
+    pub fatigued_workers: u32,
+    pub workers_hired: u32,
 }
 
 impl Default for SharedUi {
@@ -314,6 +321,9 @@ impl Default for SharedUi {
             weather_active: false,
             eco_growth_mult: 1.0,
             eco_production_mult: 1.0,
+            upkeep: 0,
+            fatigued_workers: 0,
+            workers_hired: 0,
         }
     }
 }

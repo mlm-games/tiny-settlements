@@ -2,6 +2,7 @@ use bevy::prelude::*;
 
 use super::{BlueprintId, CardType};
 use super::seasons::{Season, WeatherEvent};
+use super::workers::WorkerKind;
 
 /// Domain events for discovery / commissions / stats.
 /// Systems push events instead of directly mutating those subsystems.
@@ -65,6 +66,31 @@ pub enum GameEvent {
     HarvestGranted {
         dew: u32,
     },
+    WorkerHired {
+        kind: crate::game::workers::WorkerKind,
+    },
+    WorkerAssigned {
+        kind: crate::game::workers::WorkerKind,
+        habitat: Entity,
+    },
+    WorkerUnassigned {
+        kind: crate::game::workers::WorkerKind,
+    },
+    WorkerFatigued {
+        kind: crate::game::workers::WorkerKind,
+    },
+    WorkerRecovered {
+        kind: crate::game::workers::WorkerKind,
+    },
+    UpkeepPaid {
+        amount: u32,
+    },
+    UpkeepFailed {
+        missing: u32,
+    },
+    AdvancedStructureUnlocked {
+        blueprint: BlueprintId,
+    },
 }
 
 #[derive(Resource, Default)]
@@ -75,4 +101,5 @@ pub enum PackId {
     SoilAndSpore,
     Pollinator,
     Symbiosis,
+    Specialist,
 }

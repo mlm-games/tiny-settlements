@@ -39,6 +39,7 @@ pub struct HabitatBase {
     pub plant: Option<Entity>,
     pub companion: Option<Entity>,
     pub installation: Option<Entity>,
+    pub worker: Option<Entity>,
 }
 
 #[derive(Component)]

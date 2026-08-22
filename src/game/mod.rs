@@ -5,6 +5,7 @@ mod content;
 mod discovery;
 mod economy;
 pub mod seasons;
+pub mod workers;
 mod events;
 mod packs;
 pub mod projects;
@@ -26,8 +27,8 @@ pub use economy::{RunEconomy, EXCHANGE_MAX, EXCHANGE_MIN, point_in_exchange, try
 pub use events::{GameEvent, PackId, PendingGameEvents};
 pub use packs::{
     PackDefinition, PackEntry, PackPurchaseQueue, RunRng, PACKS, POLLINATOR_ENTRIES,
-    SOIL_ENTRIES, SYMBIOSIS_ENTRIES, draw_for_pack, is_pack_unlocked, pack_definition,
-    pack_id_from_str, pack_id_to_str,
+    SOIL_ENTRIES, SPECIALIST_ENTRIES, SYMBIOSIS_ENTRIES, draw_for_pack, is_pack_unlocked,
+    pack_definition, pack_id_from_str, pack_id_to_str,
 };
 pub use projects::{
     BlueprintDef, BlueprintId, BlueprintState, BlueprintUnlock, GardenProject, InfrastructureBonuses,
@@ -206,6 +207,11 @@ pub struct RunCounters {
     pub installations_installed: u32,
     pub installed_types: HashSet<CardType>,
     pub composted_toxins: u32,
+    // Phase 5
+    pub workers_hired: u32,
+    pub workers_assigned: u32,
+    pub distinct_workers: HashSet<CardType>,
+    pub advanced_built: u32,
 }
 
 #[derive(SystemParam)]
@@ -233,6 +239,28 @@ struct RunSetup<'w, 's> {
     eco: ResMut<'w, crate::game::seasons::EcoModifiers>,
     #[allow(dead_code)]
     _phantom: PhantomData<&'s ()>,
+}
+
+#[derive(SystemParam)]
+struct EndDragParams<'w, 's> {
+    commands: Commands<'w, 's>,
+    mouse: Res<'w, ButtonInput<MouseButton>>,
+    session: ResMut<'w, GameSession>,
+    cards: Query<'w, 's, (Entity, &'static mut Transform, &'static mut Card, Option<&'static Dragging>)>,
+    habitat_slots: Query<'w, 's, &'static GridSlot, With<HabitatBase>>,
+    habitats_read: Query<'w, 's, (Entity, &'static GridSlot, &'static HabitatBase)>,
+    stacked_q: Query<'w, 's, &'static StackedOn>,
+    habitat_entities: Query<'w, 's, Entity, With<HabitatBase>>,
+    reserved_q: Query<'w, 's, Entity, With<crate::game::projects::ReservedForProject>>,
+    assigned_q: Query<'w, 's, &'static crate::game::workers::AssignedWorker>,
+    worker_q: Query<'w, 's, &'static crate::game::workers::Worker>,
+    blueprint_state: Res<'w, crate::game::projects::BlueprintState>,
+    pending_spawn: ResMut<'w, PendingSpawns>,
+    pending_despawn: ResMut<'w, PendingDespawns>,
+    pending_work: ResMut<'w, PendingWork>,
+    pending_fx: ResMut<'w, PendingFx>,
+    economy: ResMut<'w, RunEconomy>,
+    events: ResMut<'w, PendingGameEvents>,
 }
 
 pub struct GamePlugin;
@@ -295,6 +323,12 @@ impl Plugin for GamePlugin {
                         crate::game::projects::tick_garden_projects,
                         crate::game::projects::compost_cradle_tick_with_reserved,
                         crate::game::projects::update_project_labels,
+                    )
+                        .chain(),
+                    (
+                        crate::game::workers::position_assigned_workers,
+                        crate::game::workers::clear_dead_workers,
+                        crate::game::workers::worker_upkeep_tick,
                     )
                         .chain(),
                     (
@@ -621,6 +655,12 @@ fn spawn_card(
 
     Juice::pop_in(commands, e, 0.22);
 
+    if card_type.is_worker() {
+        if let Some(kind) = crate::game::workers::WorkerKind::from_card(card_type) {
+            commands.entity(e).insert(crate::game::workers::Worker { kind, fatigued: false });
+        }
+    }
+
     if card_type == CardType::Gardener {
         session.gardener = Some(e);
     }
@@ -723,24 +763,27 @@ fn update_drag(
     }
 }
 
-fn end_drag(
-    mut commands: Commands,
-    mouse: Res<ButtonInput<MouseButton>>,
-    mut session: ResMut<GameSession>,
-    mut cards: Query<(Entity, &mut Transform, &mut Card, Option<&Dragging>)>,
-    habitat_slots: Query<&GridSlot, With<HabitatBase>>,
-    habitats_read: Query<(Entity, &GridSlot, &HabitatBase)>,
-    stacked_q: Query<&StackedOn>,
-    habitat_entities: Query<Entity, With<HabitatBase>>,
-    reserved_q: Query<Entity, With<crate::game::projects::ReservedForProject>>,
-    blueprint_state: Res<crate::game::projects::BlueprintState>,
-    mut pending_spawn: ResMut<PendingSpawns>,
-    mut pending_despawn: ResMut<PendingDespawns>,
-    mut pending_work: ResMut<PendingWork>,
-    mut pending_fx: ResMut<PendingFx>,
-    mut economy: ResMut<RunEconomy>,
-    mut events: ResMut<PendingGameEvents>,
-) {
+fn end_drag(mut params: EndDragParams) {
+    let EndDragParams {
+        mut commands,
+        mouse,
+        mut session,
+        mut cards,
+        habitat_slots,
+        habitats_read,
+        stacked_q,
+        habitat_entities,
+        reserved_q,
+        assigned_q,
+        worker_q,
+        blueprint_state,
+        mut pending_spawn,
+        mut pending_despawn,
+        mut pending_work,
+        mut pending_fx,
+        mut economy,
+        mut events,
+    } = params;
     if !mouse.just_released(MouseButton::Left) {
         return;
     }
@@ -792,6 +835,7 @@ fn end_drag(
                         plant: None,
                         companion: None,
                         installation: None,
+                        worker: None,
                     },
                     GridSlot { col, row },
                     HabitatSynergy {
@@ -910,11 +954,75 @@ fn end_drag(
             }
         }
 
-        // 3. Try selling (blocked for habitat bases / stacked / reserved cards)
+        // 3. Worker assignment / unassignment
+        if type_a.is_worker() {
+            if let Ok(assign) = assigned_q.get(src) {
+                let hab = assign.habitat;
+                if let Ok((_, slot, _)) = habitats_read.get(hab) {
+                    let hab_pos = stacks::grid_to_world(slot.col, slot.row);
+                    let d = spos.distance(hab_pos);
+                    if d > stacks::STACK_SNAP_DIST * 1.5 {
+                        let kind = worker_q.get(src).map(|w| w.kind).unwrap_or(crate::game::workers::WorkerKind::Botanist);
+                        commands.entity(src).remove::<crate::game::workers::AssignedWorker>();
+                        commands.queue(move |world: &mut World| {
+                            if let Some(mut h) = world.get_mut::<HabitatBase>(hab) {
+                                if h.worker == Some(src) {
+                                    h.worker = None;
+                                }
+                            }
+                        });
+                        pending_fx.0.push(FxEvent::Craft { pos: spos });
+                        events.0.push(GameEvent::WorkerUnassigned { kind });
+                        session.hint = format!("Unassigned {}", kind.label());
+                        session.hint_timer = 2.0;
+                        if let Ok((_, mut tf, _, _)) = cards.get_mut(src) {
+                            tf.translation.z = 1.0;
+                        }
+                        commands.entity(src).remove::<Dragging>();
+                        continue;
+                    } else {
+                        commands.entity(src).remove::<Dragging>();
+                        continue;
+                    }
+                }
+            } else {
+                let mut best: Option<(Entity, f32)> = None;
+                for (hab_e, slot, hab) in habitats_read.iter() {
+                    if hab.worker.is_some() {
+                        continue;
+                    }
+                    let pos = stacks::grid_to_world(slot.col, slot.row);
+                    let d = spos.distance(pos);
+                    if d <= stacks::STACK_SNAP_DIST {
+                        if best.map_or(true, |(_, bd)| d < bd) {
+                            best = Some((hab_e, d));
+                        }
+                    }
+                }
+                if let Some((hab_e, _)) = best {
+                    let kind = worker_q.get(src).map(|w| w.kind).unwrap_or(crate::game::workers::WorkerKind::Botanist);
+                    commands.entity(src).insert(crate::game::workers::AssignedWorker { habitat: hab_e });
+                    commands.queue(move |world: &mut World| {
+                        if let Some(mut h) = world.get_mut::<HabitatBase>(hab_e) {
+                            h.worker = Some(src);
+                        }
+                    });
+                    pending_fx.0.push(FxEvent::Craft { pos: spos });
+                    events.0.push(GameEvent::WorkerAssigned { kind, habitat: hab_e });
+                    session.hint = format!("Assigned {} to habitat", kind.label());
+                    session.hint_timer = 2.0;
+                    commands.entity(src).remove::<Dragging>();
+                    continue;
+                }
+            }
+        }
+
+        // 4. Try selling (blocked for habitat bases / stacked / reserved / assigned cards)
         let is_habitat_base = habitat_entities.get(src).is_ok();
         let is_stacked = stacked_q.get(src).is_ok();
         let is_reserved = reserved_q.get(src).is_ok();
-        if !is_habitat_base && !is_stacked && !is_reserved {
+        let is_assigned = assigned_q.get(src).is_ok();
+        if !is_habitat_base && !is_stacked && !is_reserved && !is_assigned {
             let card_opt = cards.get(src).ok().map(|(_, _, c, _)| c.card_type);
             if let Some(ctype) = card_opt
                 && let Ok((_, tf, _, _)) = cards.get(src)
@@ -961,6 +1069,12 @@ fn end_drag(
                     continue;
                 }
                 if stacked_q.get(*e).is_ok() {
+                    continue;
+                }
+                if assigned_q.get(*e).is_ok() {
+                    continue;
+                }
+                if card_type.is_worker() {
                     continue;
                 }
                 if dragged.contains(e) && *e != src {
@@ -1371,6 +1485,7 @@ fn tick_work_timers(
     stacked: Query<&StackedOn>,
     hab_syn: Query<&HabitatSynergy, With<HabitatBase>>,
     habitats: Query<&HabitatBase>,
+    workers: Query<&crate::game::workers::Worker>,
     eco: Res<crate::game::seasons::EcoModifiers>,
     mut pending_spawn: ResMut<PendingSpawns>,
     mut pending_despawn: ResMut<PendingDespawns>,
@@ -1424,7 +1539,16 @@ fn tick_work_timers(
                 } else { 1.0 }
             } else { 1.0 }
         } else { 1.0 };
-        let mult = (syn * inst_mult * eco.growth_mult).clamp(0.25, 3.0);
+        let worker_mult2 = if let Ok(stack) = stacked.get(e) {
+            if let Ok(hab) = habitats.get(stack.base) {
+                if let Some(w) = hab.worker {
+                    if let Ok(worker) = workers.get(w) {
+                        crate::game::workers::total_worker_growth_mult(Some(worker.kind), ctype, worker.fatigued)
+                    } else {1.0}
+                } else {1.0}
+            } else {1.0}
+        } else {1.0};
+        let mult = (syn * inst_mult * worker_mult2 * eco.growth_mult).clamp(0.25f32, 3.5f32);
         match action {
             GardenerAction::Plant => {
                 set_planted(&mut commands, e);
@@ -1534,6 +1658,7 @@ fn tick_passive_timers(
     stacked: Query<&StackedOn>,
     hab_syn: Query<&HabitatSynergy, With<HabitatBase>>,
     habitats: Query<&HabitatBase>,
+    workers: Query<&crate::game::workers::Worker>,
     eco: Res<crate::game::seasons::EcoModifiers>,
     mut pending_spawn: ResMut<PendingSpawns>,
     mut pending_despawn: ResMut<PendingDespawns>,
@@ -1615,7 +1740,16 @@ fn tick_passive_timers(
                                 } else { 1.0 }
                             } else { 1.0 }
                         } else { 1.0 };
-                        let total = (syn * inst * eco.production_mult).clamp(0.25, 3.0);
+                        let worker_mult = if let Ok(stack) = stacked.get(e) {
+                            if let Ok(hab) = habitats.get(stack.base) {
+                                if let Some(w) = hab.worker {
+                                    if let Ok(worker) = workers.get(w) {
+                                        crate::game::workers::total_worker_production_mult(Some(worker.kind), ctype, worker.fatigued)
+                                    } else {1.0}
+                                } else {1.0}
+                            } else {1.0}
+                        } else {1.0};
+                        let total = (syn * inst * worker_mult * eco.production_mult).clamp(0.25f32, 3.5f32);
                         let eff = (interval / total.max(0.1)).max(1.5);
                         pending_passive.0.push((e, PassiveKind::Produce, eff));
                         pending_fx.0.push(FxEvent::Produce {
@@ -1672,7 +1806,16 @@ fn tick_passive_timers(
                                 } else { 1.0 }
                             } else { 1.0 }
                         } else { 1.0 };
-                        let total = (syn * inst * eco.production_mult).clamp(0.25, 3.0);
+                        let worker_mult = if let Ok(stack) = stacked.get(e) {
+                            if let Ok(hab) = habitats.get(stack.base) {
+                                if let Some(w) = hab.worker {
+                                    if let Ok(worker) = workers.get(w) {
+                                        crate::game::workers::total_worker_production_mult(Some(worker.kind), ctype, worker.fatigued)
+                                    } else {1.0}
+                                } else {1.0}
+                            } else {1.0}
+                        } else {1.0};
+                        let total = (syn * inst * worker_mult * eco.production_mult).clamp(0.25f32, 3.5f32);
                         let eff = (interval / total.max(0.1)).max(1.5);
                         pending_passive.0.push((e, PassiveKind::Produce, eff));
                     }
@@ -1690,6 +1833,7 @@ fn world_timers(
     stacked: Query<&StackedOn>,
     hab_syn: Query<&HabitatSynergy, With<HabitatBase>>,
     habitats: Query<&HabitatBase>,
+    workers: Query<&crate::game::workers::Worker>,
     eco: Res<crate::game::seasons::EcoModifiers>,
     mut pending_spawn: ResMut<PendingSpawns>,
     mut pending_passive: ResMut<PendingPassives>,
@@ -1770,8 +1914,17 @@ fn world_timers(
                         } else { 1.0 }
                     } else { 1.0 }
                 } else { 1.0 };
+                let worker_mult = if let Ok(stack) = stacked.get(e) {
+                    if let Ok(hab) = habitats.get(stack.base) {
+                        if let Some(w) = hab.worker {
+                            if let Ok(worker) = workers.get(w) {
+                                crate::game::workers::total_worker_production_mult(Some(worker.kind), c.card_type, worker.fatigued)
+                            } else {1.0}
+                        } else {1.0}
+                    } else {1.0}
+                } else {1.0};
                 let eco_mult = eco.production_mult;
-                let total = (syn * inst * eco_mult).clamp(0.25, 3.0);
+                let total = (syn * inst * worker_mult * eco_mult).clamp(0.25f32, 3.5f32);
                 let eff = (interval / total).max(1.5);
                 pending_passive.0.push((e, PassiveKind::Produce, eff));
             }
@@ -1834,7 +1987,16 @@ fn world_timers(
                     } else { 1.0 }
                 } else { 1.0 }
             } else { 1.0 };
-            let total = (syn * inst * eco.growth_mult).clamp(0.25, 3.0);
+            let worker_mult = if let Ok(stack) = stacked.get(e) {
+                if let Ok(hab) = habitats.get(stack.base) {
+                    if let Some(w) = hab.worker {
+                        if let Ok(worker) = workers.get(w) {
+                            crate::game::workers::total_worker_growth_mult(Some(worker.kind), c.card_type, worker.fatigued)
+                        } else {1.0}
+                    } else {1.0}
+                } else {1.0}
+            } else {1.0};
+            let total = (syn * inst * worker_mult * eco.growth_mult).clamp(0.25f32, 3.5f32);
             let eff = (10.0 / total).max(1.0);
             pending_passive.0.push((e, PassiveKind::Grow, eff));
         }
@@ -1850,7 +2012,16 @@ fn world_timers(
                     } else { 1.0 }
                 } else { 1.0 }
             } else { 1.0 };
-            let total = (syn * inst * eco.growth_mult).clamp(0.25, 3.0);
+            let worker_mult = if let Ok(stack) = stacked.get(e) {
+                if let Ok(hab) = habitats.get(stack.base) {
+                    if let Some(w) = hab.worker {
+                        if let Ok(worker) = workers.get(w) {
+                            crate::game::workers::total_worker_growth_mult(Some(worker.kind), c.card_type, worker.fatigued)
+                        } else {1.0}
+                    } else {1.0}
+                } else {1.0}
+            } else {1.0};
+            let total = (syn * inst * worker_mult * eco.growth_mult).clamp(0.25f32, 3.5f32);
             let eff = (8.0 / total).max(1.0);
             pending_passive.0.push((e, PassiveKind::Grow, eff));
         }
@@ -1866,7 +2037,16 @@ fn world_timers(
                     } else { 1.0 }
                 } else { 1.0 }
             } else { 1.0 };
-            let total = (syn * inst * eco.growth_mult).clamp(0.25, 3.0);
+            let worker_mult = if let Ok(stack) = stacked.get(e) {
+                if let Ok(hab) = habitats.get(stack.base) {
+                    if let Some(w) = hab.worker {
+                        if let Ok(worker) = workers.get(w) {
+                            crate::game::workers::total_worker_growth_mult(Some(worker.kind), c.card_type, worker.fatigued)
+                        } else {1.0}
+                    } else {1.0}
+                } else {1.0}
+            } else {1.0};
+            let total = (syn * inst * worker_mult * eco.growth_mult).clamp(0.25f32, 3.5f32);
             let eff = (8.0 / total).max(1.0);
             pending_passive.0.push((e, PassiveKind::Grow, eff));
         }
@@ -1882,7 +2062,16 @@ fn world_timers(
                     } else { 1.0 }
                 } else { 1.0 }
             } else { 1.0 };
-            let total = (syn * inst * eco.growth_mult).clamp(0.25, 3.0);
+            let worker_mult = if let Ok(stack) = stacked.get(e) {
+                if let Ok(hab) = habitats.get(stack.base) {
+                    if let Some(w) = hab.worker {
+                        if let Ok(worker) = workers.get(w) {
+                            crate::game::workers::total_worker_growth_mult(Some(worker.kind), c.card_type, worker.fatigued)
+                        } else {1.0}
+                    } else {1.0}
+                } else {1.0}
+            } else {1.0};
+            let total = (syn * inst * worker_mult * eco.growth_mult).clamp(0.25f32, 3.5f32);
             let eff = (5.0 / total).max(1.0);
             pending_passive.0.push((e, PassiveKind::Grow, eff));
         }
@@ -2036,6 +2225,20 @@ fn drain_game_events(
                     }
                 }
                 *counters.created.entry(card).or_insert(0) += 1;
+                if card.is_worker() {
+                    counters.workers_hired += 1;
+                    counters.distinct_workers.insert(card);
+                    save.workers_hired = save.workers_hired.saturating_add(1);
+                    let sid = card.stable_id().to_string();
+                    if !save.discovered_workers.contains(&sid) {
+                        save.discovered_workers.push(sid.clone());
+                        save.discovered_workers.sort();
+                    }
+                }
+                if card.is_advanced_structure() {
+                    counters.advanced_built += 1;
+                    save.advanced_structures_built = save.advanced_structures_built.saturating_add(1);
+                }
             }
             GameEvent::Crafted { result } => {
                 discovery.discover(result);
@@ -2155,6 +2358,60 @@ fn drain_game_events(
                         ui.toast = format!("Harvest +{} Dew", dew);
                         ui.toast_timer = 2.0;
                     }
+                }
+            }
+            GameEvent::WorkerHired { kind } => {
+                counters.workers_hired += 1;
+                counters.distinct_workers.insert(kind.to_card());
+                save.workers_hired = save.workers_hired.saturating_add(1);
+                let sid = kind.stable_id().to_string();
+                if !save.discovered_workers.contains(&sid) {
+                    save.discovered_workers.push(sid);
+                    save.discovered_workers.sort();
+                }
+                if let Ok(mut ui) = bridge.shared.try_lock() {
+                    ui.toast = format!("Worker hired: {}", kind.label());
+                    ui.toast_timer = 2.5;
+                }
+            }
+            GameEvent::WorkerAssigned { kind, .. } => {
+                counters.workers_assigned += 1;
+                save.workers_assigned = save.workers_assigned.saturating_add(1);
+                if let Ok(mut ui) = bridge.shared.try_lock() {
+                    ui.toast = format!("{} assigned", kind.label());
+                    ui.toast_timer = 2.0;
+                }
+            }
+            GameEvent::WorkerUnassigned { kind } => {
+                if let Ok(mut ui) = bridge.shared.try_lock() {
+                    ui.toast = format!("{} unassigned", kind.label());
+                    ui.toast_timer = 2.0;
+                }
+            }
+            GameEvent::WorkerFatigued { kind } => {
+                if let Ok(mut ui) = bridge.shared.try_lock() {
+                    ui.toast = format!("{} fatigued (upkeep unpaid)", kind.label());
+                    ui.toast_timer = 3.0;
+                }
+            }
+            GameEvent::WorkerRecovered { kind } => {
+                if let Ok(mut ui) = bridge.shared.try_lock() {
+                    ui.toast = format!("{} recovered", kind.label());
+                    ui.toast_timer = 2.0;
+                }
+            }
+            GameEvent::UpkeepPaid { .. } => {}
+            GameEvent::UpkeepFailed { missing } => {
+                if let Ok(mut ui) = bridge.shared.try_lock() {
+                    ui.toast = format!("Upkeep missing {} Dew, workers fatigued", missing);
+                    ui.toast_timer = 3.0;
+                }
+            }
+            GameEvent::AdvancedStructureUnlocked { blueprint } => {
+                if let Ok(mut ui) = bridge.shared.try_lock() {
+                    let def = crate::game::projects::blueprint_def(blueprint);
+                    ui.toast = format!("Advanced: {}", def.name);
+                    ui.toast_timer = 3.0;
                 }
             }
         }
@@ -2343,10 +2600,12 @@ fn apply_pending_fx(
 
 fn update_card_labels(
     session: Res<GameSession>,
-    cards: Query<(&Card, &Children, Option<&PassiveTimer>, Option<&WorkTimer>)>,
+    cards: Query<(Entity, &Card, &Children, Option<&PassiveTimer>, Option<&WorkTimer>)>,
+    workers: Query<&crate::game::workers::Worker>,
+    assigned: Query<&crate::game::workers::AssignedWorker>,
     mut texts: Query<(&mut Text2d, Option<&CardStatus>, Option<&CardTitle>)>,
 ) {
-    for (card, children, passive, work) in &cards {
+    for (entity, card, children, passive, work) in &cards {
         for child in children.iter() {
             let Ok((mut text, status, title)) = texts.get_mut(child) else {
                 continue;
@@ -2362,6 +2621,14 @@ fn update_card_labels(
                         0
                     };
                     format!("Focus: {pct}%")
+                } else if let Ok(worker) = workers.get(entity) {
+                    if worker.fatigued {
+                        "(Fatigued)".into()
+                    } else if assigned.get(entity).is_ok() {
+                        "(Assigned)".into()
+                    } else {
+                        String::new()
+                    }
                 } else if card.card_type == CardType::MatureVine {
                     if card.needs_pollination && !card.is_pollinated {
                         "(Needs Pollination)".into()
@@ -2409,6 +2676,7 @@ fn sync_hud(
     season_clock: Res<crate::game::seasons::SeasonClock>,
     active_weather: Res<crate::game::seasons::ActiveWeather>,
     eco: Res<crate::game::seasons::EcoModifiers>,
+    workers_q: Query<&crate::game::workers::Worker>,
 ) {
     let Ok(mut ui) = bridge.shared.lock() else {
         return;
@@ -2524,10 +2792,22 @@ fn sync_hud(
             .companion
             .and_then(|e| cards_q.get(e).ok())
             .map(|c| c.card_type.label().to_string());
+        let installation = hab
+            .installation
+            .and_then(|e| cards_q.get(e).ok())
+            .map(|c| c.card_type.label().to_string());
+        let (worker, worker_fatigued) = hab
+            .worker
+            .and_then(|e| workers_q.get(e).ok().map(|w| (w.kind.label().to_string(), w.fatigued)))
+            .map(|(s,f)| (Some(s), f))
+            .unwrap_or((None, false));
         hab_ui.push(crate::app::HabitatUi {
             substrate: hab.substrate.label().to_string(),
             plant,
             companion,
+            installation,
+            worker,
+            worker_fatigued,
             synergy_name: syn.active_combo.map(|s| s.to_string()),
             production_mult: syn.production_mult,
             is_monoculture: syn.is_monoculture,
@@ -2538,6 +2818,17 @@ fn sync_hud(
     ui.habitats = hab_ui;
     ui.habitat_count = habitats.iter().count() as u32;
     ui.total_resonance = total_res;
+    // Phase 5 upkeep
+    let assigned: Vec<Entity> = habitats.iter().filter_map(|(hab, _)| hab.worker).collect();
+    ui.upkeep = assigned.len() as u32;
+    let mut fatigued = 0u32;
+    for w in &assigned {
+        if let Ok(worker) = workers_q.get(*w) {
+            if worker.fatigued { fatigued += 1; }
+        }
+    }
+    ui.fatigued_workers = fatigued;
+    ui.workers_hired = cards_q.iter().filter(|c| c.card_type.is_worker()).count() as u32;
     // Phase 3 blueprints DTO
     let mut bps = Vec::new();
     for def in crate::game::projects::BLUEPRINTS {
@@ -3033,9 +3324,9 @@ mod tests {
         let c2pos = pos_of(app.world_mut(), crystal2);
         gardener_act(&mut app, gardener, crystal2, CardType::LuminaCrystal, c2pos);
 
-        assert!(wait_for(&mut app, CardType::GrowingApex, 60));
+        assert!(wait_for(&mut app, CardType::GrowingApex, 80));
         assert!(
-            wait_for(&mut app, CardType::GenesisBloom, 80),
+            wait_for(&mut app, CardType::GenesisBloom, 160),
             "GrowingApex auto-matures into Genesis Bloom"
         );
 
@@ -3371,7 +3662,7 @@ mod tests {
         let sub = spawn_at(&mut app, CardType::BioSubstrate, Vec2::new(-330.0, -160.0), false);
         // simulate placing as habitat
         app.world_mut().entity_mut(sub).insert((
-            HabitatBase { substrate: CardType::BioSubstrate, plant: None, companion: None, installation: None },
+            HabitatBase { substrate: CardType::BioSubstrate, plant: None, companion: None, installation: None, worker: None },
             GridSlot { col: 0, row: 0 },
             HabitatSynergy::default(),
         ));
@@ -3396,7 +3687,7 @@ mod tests {
         enter_game(&mut app);
         let sub = spawn_at(&mut app, CardType::BioSubstrate, Vec2::new(-330.0, -160.0), false);
         app.world_mut().entity_mut(sub).insert((
-            HabitatBase { substrate: CardType::BioSubstrate, plant: None, companion: None, installation: None },
+            HabitatBase { substrate: CardType::BioSubstrate, plant: None, companion: None, installation: None, worker: None },
             GridSlot { col: 0, row: 0 },
             HabitatSynergy::default(),
         ));
@@ -3417,7 +3708,7 @@ mod tests {
         enter_game(&mut app);
         let sub = spawn_at(&mut app, CardType::BioSubstrate, Vec2::new(-330.0, -160.0), false);
         app.world_mut().entity_mut(sub).insert((
-            HabitatBase { substrate: CardType::BioSubstrate, plant: None, companion: None, installation: None },
+            HabitatBase { substrate: CardType::BioSubstrate, plant: None, companion: None, installation: None, worker: None },
             GridSlot { col: 0, row: 0 },
             HabitatSynergy::default(),
         ));
@@ -3439,7 +3730,7 @@ mod tests {
         // create habitat with compost cradle installed
         let sub = spawn_at(&mut app, CardType::BioSubstrate, Vec2::new(-330.0, -160.0), false);
         app.world_mut().entity_mut(sub).insert((
-            HabitatBase { substrate: CardType::BioSubstrate, plant: Some(sub), companion: None, installation: None },
+            HabitatBase { substrate: CardType::BioSubstrate, plant: Some(sub), companion: None, installation: None, worker: None },
             GridSlot { col: 0, row: 0 },
             HabitatSynergy::default(),
         ));

@@ -2,7 +2,7 @@ use bevy::prelude::*;
 use game_utils::save::Versioned;
 use serde::{Deserialize, Serialize};
 
-pub const SAVE_VERSION: u32 = 4;
+pub const SAVE_VERSION: u32 = 5;
 
 #[derive(Resource, Clone, Serialize, Deserialize)]
 pub struct SaveData {
@@ -36,6 +36,15 @@ pub struct SaveData {
     pub best_year: u32,
     #[serde(default)]
     pub weather_events_seen: u32,
+    // Phase 5
+    #[serde(default)]
+    pub workers_hired: u32,
+    #[serde(default)]
+    pub workers_assigned: u32,
+    #[serde(default)]
+    pub discovered_workers: Vec<String>,
+    #[serde(default)]
+    pub advanced_structures_built: u32,
 }
 
 fn default_version() -> u32 {
@@ -79,6 +88,10 @@ impl Default for SaveData {
             seasons_survived: 0,
             best_year: 0,
             weather_events_seen: 0,
+            workers_hired: 0,
+            workers_assigned: 0,
+            discovered_workers: Vec::new(),
+            advanced_structures_built: 0,
         }
     }
 }

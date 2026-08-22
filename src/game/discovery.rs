@@ -45,7 +45,7 @@ impl DiscoveryState {
     pub fn total_unique_cards() -> u32 {
         // Count of distinct CardType variants excluding None (used for HUD denominator).
         // Keep in sync with CardType enum.
-        29
+        40
     }
 
     pub fn total_possible(&self) -> u32 {
@@ -83,6 +83,17 @@ impl DiscoveryState {
             CardType::PollinatorLodge,
             CardType::DewBasin,
             CardType::SeedArchive,
+            CardType::Botanist,
+            CardType::Mycologist,
+            CardType::Entomologist,
+            CardType::CompostKeeper,
+            CardType::WaterTender,
+            CardType::Greenhouse,
+            CardType::RainBarrel,
+            CardType::BeeHotel,
+            CardType::MushroomCellar,
+            CardType::ObservationStation,
+            CardType::IrrigationChannel,
         ]
     }
 }

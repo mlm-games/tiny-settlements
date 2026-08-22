@@ -162,8 +162,6 @@ pub fn compose_root(
     }
 }
 
-// ── shared atoms ───────────────────────────────────────────────────────────
-
 fn col(r: u8, g: u8, b: u8) -> RColor {
     RColor::from_rgba(r, g, b, 255)
 }
@@ -260,8 +258,6 @@ fn progress_bar(frac: f32, width: f32, height: f32, fill: RColor, track: RColor)
             .align_self(AlignSelf::FLEX_START),
     ))
 }
-
-// ── splash / loading / title ───────────────────────────────────────────────
 
 fn splash_ui(st: &SharedUi) -> View {
     let tr = &st.translations;
@@ -384,8 +380,6 @@ fn title_ui(st: &SharedUi, actions: Arc<Mutex<Vec<UiAction>>>) -> View {
         })),
     )
 }
-
-// ── pause / settings / credits ───────────────────────────────────────────
 
 fn pause_overlay(st: &SharedUi, actions: Arc<Mutex<Vec<UiAction>>>) -> View {
     let a1 = actions.clone();
@@ -580,8 +574,6 @@ fn credits_ui(st: &SharedUi, actions: Arc<Mutex<Vec<UiAction>>>) -> View {
     .child(inner)
 }
 
-// ── IN-GAME SHELL (deep Phase 1 UI) ────────────────────────────────────────
-
 fn ingame_shell(st: &SharedUi, actions: Arc<Mutex<Vec<UiAction>>>) -> View {
     ZStack(Modifier::new().fill_max_size()).child((
         Column(
@@ -667,6 +659,15 @@ fn top_bar(st: &SharedUi, actions: Arc<Mutex<Vec<UiAction>>>) -> View {
                 format!("Y{} {}", st.season_year, st.season_name),
                 format!("Moon {}/4", st.moon_in_season),
                 col(70, 60, 90),
+            ),
+            metric_chip(
+                "Upkeep".to_string(),
+                format!("{} Dew", st.upkeep),
+                if st.fatigued_workers > 0 {
+                    col(140, 70, 60)
+                } else {
+                    col(60, 80, 70)
+                },
             ),
             if st.weather_active {
                 metric_chip(st.weather_name.clone(), st.weather_description.clone(), col(90, 70, 60))
@@ -866,6 +867,14 @@ fn habitat_panel(st: &SharedUi) -> View {
     for h in st.habitats.iter().filter(|h| h.plant.is_some()).take(6) {
         let plant = h.plant.as_deref().unwrap_or("—");
         let comp = h.companion.as_deref().unwrap_or("—");
+        let inst = h.installation.as_deref().map(|s| format!(" ⌂ {}", s)).unwrap_or_default();
+        let worker_str = h.worker.as_deref().map(|s| {
+            if h.worker_fatigued {
+                format!(" 👤 {} (Fatigued)", s)
+            } else {
+                format!(" 👤 {}", s)
+            }
+        }).unwrap_or_default();
         let blight_risk = st.weather_active && st.weather_name == "Blight" && h.is_monoculture;
         let mono = if blight_risk {
             " ⚠ Blight Risk"
@@ -874,7 +883,7 @@ fn habitat_panel(st: &SharedUi) -> View {
         } else {
             ""
         };
-        let line1 = format!("{} → {} [{}]{}", h.substrate, plant, comp, mono);
+        let line1 = format!("{} → {} [{}]{}{}{}", h.substrate, plant, comp, inst, worker_str, mono);
         let line2 = if let Some(ref s) = h.synergy_name {
             format!("✦ {}  ×{:.1}", s, h.production_mult)
         } else {

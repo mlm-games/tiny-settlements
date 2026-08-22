@@ -33,6 +33,19 @@ pub enum CardType {
     PollinatorLodge,
     DewBasin,
     SeedArchive,
+    // Phase 5 workers
+    Botanist,
+    Mycologist,
+    Entomologist,
+    CompostKeeper,
+    WaterTender,
+    // Phase 5 advanced structures
+    Greenhouse,
+    RainBarrel,
+    BeeHotel,
+    MushroomCellar,
+    ObservationStation,
+    IrrigationChannel,
 }
 
 impl CardType {
@@ -68,6 +81,17 @@ impl CardType {
             Self::PollinatorLodge => "Pollinator Lodge",
             Self::DewBasin => "Dew Basin",
             Self::SeedArchive => "Seed Archive",
+            Self::Botanist => "Botanist",
+            Self::Mycologist => "Mycologist",
+            Self::Entomologist => "Entomologist",
+            Self::CompostKeeper => "Compost Keeper",
+            Self::WaterTender => "Water Tender",
+            Self::Greenhouse => "Greenhouse",
+            Self::RainBarrel => "Rain Barrel",
+            Self::BeeHotel => "Bee Hotel",
+            Self::MushroomCellar => "Mushroom Cellar",
+            Self::ObservationStation => "Observation Station",
+            Self::IrrigationChannel => "Irrigation Channel",
         }
     }
 
@@ -100,6 +124,17 @@ impl CardType {
             Self::PollinatorLodge => Color::srgb(0.72, 0.68, 0.52),
             Self::DewBasin => Color::srgb(0.45, 0.68, 0.78),
             Self::SeedArchive => Color::srgb(0.60, 0.58, 0.42),
+            Self::Botanist => Color::srgb(0.52, 0.72, 0.55),
+            Self::Mycologist => Color::srgb(0.65, 0.60, 0.45),
+            Self::Entomologist => Color::srgb(0.70, 0.65, 0.80),
+            Self::CompostKeeper => Color::srgb(0.55, 0.50, 0.35),
+            Self::WaterTender => Color::srgb(0.50, 0.65, 0.85),
+            Self::Greenhouse => Color::srgb(0.75, 0.85, 0.70),
+            Self::RainBarrel => Color::srgb(0.45, 0.70, 0.85),
+            Self::BeeHotel => Color::srgb(0.78, 0.72, 0.45),
+            Self::MushroomCellar => Color::srgb(0.55, 0.50, 0.65),
+            Self::ObservationStation => Color::srgb(0.60, 0.65, 0.75),
+            Self::IrrigationChannel => Color::srgb(0.50, 0.75, 0.65),
             Self::None => Color::srgb(0.3, 0.3, 0.3),
         }
     }
@@ -239,6 +274,17 @@ impl CardType {
             Self::PollinatorLodge => Some(6),
             Self::DewBasin => Some(7),
             Self::SeedArchive => Some(8),
+            Self::Botanist => Some(5),
+            Self::Mycologist => Some(5),
+            Self::Entomologist => Some(6),
+            Self::CompostKeeper => Some(5),
+            Self::WaterTender => Some(5),
+            Self::Greenhouse => Some(7),
+            Self::RainBarrel => Some(6),
+            Self::BeeHotel => Some(6),
+            Self::MushroomCellar => Some(6),
+            Self::ObservationStation => Some(8),
+            Self::IrrigationChannel => Some(7),
             Self::Gardener
             | Self::BasicFungi
             | Self::YoungVine
@@ -264,6 +310,35 @@ impl CardType {
                 | Self::PollinatorLodge
                 | Self::DewBasin
                 | Self::SeedArchive
+                | Self::Greenhouse
+                | Self::RainBarrel
+                | Self::BeeHotel
+                | Self::MushroomCellar
+                | Self::ObservationStation
+                | Self::IrrigationChannel
+        )
+    }
+
+    pub const fn is_worker(self) -> bool {
+        matches!(
+            self,
+            Self::Botanist
+                | Self::Mycologist
+                | Self::Entomologist
+                | Self::CompostKeeper
+                | Self::WaterTender
+        )
+    }
+
+    pub const fn is_advanced_structure(self) -> bool {
+        matches!(
+            self,
+            Self::Greenhouse
+                | Self::RainBarrel
+                | Self::BeeHotel
+                | Self::MushroomCellar
+                | Self::ObservationStation
+                | Self::IrrigationChannel
         )
     }
 
@@ -275,6 +350,12 @@ impl CardType {
             Self::PollinatorLodge => Some(6),
             Self::DewBasin => Some(7),
             Self::SeedArchive => Some(8),
+            Self::Greenhouse => Some(7),
+            Self::RainBarrel => Some(6),
+            Self::BeeHotel => Some(6),
+            Self::MushroomCellar => Some(6),
+            Self::ObservationStation => Some(8),
+            Self::IrrigationChannel => Some(7),
             _ => None,
         }
     }
@@ -311,6 +392,17 @@ impl CardType {
             Self::PollinatorLodge => "pollinator_lodge",
             Self::DewBasin => "dew_basin",
             Self::SeedArchive => "seed_archive",
+            Self::Botanist => "botanist",
+            Self::Mycologist => "mycologist",
+            Self::Entomologist => "entomologist",
+            Self::CompostKeeper => "compost_keeper",
+            Self::WaterTender => "water_tender",
+            Self::Greenhouse => "greenhouse",
+            Self::RainBarrel => "rain_barrel",
+            Self::BeeHotel => "bee_hotel",
+            Self::MushroomCellar => "mushroom_cellar",
+            Self::ObservationStation => "observation_station",
+            Self::IrrigationChannel => "irrigation_channel",
         }
     }
 
@@ -346,6 +438,17 @@ impl CardType {
             "pollinator_lodge" => Self::PollinatorLodge,
             "dew_basin" => Self::DewBasin,
             "seed_archive" => Self::SeedArchive,
+            "botanist" => Self::Botanist,
+            "mycologist" => Self::Mycologist,
+            "entomologist" => Self::Entomologist,
+            "compost_keeper" => Self::CompostKeeper,
+            "water_tender" => Self::WaterTender,
+            "greenhouse" => Self::Greenhouse,
+            "rain_barrel" => Self::RainBarrel,
+            "bee_hotel" => Self::BeeHotel,
+            "mushroom_cellar" => Self::MushroomCellar,
+            "observation_station" => Self::ObservationStation,
+            "irrigation_channel" => Self::IrrigationChannel,
             _ => return None,
         })
     }
@@ -383,6 +486,17 @@ impl CardType {
             Self::PollinatorLodge => "images/cards/pollinator_lodge.ren",
             Self::DewBasin => "images/cards/dew_basin.ren",
             Self::SeedArchive => "images/cards/seed_archive.ren",
+            Self::Botanist => "images/cards/botanist.ren",
+            Self::Mycologist => "images/cards/mycologist.ren",
+            Self::Entomologist => "images/cards/entomologist.ren",
+            Self::CompostKeeper => "images/cards/compost_keeper.ren",
+            Self::WaterTender => "images/cards/water_tender.ren",
+            Self::Greenhouse => "images/cards/greenhouse.ren",
+            Self::RainBarrel => "images/cards/rain_barrel.ren",
+            Self::BeeHotel => "images/cards/bee_hotel.ren",
+            Self::MushroomCellar => "images/cards/mushroom_cellar.ren",
+            Self::ObservationStation => "images/cards/observation_station.ren",
+            Self::IrrigationChannel => "images/cards/irrigation_channel.ren",
         })
     }
 }

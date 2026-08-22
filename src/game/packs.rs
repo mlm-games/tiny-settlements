@@ -125,6 +125,39 @@ pub const SYMBIOSIS_ENTRIES: &[PackEntry] = &[
     },
 ];
 
+pub const SPECIALIST_ENTRIES: &[PackEntry] = &[
+    PackEntry {
+        card: CardType::Botanist,
+        weight: 18,
+        max_owned: Some(2),
+    },
+    PackEntry {
+        card: CardType::Mycologist,
+        weight: 18,
+        max_owned: Some(2),
+    },
+    PackEntry {
+        card: CardType::Entomologist,
+        weight: 18,
+        max_owned: Some(2),
+    },
+    PackEntry {
+        card: CardType::CompostKeeper,
+        weight: 18,
+        max_owned: Some(2),
+    },
+    PackEntry {
+        card: CardType::WaterTender,
+        weight: 18,
+        max_owned: Some(2),
+    },
+    PackEntry {
+        card: CardType::NutrientSlime,
+        weight: 10,
+        max_owned: Some(6),
+    },
+];
+
 pub const PACKS: &[PackDefinition] = &[
     PackDefinition {
         id: PackId::SoilAndSpore,
@@ -153,6 +186,15 @@ pub const PACKS: &[PackDefinition] = &[
         required_commissions: 3,
         entries: SYMBIOSIS_ENTRIES,
     },
+    PackDefinition {
+        id: PackId::Specialist,
+        name: "Specialist",
+        cost: 14,
+        draws: 2,
+        required_discoveries: 8,
+        required_commissions: 2,
+        entries: SPECIALIST_ENTRIES,
+    },
 ];
 
 pub fn pack_definition(id: PackId) -> &'static PackDefinition {
@@ -164,6 +206,7 @@ pub fn pack_id_from_str(s: &str) -> Option<PackId> {
         "soil_and_spore" => Some(PackId::SoilAndSpore),
         "pollinator" => Some(PackId::Pollinator),
         "symbiosis" => Some(PackId::Symbiosis),
+        "specialist" => Some(PackId::Specialist),
         _ => None,
     }
 }
@@ -173,6 +216,7 @@ pub fn pack_id_to_str(id: PackId) -> &'static str {
         PackId::SoilAndSpore => "soil_and_spore",
         PackId::Pollinator => "pollinator",
         PackId::Symbiosis => "symbiosis",
+        PackId::Specialist => "specialist",
     }
 }
 

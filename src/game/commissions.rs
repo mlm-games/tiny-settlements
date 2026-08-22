@@ -171,6 +171,54 @@ pub const COMMISSION_TEMPLATES: &[CommissionTemplate] = &[
         kind: CommissionKind::CleanToxins { need: 1 },
         reward_dew: 12,
     },
+    CommissionTemplate {
+        id: "first_hire",
+        title: "First Hire",
+        kind: CommissionKind::OwnCount {
+            card: CardType::Botanist,
+            need: 1,
+        },
+        reward_dew: 8,
+    },
+    CommissionTemplate {
+        id: "staffed_habitat",
+        title: "Staffed Habitat",
+        kind: CommissionKind::OwnCount {
+            card: CardType::Mycologist,
+            need: 1,
+        },
+        reward_dew: 7,
+    },
+    CommissionTemplate {
+        id: "winter_crew",
+        title: "Winter Crew",
+        kind: CommissionKind::OwnCount {
+            card: CardType::Botanist,
+            need: 1,
+        },
+        reward_dew: 10,
+    },
+    CommissionTemplate {
+        id: "sanitation_detail",
+        title: "Sanitation Detail",
+        kind: CommissionKind::CleanToxins { need: 2 },
+        reward_dew: 9,
+    },
+    CommissionTemplate {
+        id: "specialty_garden",
+        title: "Specialty Garden",
+        kind: CommissionKind::Biodiversity { need: 3 },
+        reward_dew: 12,
+    },
+    CommissionTemplate {
+        id: "engine_room",
+        title: "Engine Room",
+        kind: CommissionKind::OwnCount {
+            card: CardType::Greenhouse,
+            need: 1,
+        },
+        reward_dew: 11,
+    },
 ];
 
 #[derive(Clone, Debug)]
