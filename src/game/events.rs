@@ -17,6 +17,23 @@ pub enum GameEvent {
     Sold { card: CardType, value: u32 },
     PackOpened { pack: PackId },
     BiodiversityChanged { value: u32 },
+    HabitatPlaced {
+        substrate: CardType,
+        col: i32,
+        row: i32,
+    },
+    Stacked {
+        card: CardType,
+        layer: &'static str,
+        base_substrate: CardType,
+    },
+    SynergyActivated {
+        name: &'static str,
+        dew_bonus: u32,
+    },
+    SynergyTick {
+        dew: u32,
+    },
 }
 
 #[derive(Resource, Default)]

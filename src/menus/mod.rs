@@ -598,7 +598,11 @@ fn ingame_shell(st: &SharedUi, actions: Arc<Mutex<Vec<UiAction>>>) -> View {
                 .align_items(AlignItems::FLEX_START)
                 .justify_content(JustifyContent::CENTER),
         )
-        .child(commissions_panel(st)),
+        .child((
+            commissions_panel(st),
+            spacer(10.0),
+            habitat_panel(st),
+        )),
         Column(
             Modifier::new()
                 .fill_max_size()
@@ -794,6 +798,86 @@ fn commission_card_new(c: &CommissionUi) -> View {
             col(190, 210, 190),
         ),
     ))
+}
+
+fn habitat_panel(st: &SharedUi) -> View {
+    let tr = &st.translations;
+    if st.habitats.is_empty() {
+        return panel(
+            280.0,
+            Column(Modifier::new())
+                .child(section_title(t(tr, "habitats", "Habitats")))
+                .child(spacer(6.0))
+                .child(body(
+                    t(tr, "habitat-hint", "Drop Bio-Substrate on the faint grid to found a habitat"),
+                    13.0,
+                    col(150, 175, 155),
+                )),
+        );
+    }
+
+    let header = Row(Modifier::new().gap(10.0).align_items(AlignItems::CENTER)).child((
+        body(
+            format!("{} {}", t(tr, "habitats", "Habitats"), st.habitat_count),
+            16.0,
+            col(210, 230, 200),
+        ),
+        body(
+            format!("{} +{:.0}%", t(tr, "resonance", "Resonance"), st.total_resonance * 100.0),
+            13.0,
+            col(140, 200, 150),
+        ),
+    ));
+
+    let mut list = Column(Modifier::new().gap(6.0));
+    for h in st.habitats.iter().filter(|h| h.plant.is_some()).take(6) {
+        let plant = h.plant.as_deref().unwrap_or("—");
+        let comp = h.companion.as_deref().unwrap_or("—");
+        let mono = if h.is_monoculture { " ⚠ mono" } else { "" };
+        let line1 = format!("{} → {} [{}]{}", h.substrate, plant, comp, mono);
+        let line2 = if let Some(ref s) = h.synergy_name {
+            format!("✦ {}  ×{:.1}", s, h.production_mult)
+        } else {
+            format!("×{:.1}  div {}", h.production_mult, h.diversity)
+        };
+
+        list = list.child(
+            Column(
+                Modifier::new()
+                    .padding(10.0)
+                    .background(col(26, 36, 28))
+                    .clip_rounded(8.0),
+            )
+            .child((
+                body(line1, 13.0, col(220, 235, 210)),
+                body(
+                    line2,
+                    12.0,
+                    if h.is_monoculture {
+                        col(220, 150, 110)
+                    } else {
+                        col(160, 200, 150)
+                    },
+                ),
+            )),
+        );
+    }
+    // If no planted habitats but some empty habitats, show empty slot count
+    if st.habitats.iter().filter(|h| h.plant.is_some()).count() == 0 {
+        list = list.child(body(
+            t(tr, "stack-plant-hint", "Plant on habitat"),
+            13.0,
+            col(160, 190, 160),
+        ));
+    }
+
+    panel(
+        280.0,
+        Column(Modifier::new())
+            .child(header)
+            .child(spacer(6.0))
+            .child(list),
+    )
 }
 
 fn satchels_panel(st: &SharedUi, actions: Arc<Mutex<Vec<UiAction>>>) -> View {

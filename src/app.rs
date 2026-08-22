@@ -72,6 +72,15 @@ const TRANSLATION_KEYS: &[&str] = &[
     "commission-complete",
     "empty-commissions",
     "not-enough-dew",
+    // Phase 2
+    "habitats",
+    "resonance",
+    "habitat-hint",
+    "monoculture-warning",
+    "synergy-activated",
+    "resonance-tick",
+    "stack-plant-hint",
+    "stack-companion-hint",
 ];
 
 const LOCALES: &[(&str, &str)] = &[
@@ -147,6 +156,17 @@ pub struct JournalEntryUi {
     pub blurb: String,
 }
 
+#[derive(Clone, Debug, Default)]
+pub struct HabitatUi {
+    pub substrate: String,
+    pub plant: Option<String>,
+    pub companion: Option<String>,
+    pub synergy_name: Option<String>,
+    pub production_mult: f32,
+    pub is_monoculture: bool,
+    pub diversity: u32,
+}
+
 // Keep PackHud as alias for backward compat with game/mod.rs (will be phased out)
 #[derive(Clone, Debug)]
 pub struct PackHud {
@@ -199,6 +219,10 @@ pub struct SharedUi {
     pub commissions_ui: Vec<CommissionUi>,
     pub packs_ui: Vec<PackUi>,
     pub journal: Vec<JournalEntryUi>,
+    // Phase 2 habitats
+    pub habitats: Vec<HabitatUi>,
+    pub habitat_count: u32,
+    pub total_resonance: f32,
 }
 
 impl Default for SharedUi {
@@ -242,6 +266,9 @@ impl Default for SharedUi {
             commissions_ui: Vec::new(),
             packs_ui: Vec::new(),
             journal: Vec::new(),
+            habitats: Vec::new(),
+            habitat_count: 0,
+            total_resonance: 0.0,
         }
     }
 }

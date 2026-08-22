@@ -46,3 +46,13 @@ toast-discovered = Discovered: { $name }
 commission-complete = Commission complete! +{ $dew } Dew
 empty-commissions = No active commissions
 not-enough-dew = Not enough Dew
+
+# Phase 2
+habitats = Habitats
+resonance = Resonance
+habitat-hint = Drop Bio-Substrate on the faint grid to found a habitat
+monoculture-warning = Monoculture — efficient but fragile
+synergy-activated = Synergy: { $name }
+resonance-tick = +{ $dew } Dew from habitats
+stack-plant-hint = Plant on habitat
+stack-companion-hint = Add companion to planted habitat

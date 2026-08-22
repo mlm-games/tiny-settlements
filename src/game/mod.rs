@@ -6,6 +6,7 @@ mod discovery;
 mod economy;
 mod events;
 mod packs;
+pub mod stacks;
 
 use bevy::ecs::query::QueryFilter;
 use bevy::ecs::system::SystemParam;
@@ -25,6 +26,12 @@ pub use packs::{
     PackDefinition, PackEntry, PackPurchaseQueue, RunRng, PACKS, POLLINATOR_ENTRIES,
     SOIL_ENTRIES, SYMBIOSIS_ENTRIES, draw_for_pack, is_pack_unlocked, pack_definition,
     pack_id_from_str, pack_id_to_str,
+};
+pub use stacks::{
+    GridSlot, HabitatBase, HabitatSynergy, StackedOn, StackLayer, GRID_CELL, GRID_ORIGIN,
+    MAX_COLS, MAX_ROWS, STACK_SNAP_DIST, SYNERGY_COMBOS, can_stack_as_companion,
+    can_stack_as_plant, find_synergy, grid_to_world, is_habitat_substrate, substrate_growth_mult,
+    world_to_grid,
 };
 
 use std::collections::HashMap;
@@ -166,9 +173,10 @@ pub struct PendingWork(pub Vec<(Entity, f32, GardenerAction)>);
 
 /// One-shot juice requests so systems stay small.
 #[derive(Resource, Default)]
-struct PendingFx(Vec<FxEvent>);
+pub struct PendingFx(pub Vec<FxEvent>);
 
-enum FxEvent {
+#[derive(Debug)]
+pub enum FxEvent {
     Craft { pos: Vec2 },
     Plant { pos: Vec2 },
     Clean { pos: Vec2 },
@@ -227,7 +235,10 @@ impl Plugin for GamePlugin {
             .init_resource::<DiscoveryState>()
             .init_resource::<CommissionBoard>()
             .init_resource::<RunCounters>()
-            .add_systems(OnEnter(AppState::InGame), setup_game)
+            .add_systems(
+                OnEnter(AppState::InGame),
+                (setup_game, stacks::spawn_grid_ghosts).chain(),
+            )
             .add_systems(OnExit(AppState::InGame), cleanup_game)
             .add_systems(
                 Update,
@@ -238,6 +249,13 @@ impl Plugin for GamePlugin {
                         begin_drag,
                         update_drag,
                         end_drag,
+                    )
+                        .chain(),
+                    (
+                        stacks::recompute_synergies,
+                        stacks::position_stacked_cards,
+                        stacks::clear_dead_stacks,
+                        stacks::synergy_income_tick,
                     )
                         .chain(),
                     (
@@ -627,6 +645,10 @@ fn end_drag(
     mouse: Res<ButtonInput<MouseButton>>,
     mut session: ResMut<GameSession>,
     mut cards: Query<(Entity, &mut Transform, &mut Card, Option<&Dragging>)>,
+    habitat_slots: Query<&GridSlot, With<HabitatBase>>,
+    habitats_read: Query<(Entity, &GridSlot, &HabitatBase)>,
+    stacked_q: Query<&StackedOn>,
+    habitat_entities: Query<Entity, With<HabitatBase>>,
     mut pending_spawn: ResMut<PendingSpawns>,
     mut pending_despawn: ResMut<PendingDespawns>,
     mut pending_work: ResMut<PendingWork>,
@@ -669,14 +691,130 @@ fn end_drag(
             continue;
         }
 
-        // try selling first (before overlap)
-        {
+        // 1. Habitat placement (substrate onto free grid cell)
+        if stacks::is_habitat_substrate(type_a) {
+            if let Some((col, row, snap_pos)) =
+                stacks::try_place_habitat(src, type_a, spos, &habitat_slots)
+            {
+                if let Ok((_, mut tf, _, _)) = cards.get_mut(src) {
+                    tf.translation.x = snap_pos.x;
+                    tf.translation.y = snap_pos.y;
+                    tf.translation.z = 2.0;
+                }
+                commands.entity(src).insert((
+                    HabitatBase {
+                        substrate: type_a,
+                        plant: None,
+                        companion: None,
+                    },
+                    GridSlot { col, row },
+                    HabitatSynergy {
+                        production_mult: stacks::substrate_growth_mult(type_a),
+                        ..Default::default()
+                    },
+                ));
+                pending_fx.0.push(FxEvent::Plant { pos: snap_pos });
+                events.0.push(GameEvent::HabitatPlaced {
+                    substrate: type_a,
+                    col,
+                    row,
+                });
+                session.hint = format!("Habitat founded: {} at {},{}", type_a.label(), col, row);
+                session.hint_timer = 2.5;
+                commands.entity(src).remove::<Dragging>();
+                continue;
+            }
+        }
+
+        // 2. Stack plant/companion onto nearby habitat
+        if stacks::can_stack_as_plant(type_a) || stacks::can_stack_as_companion(type_a) {
+            if let Some((base, layer)) =
+                stacks::find_stack_target(type_a, spos, &habitats_read)
+            {
+                let base_substrate = habitats_read
+                    .get(base)
+                    .map(|(_, _, h)| h.substrate)
+                    .unwrap_or(CardType::BioSubstrate);
+                let base_slot = habitats_read
+                    .get(base)
+                    .map(|(_, s, _)| *s)
+                    .unwrap_or(GridSlot { col: 0, row: 0 });
+                let base_pos = stacks::grid_to_world(base_slot.col, base_slot.row);
+                commands.entity(src).insert(StackedOn { base, layer });
+                // Defer habitat mutation and planted flag (avoid borrowing conflicts)
+                commands.queue(move |world: &mut World| {
+                    if layer == StackLayer::Plant {
+                        if let Some(mut c) = world.get_mut::<Card>(src) {
+                            c.is_planted = true;
+                        }
+                    }
+                    if let Some(mut hab) = world.get_mut::<HabitatBase>(base) {
+                        match layer {
+                            StackLayer::Plant => hab.plant = Some(src),
+                            StackLayer::Companion => hab.companion = Some(src),
+                        }
+                    }
+                });
+                match layer {
+                    StackLayer::Plant => {
+                        pending_fx.0.push(FxEvent::Plant { pos: base_pos });
+                        events.0.push(GameEvent::Stacked {
+                            card: type_a,
+                            layer: "plant",
+                            base_substrate,
+                        });
+                        session.hint = format!("Planted {} on {}", type_a.label(), base_substrate.label());
+                        session.hint_timer = 2.0;
+                    }
+                    StackLayer::Companion => {
+                        pending_fx.0.push(FxEvent::Craft { pos: base_pos });
+                        // check named combo for toast
+                        let plant_type_opt = habitats_read
+                            .get(base)
+                            .ok()
+                            .and_then(|(_, _, h)| h.plant)
+                            .and_then(|pe| {
+                                snap.iter()
+                                    .find(|(e, ..)| *e == pe)
+                                    .map(|(_, _, t, _, _)| *t)
+                            });
+                        if let Some(pt) = plant_type_opt {
+                            if let Some(combo) = stacks::find_synergy(pt, type_a) {
+                                events.0.push(GameEvent::SynergyActivated {
+                                    name: combo.name,
+                                    dew_bonus: combo.dew_per_tick,
+                                });
+                                session.hint =
+                                    format!("✦ {} (+{} Dew/tick)", combo.name, combo.dew_per_tick);
+                                session.hint_timer = 3.0;
+                            }
+                        }
+                        events.0.push(GameEvent::Stacked {
+                            card: type_a,
+                            layer: "companion",
+                            base_substrate,
+                        });
+                        if session.hint_timer < 0.1 {
+                            session.hint =
+                                format!("Added {} to {}", type_a.label(), base_substrate.label());
+                            session.hint_timer = 2.0;
+                        }
+                    }
+                }
+                commands.entity(src).remove::<Dragging>();
+                continue;
+            }
+        }
+
+        // 3. Try selling (blocked for habitat bases / stacked cards)
+        let is_habitat_base = habitat_entities.get(src).is_ok();
+        let is_stacked = stacked_q.get(src).is_ok();
+        if !is_habitat_base && !is_stacked {
             let card_opt = cards.get(src).ok().map(|(_, _, c, _)| c.card_type);
             if let Some(ctype) = card_opt
                 && let Ok((_, tf, _, _)) = cards.get(src)
             {
                 let pos = tf.translation.truncate();
-                // Need Card reference for sell_value; reconstruct minimal Card
                 let dummy = Card {
                     card_type: ctype,
                     is_planted: false,
@@ -686,7 +824,11 @@ fn end_drag(
                     action: None,
                 };
                 if try_sell_card(src, pos, &dummy, &mut economy, &mut pending_despawn, &mut events) {
-                    session.hint = format!("Sold {} for {} Dew", ctype.label(), ctype.sell_value().unwrap_or(0));
+                    session.hint = format!(
+                        "Sold {} for {} Dew",
+                        ctype.label(),
+                        ctype.sell_value().unwrap_or(0)
+                    );
                     session.hint_timer = 2.5;
                     if let Ok((_, mut tf, _, _)) = cards.get_mut(src) {
                         tf.translation.z = 1.0;
@@ -1014,6 +1156,8 @@ fn tick_work_timers(
     mut session: ResMut<GameSession>,
     mut q: Query<(Entity, &mut Card, &mut WorkTimer, &Transform)>,
     others: Query<(Entity, &Transform, &Card), Without<WorkTimer>>,
+    stacked: Query<&StackedOn>,
+    hab_syn: Query<&HabitatSynergy, With<HabitatBase>>,
     mut pending_spawn: ResMut<PendingSpawns>,
     mut pending_despawn: ResMut<PendingDespawns>,
     mut pending_passive: ResMut<PendingPassives>,
@@ -1054,10 +1198,11 @@ fn tick_work_timers(
     for (e, action, pos, ctype, planted) in finished {
         let Some(action) = action else { continue };
         let sub_ok = substrate_ok_for(&others, e, ctype, pos);
+        let mult = stacks::production_mult_for_entity(e, &stacked, &hab_syn);
         match action {
             GardenerAction::Plant => {
                 set_planted(&mut commands, e);
-                start_growth(&mut pending_passive, e, ctype, true, false, sub_ok);
+                start_growth(&mut pending_passive, e, ctype, true, false, sub_ok, mult);
                 pending_fx.0.push(FxEvent::Plant { pos });
                 events.0.push(GameEvent::Planted { card: ctype });
                 session.hint = format!("{} planted", ctype.label());
@@ -1073,7 +1218,7 @@ fn tick_work_timers(
                     session.hint_timer = 3.0;
                 } else {
                     pending_despawn.0.push(source);
-                    start_growth(&mut pending_passive, e, ctype, planted, true, true);
+                    start_growth(&mut pending_passive, e, ctype, planted, true, true, mult);
                     pending_fx.0.push(FxEvent::Plant { pos });
                     events.0.push(GameEvent::Grew { from: ctype, to: ctype });
                     session.hint = format!("{} growing...", ctype.label());
@@ -1113,10 +1258,12 @@ fn start_growth(
     planted: bool,
     nutrient_applied: bool,
     substrate_ok: bool,
+    mult: f32,
 ) {
-    let Some(dur) = ctype.growth_duration() else {
+    let Some(base) = ctype.growth_duration() else {
         return;
     };
+    let dur = (base / mult.max(0.1)).max(1.0);
 
     if ctype.auto_grows() {
         let ok = match ctype {
@@ -1158,6 +1305,8 @@ fn tick_passive_timers(
     mut session: ResMut<GameSession>,
     mut q: Query<(Entity, &mut Card, &mut PassiveTimer, &Transform)>,
     others: Query<(Entity, &Transform, &Card), Without<PassiveTimer>>,
+    stacked: Query<&StackedOn>,
+    hab_syn: Query<&HabitatSynergy, With<HabitatBase>>,
     mut pending_spawn: ResMut<PendingSpawns>,
     mut pending_despawn: ResMut<PendingDespawns>,
     mut pending_passive: ResMut<PendingPassives>,
@@ -1228,7 +1377,9 @@ fn tick_passive_timers(
                     if ok {
                         let p = offset_near(pos);
                         pending_spawn.0.push((prod, p, false));
-                        pending_passive.0.push((e, PassiveKind::Produce, interval));
+                        let mult = stacks::production_mult_for_entity(e, &stacked, &hab_syn);
+                        let eff = (interval / mult.max(0.1)).max(2.5);
+                        pending_passive.0.push((e, PassiveKind::Produce, eff));
                         pending_fx.0.push(FxEvent::Produce {
                             pos: p,
                             color: prod.color(),
@@ -1273,7 +1424,9 @@ fn tick_passive_timers(
                 {
                     pending_despawn.0.push(food);
                     if let Some((_, interval)) = ctype.produces_passively() {
-                        pending_passive.0.push((e, PassiveKind::Produce, interval));
+                        let mult = stacks::production_mult_for_entity(e, &stacked, &hab_syn);
+                        let eff = (interval / mult.max(0.1)).max(2.5);
+                        pending_passive.0.push((e, PassiveKind::Produce, eff));
                     }
                 }
             }
@@ -1286,6 +1439,8 @@ fn world_timers(
     mut session: ResMut<GameSession>,
     cards: Query<(Entity, &Transform, &Card)>,
     has_passive: Query<(), With<PassiveTimer>>,
+    stacked: Query<&StackedOn>,
+    hab_syn: Query<&HabitatSynergy, With<HabitatBase>>,
     mut pending_spawn: ResMut<PendingSpawns>,
     mut pending_passive: ResMut<PendingPassives>,
     mut pending_fx: ResMut<PendingFx>,
@@ -1354,7 +1509,9 @@ fn world_timers(
                 });
             }
             if ok {
-                pending_passive.0.push((e, PassiveKind::Produce, interval));
+                let mult = stacks::production_mult_for_entity(e, &stacked, &hab_syn);
+                let eff = (interval / mult.max(0.1)).max(2.5);
+                pending_passive.0.push((e, PassiveKind::Produce, eff));
             }
         }
 
@@ -1393,19 +1550,27 @@ fn world_timers(
         }
 
         if c.card_type == CardType::FlutterwingLarva {
-            pending_passive.0.push((e, PassiveKind::Grow, 10.0));
+            let mult = stacks::production_mult_for_entity(e, &stacked, &hab_syn);
+            let eff = (10.0 / mult.max(0.1)).max(1.0);
+            pending_passive.0.push((e, PassiveKind::Grow, eff));
         }
 
         if c.card_type == CardType::GrowingApex {
-            pending_passive.0.push((e, PassiveKind::Grow, 8.0));
+            let mult = stacks::production_mult_for_entity(e, &stacked, &hab_syn);
+            let eff = (8.0 / mult.max(0.1)).max(1.0);
+            pending_passive.0.push((e, PassiveKind::Grow, eff));
         }
 
         if c.card_type == CardType::FertilizedVinePod && c.is_planted {
-            pending_passive.0.push((e, PassiveKind::Grow, 8.0));
+            let mult = stacks::production_mult_for_entity(e, &stacked, &hab_syn);
+            let eff = (8.0 / mult.max(0.1)).max(1.0);
+            pending_passive.0.push((e, PassiveKind::Grow, eff));
         }
 
         if c.card_type == CardType::SporePod && c.is_planted {
-            pending_passive.0.push((e, PassiveKind::Grow, 5.0));
+            let mult = stacks::production_mult_for_entity(e, &stacked, &hab_syn);
+            let eff = (5.0 / mult.max(0.1)).max(1.0);
+            pending_passive.0.push((e, PassiveKind::Grow, eff));
         }
     }
 }
@@ -1586,6 +1751,25 @@ fn drain_game_events(
             }
             GameEvent::PackOpened { .. } => {}
             GameEvent::BiodiversityChanged { .. } => {}
+            GameEvent::HabitatPlaced { .. } => {
+                // optional soft toast; count as discovery? already discovered via spawn
+            }
+            GameEvent::Stacked { .. } => {}
+            GameEvent::SynergyActivated { name, dew_bonus } => {
+                if let Ok(mut ui) = bridge.shared.try_lock() {
+                    ui.toast = format!("✦ {} (+{} Dew/tick)", name, dew_bonus);
+                    ui.toast_timer = 3.0;
+                }
+            }
+            GameEvent::SynergyTick { dew } => {
+                if let Ok(mut ui) = bridge.shared.try_lock() {
+                    // don't override a more important toast; just set subtle if empty
+                    if ui.toast_timer < 0.2 {
+                        ui.toast = format!("+{} Dew from habitat resonance", dew);
+                        ui.toast_timer = 2.0;
+                    }
+                }
+            }
         }
     }
 }
@@ -1803,6 +1987,8 @@ fn sync_hud(
     bridge: Res<crate::menus::UiBridge>,
     save: Res<SaveData>,
     _rng: Res<RunRng>,
+    habitats: Query<(&HabitatBase, &HabitatSynergy)>,
+    cards_q: Query<&Card>,
 ) {
     let Ok(mut ui) = bridge.shared.lock() else {
         return;
@@ -1905,6 +2091,32 @@ fn sync_hud(
     }
     journal.sort_by(|a, b| b.discovered.cmp(&a.discovered));
     ui.journal = journal;
+    // Phase 2 habitats DTO
+    let mut hab_ui: Vec<crate::app::HabitatUi> = Vec::new();
+    let mut total_res = 0.0;
+    for (hab, syn) in &habitats {
+        let plant = hab
+            .plant
+            .and_then(|e| cards_q.get(e).ok())
+            .map(|c| c.card_type.label().to_string());
+        let companion = hab
+            .companion
+            .and_then(|e| cards_q.get(e).ok())
+            .map(|c| c.card_type.label().to_string());
+        hab_ui.push(crate::app::HabitatUi {
+            substrate: hab.substrate.label().to_string(),
+            plant,
+            companion,
+            synergy_name: syn.active_combo.map(|s| s.to_string()),
+            production_mult: syn.production_mult,
+            is_monoculture: syn.is_monoculture,
+            diversity: syn.diversity,
+        });
+        total_res += syn.diversity as f32 * 0.12;
+    }
+    ui.habitats = hab_ui;
+    ui.habitat_count = habitats.iter().count() as u32;
+    ui.total_resonance = total_res;
 }
 
 fn done_need(board: &CommissionBoard, save: &SaveData, def: &PackDefinition) -> bool {
