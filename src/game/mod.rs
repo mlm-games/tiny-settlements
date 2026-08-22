@@ -16,9 +16,7 @@ use bevy::window::PrimaryWindow;
 use game_utils_bevy::game_feel::{GameFeel, SlowMotion};
 use game_utils_bevy::juice::{Juice, Particle};
 use game_utils_bevy::save::SaveManager;
-use game_utils_bevy::screen_effects::{
-    ChromaticAberration, FlashWhite, FreezeFrame, ScreenEffects, Trauma,
-};
+use game_utils_bevy::screen_effects::{FlashWhite, FreezeFrame, ScreenEffects, Trauma};
 use game_utils_bevy::transitions::Transition;
 use game_utils_bevy::vfx::{DamageNumber, TrailGhost, VfxSpawner};
 use rand::RngExt;
@@ -26,11 +24,21 @@ use rand::RngExt;
 use crate::app::{AppState, Paused};
 use crate::save::SaveData;
 
-pub const CARD_SIZE: Vec2 = Vec2::new(96.0, 128.0);
-pub const BOARD_MIN: Vec2 = Vec2::new(-480.0, -280.0);
-pub const BOARD_MAX: Vec2 = Vec2::new(480.0, 280.0);
-pub const NEARBY: f32 = 95.0;
+/// Godot original collision: RectangleShape2D size = Vector2(90, 120).
+pub const CARD_SIZE: Vec2 = Vec2::new(90.0, 120.0);
+/// Godot draws card_bg.svg at scale (0.486, 0.4267) => ~97x128 visual.
+pub const CARD_DRAW_SIZE: Vec2 = Vec2::new(97.2, 128.0);
+/// Godot board_size = Rect2(50, 50, 900, 600); screen 1280x720 centered:
+/// x = godot_x - 640, y = 360 - godot_y.
+pub const BOARD_MIN: Vec2 = Vec2::new(-590.0, -290.0);
+pub const BOARD_MAX: Vec2 = Vec2::new(310.0, 310.0);
+/// Godot find_nearby_card_type default max_distance = 80.
+pub const NEARBY: f32 = 80.0;
 pub const CARD_BG_PATH: &str = "images/cards/card_bg.ren";
+
+fn gpos(x: f32, y: f32) -> Vec2 {
+    Vec2::new(x - 640.0, 360.0 - y)
+}
 
 #[derive(Component)]
 pub struct GameCleanup;
@@ -76,6 +84,7 @@ pub struct GameSession {
     pub max_focus: f32,
     pub action_cost: f32,
     pub biodiversity: u32,
+    /// Display-only count; toxins never end the run by themselves (original parity).
     pub toxins: u32,
     pub tracked: HashMap<CardType, u32>,
     pub status: String,
@@ -85,10 +94,8 @@ pub struct GameSession {
     nutrient_spawn: Timer,
     passive_scan: Timer,
     waste_check: Timer,
-    toxicity_tick: Timer,
     pub focus_recharge_rate: f32,
     pub max_slugs_before_waste: u32,
-    pub max_toxins_before_loss: u32,
     /// Fire win/lose juice exactly once.
     pub end_fx_done: bool,
 }
@@ -110,14 +117,12 @@ impl Default for GameSession {
             status: String::new(),
             hint: String::new(),
             hint_timer: 0.0,
-            focus_recharge: Timer::from_seconds(0.5, TimerMode::Repeating),
-            nutrient_spawn: Timer::from_seconds(18.0, TimerMode::Repeating),
+            focus_recharge: Timer::from_seconds(1.5, TimerMode::Repeating),
+            nutrient_spawn: Timer::from_seconds(30.0, TimerMode::Repeating),
             passive_scan: Timer::from_seconds(1.0, TimerMode::Repeating),
-            waste_check: Timer::from_seconds(12.0, TimerMode::Repeating),
-            toxicity_tick: Timer::from_seconds(1.5, TimerMode::Repeating),
+            waste_check: Timer::from_seconds(25.0, TimerMode::Repeating),
             focus_recharge_rate: 3.0,
             max_slugs_before_waste: 5,
-            max_toxins_before_loss: 6,
             end_fx_done: false,
         }
     }
@@ -176,7 +181,6 @@ impl Plugin for GamePlugin {
                     tick_work_timers,
                     tick_passive_timers,
                     world_timers,
-                    board_pressure,
                     apply_pending_spawns,
                     apply_pending_despawns,
                     end_game_fx,
@@ -216,14 +220,24 @@ fn setup_game(
     save.times_played = save.times_played.saturating_add(1);
     let _ = manager.save(&*save);
 
+    // Godot default clear color + GameBoardPanel over the mechanic board rect
     commands.spawn((
         GameCleanup,
         Sprite {
-            color: Color::srgb(0.10, 0.16, 0.12),
-            custom_size: Some(BOARD_MAX - BOARD_MIN + Vec2::splat(48.0)),
+            color: Color::srgb(0.200456, 0.297065, 0.476979),
+            custom_size: Some(Vec2::new(1280.0, 720.0)),
             ..default()
         },
-        Transform::from_xyz(0.0, 0.0, -10.0),
+        Transform::from_xyz(0.0, 0.0, -30.0),
+    ));
+    commands.spawn((
+        GameCleanup,
+        Sprite {
+            color: Color::srgba(0.10, 0.15, 0.12, 0.90),
+            custom_size: Some(BOARD_MAX - BOARD_MIN),
+            ..default()
+        },
+        Transform::from_translation(((BOARD_MIN + BOARD_MAX) * 0.5).extend(-20.0)),
     ));
 
     spawn_card(
@@ -231,7 +245,7 @@ fn setup_game(
         &mut session,
         Some(&art),
         CardType::Gardener,
-        Vec2::new(-360.0, 0.0),
+        gpos(100.0, 300.0),
         false,
     );
     spawn_card(
@@ -239,7 +253,7 @@ fn setup_game(
         &mut session,
         Some(&art),
         CardType::BioSubstrate,
-        Vec2::new(-180.0, 90.0),
+        gpos(250.0, 200.0),
         false,
     );
     spawn_card(
@@ -247,7 +261,7 @@ fn setup_game(
         &mut session,
         Some(&art),
         CardType::BioSubstrate,
-        Vec2::new(-180.0, -90.0),
+        gpos(250.0, 400.0),
         false,
     );
     spawn_card(
@@ -255,7 +269,7 @@ fn setup_game(
         &mut session,
         Some(&art),
         CardType::SporePod,
-        Vec2::new(20.0, 90.0),
+        gpos(400.0, 200.0),
         false,
     );
     spawn_card(
@@ -263,7 +277,7 @@ fn setup_game(
         &mut session,
         Some(&art),
         CardType::NutrientSlime,
-        Vec2::new(20.0, 0.0),
+        gpos(400.0, 300.0),
         false,
     );
     spawn_card(
@@ -271,7 +285,7 @@ fn setup_game(
         &mut session,
         Some(&art),
         CardType::NutrientSlime,
-        Vec2::new(20.0, -90.0),
+        gpos(400.0, 400.0),
         false,
     );
 
@@ -336,7 +350,7 @@ fn spawn_card(
     // upper window, name/status in the two lower bands
     let mut body = Sprite {
         color: Color::WHITE.mix(&card_type.color(), 0.45),
-        custom_size: Some(CARD_SIZE),
+        custom_size: Some(CARD_DRAW_SIZE),
         ..default()
     };
     if let Some(bg) = art.and_then(|a| a.bg.as_ref()) {
@@ -364,37 +378,38 @@ fn spawn_card(
             let icon = match art.and_then(|a| a.icons.get(&card_type)) {
                 Some(handle) => Sprite {
                     image: handle.clone(),
-                    custom_size: Some(Vec2::splat(58.0)),
+                    custom_size: Some(Vec2::new(80.0, 70.0)),
                     ..default()
                 },
                 None => Sprite {
                     color: Color::srgba(1.0, 1.0, 1.0, 0.12),
-                    custom_size: Some(Vec2::splat(46.0)),
+                    custom_size: Some(Vec2::new(80.0, 70.0)),
                     ..default()
                 },
             };
-            p.spawn((icon, Transform::from_xyz(0.0, 20.0, 0.5)));
+            // ImageRect: offsets (-40,-37)..(40.9,32.8) => center ~(0,-2) godot
+            p.spawn((icon, Transform::from_xyz(0.0, 2.0, 0.5)));
             p.spawn((
                 CardTitle,
                 Text2d::new(card_type.label()),
                 TextFont {
-                    font_size: FontSize::Px(12.0),
+                    font_size: FontSize::Px(8.0),
                     ..default()
                 },
-                TextColor(Color::srgb(0.13, 0.16, 0.13)),
+                TextColor(Color::BLACK),
                 TextLayout::justify(Justify::Center),
-                Transform::from_xyz(0.0, -26.0, 1.0),
+                Transform::from_xyz(0.0, 51.0, 1.0),
             ));
             p.spawn((
                 CardStatus,
                 Text2d::new(""),
                 TextFont {
-                    font_size: FontSize::Px(9.0),
+                    font_size: FontSize::Px(6.0),
                     ..default()
                 },
-                TextColor(Color::srgb(0.25, 0.3, 0.25)),
+                TextColor(Color::srgb(0.2, 0.2, 0.2)),
                 TextLayout::justify(Justify::Center),
-                Transform::from_xyz(0.0, -46.0, 1.0),
+                Transform::from_xyz(0.0, -49.0, 1.0),
             ));
         })
         .id();
@@ -625,7 +640,7 @@ fn resolve_drop(
 
     if type_a.is_seed_or_spore() && type_b.is_substrate() {
         if let Ok((_, mut tf, _, _)) = cards.get_mut(src) {
-            tf.translation = (tpos + Vec2::new(0.0, 16.0)).extend(2.0);
+            tf.translation = (tpos + Vec2::new(0.0, 10.0)).extend(2.0);
         }
         session.hint = format!("Drop Gardener on {} to plant", type_a.label());
         session.hint_timer = 3.0;
@@ -634,7 +649,7 @@ fn resolve_drop(
 
     if type_a.is_nutrient() {
         if let Ok((_, mut tf, _, _)) = cards.get_mut(src) {
-            tf.translation = (tpos + Vec2::new(10.0, 16.0)).extend(2.0);
+            tf.translation = (tpos + Vec2::new(0.0, 10.0)).extend(2.0);
         }
         session.hint = format!("Drop Gardener on {} to apply", type_a.label());
         session.hint_timer = 3.0;
@@ -643,7 +658,7 @@ fn resolve_drop(
 
     if type_a == CardType::RichMulch && type_b == CardType::BioSubstrate {
         if let Ok((_, mut tf, _, _)) = cards.get_mut(src) {
-            tf.translation = (tpos + Vec2::new(0.0, 16.0)).extend(2.0);
+            tf.translation = (tpos + Vec2::new(0.0, 10.0)).extend(2.0);
         }
         session.hint = "Drop Gardener on Mulch (near substrate) to upgrade".into();
         session.hint_timer = 3.0;
@@ -756,7 +771,7 @@ fn move_gardener(
 ) {
     if let Ok((_, mut tf, mut c, _)) = cards.get_mut(gardener) {
         c.is_working = true;
-        tf.translation = (target + Vec2::new(0.0, 56.0)).extend(30.0);
+        tf.translation = (target + Vec2::new(0.0, 40.0)).extend(30.0);
     }
 }
 
@@ -1176,6 +1191,11 @@ fn world_timers(
         return;
     }
 
+    session.toxins = cards
+        .iter()
+        .filter(|(_, _, c)| c.card_type == CardType::WasteToxin)
+        .count() as u32;
+
     for (e, tf, c) in &cards {
         if c.is_working || has_passive.get(e).is_ok() {
             continue;
@@ -1288,101 +1308,6 @@ fn apply_pending_despawns(
             }
         }
         commands.entity(e).despawn();
-    }
-}
-
-fn is_toxin_vulnerable(t: CardType) -> bool {
-    matches!(
-        t,
-        CardType::SporePod
-            | CardType::BasicFungi
-            | CardType::VineSeed
-            | CardType::YoungVine
-            | CardType::MatureVine
-            | CardType::FlutterwingSpore
-            | CardType::FlutterwingLarva
-            | CardType::MatureFlutterwing
-            | CardType::FertilizedVinePod
-            | CardType::SymbioticAlgae
-            | CardType::GrazingSlugEgg
-            | CardType::GrazingSlug
-            | CardType::ApexSpore
-            | CardType::GrowingApex
-    )
-}
-
-fn board_pressure(
-    time: Res<Time>,
-    mut commands: Commands,
-    mut session: ResMut<GameSession>,
-    mut save: ResMut<SaveData>,
-    manager: Res<SaveManager>,
-    mut trauma: ResMut<Trauma>,
-    mut chroma: ResMut<ChromaticAberration>,
-    cards: Query<(Entity, &Transform, &Card)>,
-    mut pending_despawn: ResMut<PendingDespawns>,
-) {
-    let toxins: Vec<(Entity, Vec2)> = cards
-        .iter()
-        .filter(|(_, _, c)| c.card_type == CardType::WasteToxin)
-        .map(|(e, tf, _)| (e, tf.translation.truncate()))
-        .collect();
-
-    session.toxins = toxins.len() as u32;
-
-    if session.game_over || toxins.is_empty() {
-        return;
-    }
-
-    if !session.toxicity_tick.tick(time.delta()).just_finished() {
-        return;
-    }
-
-    // Global pressure: toxins drain focus.
-    let drain = toxins.len() as f32 * 4.0;
-    session.focus = (session.focus - drain).max(0.0);
-
-    ScreenEffects::add_trauma(&mut trauma, (0.03 * toxins.len() as f32).clamp(0.03, 0.25));
-    ScreenEffects::chromatic_pulse(&mut chroma, (0.02 * toxins.len() as f32).clamp(0.02, 0.12));
-
-    // Occasionally destroy one nearby vulnerable ecosystem card.
-    if let Some((victim, pos, card_type)) = cards.iter().find_map(|(e, tf, c)| {
-        if c.card_type == CardType::WasteToxin || c.card_type == CardType::Gardener {
-            return None;
-        }
-        if !is_toxin_vulnerable(c.card_type) {
-            return None;
-        }
-        let pos = tf.translation.truncate();
-        toxins
-            .iter()
-            .any(|(_, tpos)| pos.distance(*tpos) < 72.0)
-            .then_some((e, pos, c.card_type))
-    }) {
-        pending_despawn.0.push(victim);
-        VfxSpawner::spawn_burst(
-            &mut commands,
-            pos,
-            10,
-            Color::srgb(0.75, 0.22, 0.25),
-            (25.0, 90.0),
-        );
-        VfxSpawner::spawn_damage_number(&mut commands, 1, pos, Color::srgb(1.0, 0.55, 0.55));
-        session.hint = format!("Waste toxin consumed {}!", card_type.label());
-        session.hint_timer = 2.0;
-    }
-
-    if session.focus <= 0.0 || session.toxins >= session.max_toxins_before_loss {
-        session.game_over = true;
-        session.victory = false;
-        session.end_reason = "Toxic overflow".into();
-        session.status = "ECOSYSTEM COLLAPSED: Toxic overflow!".into();
-
-        // loss still records your best biodiversity before the collapse
-        if session.biodiversity > save.high_biodiversity {
-            save.high_biodiversity = session.biodiversity;
-        }
-        let _ = manager.save(&*save);
     }
 }
 
@@ -1649,12 +1574,11 @@ mod tests {
         });
         app.insert_resource(ButtonInput::<MouseButton>::default());
         app.insert_resource(ButtonInput::<KeyCode>::default());
-        // screen-effects / game-feel resources consumed by apply_pending_fx + board_pressure
+        // screen-effects / game-feel resources consumed by apply_pending_fx
         app.insert_resource(game_utils_bevy::screen_effects::Trauma::default());
         app.insert_resource(FlashWhite::default());
         app.insert_resource(FreezeFrame::default());
         app.insert_resource(SlowMotion::default());
-        app.insert_resource(ChromaticAberration::default());
         // art is baked by load_card_art (registered in app.rs, not tests)
         app.insert_resource(CardArt::default());
         app.add_plugins(bevy::app::TaskPoolPlugin::default());
@@ -1806,8 +1730,8 @@ mod tests {
         let snapped = pos_of(app.world_mut(), spore);
         assert_eq!(
             snapped,
-            tpos + Vec2::new(0.0, 16.0),
-            "seed should snap above substrate"
+            tpos + Vec2::new(0.0, 10.0),
+            "seed stages above substrate (original -10 godot offset)"
         );
 
         // placement 2: drop the Gardener onto the staged seed -> plant action
@@ -2011,14 +1935,13 @@ mod tests {
             "win flushed to save"
         );
     }
-
     #[test]
-    fn toxin_pileup_collapses_ecosystem() {
+    fn toxins_never_cause_loss_on_their_own() {
         let mut app = test_app();
         enter_game(&mut app);
 
-        let threshold = app.world().resource::<GameSession>().max_toxins_before_loss;
-        for i in 0..threshold {
+        // original parity: a pile of toxins is only a cleaning chore
+        for i in 0..6 {
             spawn_at(
                 &mut app,
                 CardType::WasteToxin,
@@ -2026,63 +1949,47 @@ mod tests {
                 false,
             );
         }
-
-        // pressure ticks every 1.5s; loss fires on the first tick past the threshold
-        let mut collapsed = false;
         for _ in 0..20 {
             app.update();
-            if app.world().resource::<GameSession>().game_over {
-                collapsed = true;
-                break;
-            }
         }
-        assert!(collapsed, "collapse triggers");
 
         let session = app.world().resource::<GameSession>();
-        assert!(!session.victory, "collapse is a loss");
-        assert!(
-            session.end_reason.contains("Toxic"),
-            "end reason explains the loss"
-        );
-        assert!(session.focus < 100.0, "toxins drained focus");
-        // loss still persists stats
-        let save = app.world().resource::<SaveData>();
-        assert!(save.times_played >= 1, "session stat persisted");
+        assert!(!session.game_over, "no auto-collapse from toxin count");
+        assert_eq!(session.toxins, 6, "HUD counter tracks toxins");
     }
 
     #[test]
-    fn restart_after_game_over_resets_board() {
+    fn losing_the_gardener_loses_and_restart_resets() {
         let mut app = test_app();
         enter_game(&mut app);
 
-        let threshold = app.world().resource::<GameSession>().max_toxins_before_loss;
-        for i in 0..threshold {
-            spawn_at(
-                &mut app,
-                CardType::WasteToxin,
-                Vec2::new(-400.0 + 60.0 * i as f32, 200.0),
-                false,
-            );
-        }
-        for _ in 0..20 {
+        let gardener = cards_of(app.world_mut(), CardType::Gardener).remove(0);
+        app.world_mut()
+            .resource_mut::<PendingDespawns>()
+            .0
+            .push(gardener);
+        for _ in 0..8 {
             app.update();
             if app.world().resource::<GameSession>().game_over {
                 break;
             }
         }
-        assert!(app.world().resource::<GameSession>().game_over);
+        {
+            let session = app.world().resource::<GameSession>();
+            assert!(session.game_over && !session.victory, "gardener loss");
+            assert!(session.end_reason.contains("Gardener"));
+        }
 
-        // trigger restart via the same flag the UI/R key sets
+        // restart via the same flag the UI/R key sets
         app.world_mut().resource_mut::<RestartFlag>().0 = true;
         app.update();
 
         let world = app.world_mut();
         assert!(!world.resource::<GameSession>().game_over, "fresh session");
-        assert_eq!(
-            cards_of(world, CardType::SporePod).len(),
-            1,
-            "opening spore back"
+        assert_eq!(cards_of(world, CardType::SporePod).len(), 1);
+        assert!(
+            world.resource::<GameSession>().gardener.is_some(),
+            "gardener back on the board"
         );
-        assert!(world.resource::<GameSession>().gardener.is_some());
     }
 }

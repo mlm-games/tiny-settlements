@@ -15,7 +15,7 @@ use crate::screens::ScreensPlugin;
 use crate::theme::ThemePlugin;
 use game_utils_bevy::{
     EcosystemPlugin,
-    audio::AudioChannels,
+    audio::{AudioChannels, MusicChannel},
     i18n::{self, I18nPlugin, LocaleResources},
     post_process::{ScreenEffectSettings, sync_post_process_settings},
     save::{SaveManager, SavePlugin},
@@ -191,6 +191,8 @@ impl Plugin for AppPlugin {
                 GamePlugin,
                 DevToolsPlugin,
             ))
+            .init_resource::<MusicStarted>()
+            .add_systems(OnEnter(AppState::Title), start_music)
             .add_systems(Startup, (setup_camera, crate::game::load_card_art))
             .add_systems(
                 Update,
@@ -219,6 +221,25 @@ fn apply_saved_settings(save: Res<SaveData>, mut locale: ResMut<LocaleResources>
     {
         locale.set_locale(&save.settings.language);
     }
+}
+
+#[derive(Resource, Default)]
+struct MusicStarted(bool);
+
+fn start_music(
+    mut commands: Commands,
+    assets: Res<AssetServer>,
+    mut started: ResMut<MusicStarted>,
+) {
+    if started.0 {
+        return;
+    }
+    started.0 = true;
+    commands.spawn((
+        MusicChannel,
+        AudioPlayer::new(assets.load("audio/music_loop.ogg")),
+        PlaybackSettings::LOOP,
+    ));
 }
 
 fn setup_camera(mut commands: Commands) {
