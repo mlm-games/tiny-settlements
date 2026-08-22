@@ -591,7 +591,11 @@ fn ingame_shell(st: &SharedUi, actions: Arc<Mutex<Vec<UiAction>>>) -> View {
                 .align_items(AlignItems::FLEX_START)
                 .justify_content(JustifyContent::FLEX_START),
         )
-        .child(top_bar(st, actions.clone())),
+        .child((
+            top_bar(st, actions.clone()),
+            spacer(6.0),
+            weather_banner(st),
+        )),
         Column(
             Modifier::new()
                 .fill_max_size()
@@ -643,7 +647,7 @@ fn top_bar(st: &SharedUi, actions: Arc<Mutex<Vec<UiAction>>>) -> View {
             .justify_content(JustifyContent::SPACE_BETWEEN),
     )
     .child((
-        Row(Modifier::new().gap(10.0).align_items(AlignItems::CENTER)).child((
+        Row(Modifier::new().gap(8.0).align_items(AlignItems::CENTER)).child((
             metric_chip(
                 t(tr, "biodiversity", "Biodiversity"),
                 st.biodiversity.to_string(),
@@ -659,6 +663,16 @@ fn top_bar(st: &SharedUi, actions: Arc<Mutex<Vec<UiAction>>>) -> View {
                 format!("{}/{}", st.discoveries, st.discoveries_total),
                 col(90, 80, 40),
             ),
+            metric_chip(
+                format!("Y{} {}", st.season_year, st.season_name),
+                format!("Moon {}/4", st.moon_in_season),
+                col(70, 60, 90),
+            ),
+            if st.weather_active {
+                metric_chip(st.weather_name.clone(), st.weather_description.clone(), col(90, 70, 60))
+            } else {
+                spacer(0.0)
+            },
         )),
         Column(Modifier::new().align_items(AlignItems::CENTER)).child((
             body(
@@ -692,6 +706,24 @@ fn metric_chip(label: String, value: String, bg: RColor) -> View {
     .child((
         body(label, 11.0, col(200, 220, 200)),
         body(value, 20.0, RColor::WHITE),
+    ))
+}
+
+fn weather_banner(st: &SharedUi) -> View {
+    if !st.weather_active {
+        return spacer(0.0);
+    }
+    Column(
+        Modifier::new()
+            .fill_max_width()
+            .padding(8.0)
+            .background(cola(90, 60, 40, 220))
+            .clip_rounded(8.0)
+            .align_items(AlignItems::CENTER),
+    )
+    .child((
+        body(st.weather_name.clone(), 15.0, RColor::WHITE),
+        body(st.weather_description.clone(), 12.0, col(220, 210, 180)),
     ))
 }
 
@@ -834,7 +866,14 @@ fn habitat_panel(st: &SharedUi) -> View {
     for h in st.habitats.iter().filter(|h| h.plant.is_some()).take(6) {
         let plant = h.plant.as_deref().unwrap_or("—");
         let comp = h.companion.as_deref().unwrap_or("—");
-        let mono = if h.is_monoculture { " ⚠ mono" } else { "" };
+        let blight_risk = st.weather_active && st.weather_name == "Blight" && h.is_monoculture;
+        let mono = if blight_risk {
+            " ⚠ Blight Risk"
+        } else if h.is_monoculture {
+            " ⚠ mono"
+        } else {
+            ""
+        };
         let line1 = format!("{} → {} [{}]{}", h.substrate, plant, comp, mono);
         let line2 = if let Some(ref s) = h.synergy_name {
             format!("✦ {}  ×{:.1}", s, h.production_mult)
@@ -854,7 +893,9 @@ fn habitat_panel(st: &SharedUi) -> View {
                 body(
                     line2,
                     12.0,
-                    if h.is_monoculture {
+                    if blight_risk {
+                        col(255, 80, 80)
+                    } else if h.is_monoculture {
                         col(220, 150, 110)
                     } else {
                         col(160, 200, 150)

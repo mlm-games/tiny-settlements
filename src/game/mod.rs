@@ -4,6 +4,7 @@ mod commissions;
 mod content;
 mod discovery;
 mod economy;
+pub mod seasons;
 mod events;
 mod packs;
 pub mod projects;
@@ -227,6 +228,9 @@ struct RunSetup<'w, 's> {
     counters: ResMut<'w, RunCounters>,
     blueprint_state: ResMut<'w, crate::game::projects::BlueprintState>,
     infra_bonuses: ResMut<'w, crate::game::projects::InfrastructureBonuses>,
+    season_clock: ResMut<'w, crate::game::seasons::SeasonClock>,
+    active_weather: ResMut<'w, crate::game::seasons::ActiveWeather>,
+    eco: ResMut<'w, crate::game::seasons::EcoModifiers>,
     #[allow(dead_code)]
     _phantom: PhantomData<&'s ()>,
 }
@@ -250,6 +254,9 @@ impl Plugin for GamePlugin {
             .init_resource::<RunCounters>()
             .init_resource::<crate::game::projects::BlueprintState>()
             .init_resource::<crate::game::projects::InfrastructureBonuses>()
+            .init_resource::<crate::game::seasons::SeasonClock>()
+            .init_resource::<crate::game::seasons::ActiveWeather>()
+            .init_resource::<crate::game::seasons::EcoModifiers>()
             .add_systems(
                 OnEnter(AppState::InGame),
                 (setup_game, stacks::spawn_grid_ghosts).chain(),
@@ -271,6 +278,16 @@ impl Plugin for GamePlugin {
                         stacks::position_stacked_cards,
                         stacks::clear_dead_stacks,
                         stacks::synergy_income_tick,
+                    )
+                        .chain(),
+                    (
+                        crate::game::seasons::tick_season_clock,
+                        crate::game::seasons::tick_active_weather,
+                        crate::game::seasons::recompute_eco_modifiers,
+                        crate::game::seasons::blight_strike_tick,
+                        crate::game::seasons::heatwave_toxin_tick,
+                        crate::game::seasons::heavy_rain_cleanse_tick,
+                        crate::game::seasons::frost_snap_tick,
                     )
                         .chain(),
                     (
@@ -364,6 +381,10 @@ fn setup_game(mut commands: Commands, mut run: RunSetup) {
         }
         run.save.discovered_blueprints.sort();
         run.infra_bonuses.clone_from(&crate::game::projects::InfrastructureBonuses::default());
+        // init seasons
+        *run.season_clock = crate::game::seasons::SeasonClock::default();
+        *run.active_weather = crate::game::seasons::ActiveWeather::default();
+        *run.eco = crate::game::seasons::season_base_modifiers(crate::game::seasons::Season::Spring);
     }
     // init commission board with 3 random picks
     run.board.active.clear();
@@ -1350,6 +1371,7 @@ fn tick_work_timers(
     stacked: Query<&StackedOn>,
     hab_syn: Query<&HabitatSynergy, With<HabitatBase>>,
     habitats: Query<&HabitatBase>,
+    eco: Res<crate::game::seasons::EcoModifiers>,
     mut pending_spawn: ResMut<PendingSpawns>,
     mut pending_despawn: ResMut<PendingDespawns>,
     mut pending_passive: ResMut<PendingPassives>,
@@ -1402,7 +1424,7 @@ fn tick_work_timers(
                 } else { 1.0 }
             } else { 1.0 }
         } else { 1.0 };
-        let mult = (syn * inst_mult).clamp(0.25, 3.0);
+        let mult = (syn * inst_mult * eco.growth_mult).clamp(0.25, 3.0);
         match action {
             GardenerAction::Plant => {
                 set_planted(&mut commands, e);
@@ -1512,6 +1534,7 @@ fn tick_passive_timers(
     stacked: Query<&StackedOn>,
     hab_syn: Query<&HabitatSynergy, With<HabitatBase>>,
     habitats: Query<&HabitatBase>,
+    eco: Res<crate::game::seasons::EcoModifiers>,
     mut pending_spawn: ResMut<PendingSpawns>,
     mut pending_despawn: ResMut<PendingDespawns>,
     mut pending_passive: ResMut<PendingPassives>,
@@ -1592,7 +1615,7 @@ fn tick_passive_timers(
                                 } else { 1.0 }
                             } else { 1.0 }
                         } else { 1.0 };
-                        let total = (syn * inst).clamp(0.25, 3.0);
+                        let total = (syn * inst * eco.production_mult).clamp(0.25, 3.0);
                         let eff = (interval / total.max(0.1)).max(1.5);
                         pending_passive.0.push((e, PassiveKind::Produce, eff));
                         pending_fx.0.push(FxEvent::Produce {
@@ -1649,7 +1672,7 @@ fn tick_passive_timers(
                                 } else { 1.0 }
                             } else { 1.0 }
                         } else { 1.0 };
-                        let total = (syn * inst).clamp(0.25, 3.0);
+                        let total = (syn * inst * eco.production_mult).clamp(0.25, 3.0);
                         let eff = (interval / total.max(0.1)).max(1.5);
                         pending_passive.0.push((e, PassiveKind::Produce, eff));
                     }
@@ -1667,6 +1690,7 @@ fn world_timers(
     stacked: Query<&StackedOn>,
     hab_syn: Query<&HabitatSynergy, With<HabitatBase>>,
     habitats: Query<&HabitatBase>,
+    eco: Res<crate::game::seasons::EcoModifiers>,
     mut pending_spawn: ResMut<PendingSpawns>,
     mut pending_passive: ResMut<PendingPassives>,
     mut pending_fx: ResMut<PendingFx>,
@@ -1683,7 +1707,8 @@ fn world_timers(
             .map(|(_, _, c)| c.is_working)
             .unwrap_or(true);
         if !gardener_busy {
-            session.focus = (session.focus + session.focus_recharge_rate).min(session.max_focus);
+            let rate = session.focus_recharge_rate * eco.focus_recharge_mult;
+            session.focus = (session.focus + rate).min(session.max_focus);
         }
     }
 
@@ -1745,7 +1770,8 @@ fn world_timers(
                         } else { 1.0 }
                     } else { 1.0 }
                 } else { 1.0 };
-                let total = (syn * inst).clamp(0.25, 3.0);
+                let eco_mult = eco.production_mult;
+                let total = (syn * inst * eco_mult).clamp(0.25, 3.0);
                 let eff = (interval / total).max(1.5);
                 pending_passive.0.push((e, PassiveKind::Produce, eff));
             }
@@ -1759,7 +1785,7 @@ fn world_timers(
                     && otf.translation.truncate().distance(pos) < NEARBY
             });
             if flutter_nearby {
-                let mut dur = 5.0;
+                let mut dur = 5.0 / eco.pollination_mult.max(0.1);
                 if let Ok(stack) = stacked.get(e) {
                     if let Ok(hab) = habitats.get(stack.base) {
                         if let Some(inst) = hab.installation {
@@ -1771,6 +1797,7 @@ fn world_timers(
                         }
                     }
                 }
+                dur = dur.max(1.0);
                 pending_passive.0.push((e, PassiveKind::Pollinate, dur));
             }
         }
@@ -1807,7 +1834,7 @@ fn world_timers(
                     } else { 1.0 }
                 } else { 1.0 }
             } else { 1.0 };
-            let total = (syn * inst).clamp(0.25, 3.0);
+            let total = (syn * inst * eco.growth_mult).clamp(0.25, 3.0);
             let eff = (10.0 / total).max(1.0);
             pending_passive.0.push((e, PassiveKind::Grow, eff));
         }
@@ -1823,7 +1850,7 @@ fn world_timers(
                     } else { 1.0 }
                 } else { 1.0 }
             } else { 1.0 };
-            let total = (syn * inst).clamp(0.25, 3.0);
+            let total = (syn * inst * eco.growth_mult).clamp(0.25, 3.0);
             let eff = (8.0 / total).max(1.0);
             pending_passive.0.push((e, PassiveKind::Grow, eff));
         }
@@ -1839,7 +1866,7 @@ fn world_timers(
                     } else { 1.0 }
                 } else { 1.0 }
             } else { 1.0 };
-            let total = (syn * inst).clamp(0.25, 3.0);
+            let total = (syn * inst * eco.growth_mult).clamp(0.25, 3.0);
             let eff = (8.0 / total).max(1.0);
             pending_passive.0.push((e, PassiveKind::Grow, eff));
         }
@@ -1855,7 +1882,7 @@ fn world_timers(
                     } else { 1.0 }
                 } else { 1.0 }
             } else { 1.0 };
-            let total = (syn * inst).clamp(0.25, 3.0);
+            let total = (syn * inst * eco.growth_mult).clamp(0.25, 3.0);
             let eff = (5.0 / total).max(1.0);
             pending_passive.0.push((e, PassiveKind::Grow, eff));
         }
@@ -2104,6 +2131,30 @@ fn drain_game_events(
                     let def = crate::game::projects::blueprint_def(blueprint);
                     ui.toast = format!("New Field Note: {}", def.name);
                     ui.toast_timer = 3.2;
+                }
+            }
+            GameEvent::SeasonChanged { season, year } => {
+                if let Ok(mut ui) = bridge.shared.try_lock() {
+                    ui.toast = format!("Season: {} Year {}", season.label(), year);
+                    ui.toast_timer = 2.5;
+                }
+            }
+            GameEvent::WeatherStarted { weather } => {
+                save.weather_events_seen = save.weather_events_seen.saturating_add(1);
+                if let Ok(mut ui) = bridge.shared.try_lock() {
+                    ui.toast = format!("Weather: {} - {}", weather.label(), weather.description());
+                    ui.toast_timer = 3.0;
+                }
+            }
+            GameEvent::WeatherEnded { .. } => {}
+            GameEvent::BlightStruck { .. } => {}
+            GameEvent::HarvestGranted { dew } => {
+                save.total_dew_earned = save.total_dew_earned.saturating_add(dew as u64);
+                if let Ok(mut ui) = bridge.shared.try_lock() {
+                    if ui.toast_timer < 0.2 {
+                        ui.toast = format!("Harvest +{} Dew", dew);
+                        ui.toast_timer = 2.0;
+                    }
                 }
             }
         }
@@ -2355,6 +2406,9 @@ fn sync_hud(
     cards_q: Query<&Card>,
     bonuses: Res<crate::game::projects::InfrastructureBonuses>,
     blueprint_state: Res<crate::game::projects::BlueprintState>,
+    season_clock: Res<crate::game::seasons::SeasonClock>,
+    active_weather: Res<crate::game::seasons::ActiveWeather>,
+    eco: Res<crate::game::seasons::EcoModifiers>,
 ) {
     let Ok(mut ui) = bridge.shared.lock() else {
         return;
@@ -2512,6 +2566,21 @@ fn sync_hud(
         .iter()
         .map(|s| format!("{}: {} + {} -> +{:.0}% +{} Dew", s.name, s.plant.label(), s.companion.label(), s.production_bonus*100.0, s.dew_per_tick))
         .collect();
+    // Phase 4 seasons
+    ui.season_name = season_clock.current.label().to_string();
+    ui.season_year = season_clock.current_year;
+    ui.moon_in_season = season_clock.moons_into_season + 1;
+    if let Some(ev) = active_weather.event {
+        ui.weather_active = true;
+        ui.weather_name = ev.label().to_string();
+        ui.weather_description = ev.description().to_string();
+    } else {
+        ui.weather_active = false;
+        ui.weather_name.clear();
+        ui.weather_description.clear();
+    }
+    ui.eco_growth_mult = eco.growth_mult;
+    ui.eco_production_mult = eco.production_mult;
 }
 
 fn done_need(board: &CommissionBoard, save: &SaveData, def: &PackDefinition) -> bool {

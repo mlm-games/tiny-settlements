@@ -133,6 +133,44 @@ pub const COMMISSION_TEMPLATES: &[CommissionTemplate] = &[
         kind: CommissionKind::CompostToxins { need: 2 },
         reward_dew: 9,
     },
+    CommissionTemplate {
+        id: "spring_nursery",
+        title: "Spring Nursery",
+        kind: CommissionKind::Grow {
+            card: CardType::YoungVine,
+        },
+        reward_dew: 7,
+    },
+    CommissionTemplate {
+        id: "summer_reserves",
+        title: "Summer Reserves",
+        kind: CommissionKind::ProduceCount {
+            card: CardType::ProcessedNutrients,
+            need: 10,
+        },
+        reward_dew: 8,
+    },
+    CommissionTemplate {
+        id: "autumn_harvest",
+        title: "Autumn Harvest",
+        kind: CommissionKind::OwnCount {
+            card: CardType::MatureVine,
+            need: 4,
+        },
+        reward_dew: 10,
+    },
+    CommissionTemplate {
+        id: "winter_keeper",
+        title: "Winter Keeper",
+        kind: CommissionKind::CompleteProjects { need: 1 },
+        reward_dew: 9,
+    },
+    CommissionTemplate {
+        id: "blight_resistant",
+        title: "Blight Resistant",
+        kind: CommissionKind::CleanToxins { need: 1 },
+        reward_dew: 12,
+    },
 ];
 
 #[derive(Clone, Debug)]

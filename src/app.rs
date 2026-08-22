@@ -248,6 +248,15 @@ pub struct SharedUi {
     // Phase 3 blueprints
     pub blueprints: Vec<BlueprintUi>,
     pub synergies: Vec<String>,
+    // Phase 4 seasons
+    pub season_name: String,
+    pub season_year: u32,
+    pub moon_in_season: u8,
+    pub weather_name: String,
+    pub weather_description: String,
+    pub weather_active: bool,
+    pub eco_growth_mult: f32,
+    pub eco_production_mult: f32,
 }
 
 impl Default for SharedUi {
@@ -297,6 +306,14 @@ impl Default for SharedUi {
             total_resonance: 0.0,
             blueprints: Vec::new(),
             synergies: Vec::new(),
+            season_name: "Spring".to_string(),
+            season_year: 1,
+            moon_in_season: 1,
+            weather_name: String::new(),
+            weather_description: String::new(),
+            weather_active: false,
+            eco_growth_mult: 1.0,
+            eco_production_mult: 1.0,
         }
     }
 }

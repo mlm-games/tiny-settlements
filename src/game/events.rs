@@ -1,6 +1,7 @@
 use bevy::prelude::*;
 
 use super::{BlueprintId, CardType};
+use super::seasons::{Season, WeatherEvent};
 
 /// Domain events for discovery / commissions / stats.
 /// Systems push events instead of directly mutating those subsystems.
@@ -47,6 +48,22 @@ pub enum GameEvent {
     },
     BlueprintUnlocked {
         blueprint: BlueprintId,
+    },
+    SeasonChanged {
+        season: Season,
+        year: u32,
+    },
+    WeatherStarted {
+        weather: WeatherEvent,
+    },
+    WeatherEnded {
+        weather: WeatherEvent,
+    },
+    BlightStruck {
+        habitat: Option<Entity>,
+    },
+    HarvestGranted {
+        dew: u32,
     },
 }
 
