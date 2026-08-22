@@ -512,7 +512,10 @@ fn ingame_hud(st: &SharedUi) -> View {
         ))
         .size(22.0)
         .color(RColor::WHITE),
-        spacer(6.0),
+        spacer(4.0),
+        RText(format!("{}: {}", t(tr, "toxins", "Toxins"), st.toxins))
+            .size(16.0)
+            .color(col(220, 120, 120)),
         RText(format!(
             "{}: {}%",
             t(tr, "focus", "Gardener Focus"),
@@ -544,6 +547,18 @@ fn ingame_hud(st: &SharedUi) -> View {
         .size(13.0)
         .color(col(170, 180, 170)),
     ];
+
+    if st.toxins >= 3 && !st.game_over {
+        children.push(
+            RText(t(
+                tr,
+                "toxin-warning",
+                "Warning: toxins are destabilizing the ecosystem",
+            ))
+            .size(14.0)
+            .color(col(255, 140, 140)),
+        );
+    }
 
     if !st.status_line.is_empty() && !st.game_over {
         children.push(spacer(8.0));

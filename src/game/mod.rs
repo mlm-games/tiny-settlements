@@ -11,11 +11,13 @@ use std::collections::HashMap;
 use bevy::prelude::*;
 use bevy::window::PrimaryWindow;
 use game_utils_bevy::game_feel::{GameFeel, SlowMotion};
-use game_utils_bevy::juice::Juice;
+use game_utils_bevy::juice::{Juice, Particle};
 use game_utils_bevy::save::SaveManager;
-use game_utils_bevy::screen_effects::{FlashWhite, FreezeFrame, ScreenEffects, Trauma};
+use game_utils_bevy::screen_effects::{
+    ChromaticAberration, FlashWhite, FreezeFrame, ScreenEffects, Trauma,
+};
 use game_utils_bevy::transitions::Transition;
-use game_utils_bevy::vfx::VfxSpawner;
+use game_utils_bevy::vfx::{DamageNumber, TrailGhost, VfxSpawner};
 use rand::RngExt;
 
 use crate::app::{AppState, Paused};
@@ -25,7 +27,6 @@ pub const CARD_SIZE: Vec2 = Vec2::new(96.0, 128.0);
 pub const BOARD_MIN: Vec2 = Vec2::new(-480.0, -280.0);
 pub const BOARD_MAX: Vec2 = Vec2::new(480.0, 280.0);
 pub const NEARBY: f32 = 95.0;
-pub const MAX_TOXINS_BEFORE_COLLAPSE: u32 = 4;
 
 #[derive(Component)]
 pub struct GameCleanup;
@@ -71,6 +72,7 @@ pub struct GameSession {
     pub max_focus: f32,
     pub action_cost: f32,
     pub biodiversity: u32,
+    pub toxins: u32,
     pub tracked: HashMap<CardType, u32>,
     pub status: String,
     pub hint: String,
@@ -79,8 +81,10 @@ pub struct GameSession {
     nutrient_spawn: Timer,
     passive_scan: Timer,
     waste_check: Timer,
+    toxicity_tick: Timer,
     pub focus_recharge_rate: f32,
     pub max_slugs_before_waste: u32,
+    pub max_toxins_before_loss: u32,
     /// Fire win/lose juice exactly once.
     pub end_fx_done: bool,
 }
@@ -97,6 +101,7 @@ impl Default for GameSession {
             // Godot CARD_PROPERTIES uses 50; keep that for fidelity
             action_cost: 50.0,
             biodiversity: 0,
+            toxins: 0,
             tracked: HashMap::new(),
             status: String::new(),
             hint: String::new(),
@@ -105,8 +110,10 @@ impl Default for GameSession {
             nutrient_spawn: Timer::from_seconds(18.0, TimerMode::Repeating),
             passive_scan: Timer::from_seconds(1.0, TimerMode::Repeating),
             waste_check: Timer::from_seconds(12.0, TimerMode::Repeating),
+            toxicity_tick: Timer::from_seconds(1.5, TimerMode::Repeating),
             focus_recharge_rate: 3.0,
             max_slugs_before_waste: 5,
+            max_toxins_before_loss: 6,
             end_fx_done: false,
         }
     }
@@ -165,9 +172,9 @@ impl Plugin for GamePlugin {
                     tick_work_timers,
                     tick_passive_timers,
                     world_timers,
+                    board_pressure,
                     apply_pending_spawns,
                     apply_pending_despawns,
-                    check_toxin_collapse,
                     end_game_fx,
                     apply_pending_fx,
                     update_card_labels,
@@ -187,6 +194,7 @@ fn setup_game(
     mut commands: Commands,
     mut session: ResMut<GameSession>,
     mut save: ResMut<SaveData>,
+    manager: Res<SaveManager>,
     mut pending_spawn: ResMut<PendingSpawns>,
     mut pending_despawn: ResMut<PendingDespawns>,
     mut pending_passive: ResMut<PendingPassives>,
@@ -199,7 +207,9 @@ fn setup_game(
     pending_passive.0.clear();
     pending_work.0.clear();
     pending_fx.0.clear();
+    // persist immediately so quitting/losing can't lose the stat
     save.times_played = save.times_played.saturating_add(1);
+    let _ = manager.save(&*save);
 
     commands.spawn((
         GameCleanup,
@@ -268,10 +278,16 @@ fn setup_game(
 fn cleanup_game(
     mut commands: Commands,
     q: Query<Entity, With<GameCleanup>>,
-    numbers: Query<Entity, With<game_utils_bevy::vfx::DamageNumber>>,
-    particles: Query<Entity, With<game_utils_bevy::juice::Particle>>,
+    numbers: Query<Entity, With<DamageNumber>>,
+    particles: Query<Entity, With<Particle>>,
+    trails: Query<Entity, With<TrailGhost>>,
 ) {
-    for e in q.iter().chain(numbers.iter()).chain(particles.iter()) {
+    for e in q
+        .iter()
+        .chain(numbers.iter())
+        .chain(particles.iter())
+        .chain(trails.iter())
+    {
         commands.entity(e).despawn();
     }
 }
@@ -1268,19 +1284,98 @@ fn apply_pending_despawns(
     }
 }
 
-fn check_toxin_collapse(mut session: ResMut<GameSession>, cards: Query<&Card>) {
-    if session.game_over {
+fn is_toxin_vulnerable(t: CardType) -> bool {
+    matches!(
+        t,
+        CardType::SporePod
+            | CardType::BasicFungi
+            | CardType::VineSeed
+            | CardType::YoungVine
+            | CardType::MatureVine
+            | CardType::FlutterwingSpore
+            | CardType::FlutterwingLarva
+            | CardType::MatureFlutterwing
+            | CardType::FertilizedVinePod
+            | CardType::SymbioticAlgae
+            | CardType::GrazingSlugEgg
+            | CardType::GrazingSlug
+            | CardType::ApexSpore
+            | CardType::GrowingApex
+    )
+}
+
+fn board_pressure(
+    time: Res<Time>,
+    mut commands: Commands,
+    mut session: ResMut<GameSession>,
+    mut save: ResMut<SaveData>,
+    manager: Res<SaveManager>,
+    mut trauma: ResMut<Trauma>,
+    mut chroma: ResMut<ChromaticAberration>,
+    cards: Query<(Entity, &Transform, &Card)>,
+    mut pending_despawn: ResMut<PendingDespawns>,
+) {
+    let toxins: Vec<(Entity, Vec2)> = cards
+        .iter()
+        .filter(|(_, _, c)| c.card_type == CardType::WasteToxin)
+        .map(|(e, tf, _)| (e, tf.translation.truncate()))
+        .collect();
+
+    session.toxins = toxins.len() as u32;
+
+    if session.game_over || toxins.is_empty() {
         return;
     }
-    let toxins = cards
-        .iter()
-        .filter(|c| c.card_type == CardType::WasteToxin)
-        .count() as u32;
-    if toxins >= MAX_TOXINS_BEFORE_COLLAPSE {
+
+    if !session.toxicity_tick.tick(time.delta()).just_finished() {
+        return;
+    }
+
+    // Global pressure: toxins drain focus.
+    let drain = toxins.len() as f32 * 4.0;
+    session.focus = (session.focus - drain).max(0.0);
+
+    ScreenEffects::add_trauma(&mut trauma, (0.03 * toxins.len() as f32).clamp(0.03, 0.25));
+    ScreenEffects::chromatic_pulse(&mut chroma, (0.02 * toxins.len() as f32).clamp(0.02, 0.12));
+
+    // Occasionally destroy one nearby vulnerable ecosystem card.
+    if let Some((victim, pos, card_type)) = cards.iter().find_map(|(e, tf, c)| {
+        if c.card_type == CardType::WasteToxin || c.card_type == CardType::Gardener {
+            return None;
+        }
+        if !is_toxin_vulnerable(c.card_type) {
+            return None;
+        }
+        let pos = tf.translation.truncate();
+        toxins
+            .iter()
+            .any(|(_, tpos)| pos.distance(*tpos) < 72.0)
+            .then_some((e, pos, c.card_type))
+    }) {
+        pending_despawn.0.push(victim);
+        VfxSpawner::spawn_burst(
+            &mut commands,
+            pos,
+            10,
+            Color::srgb(0.75, 0.22, 0.25),
+            (25.0, 90.0),
+        );
+        VfxSpawner::spawn_damage_number(&mut commands, 1, pos, Color::srgb(1.0, 0.55, 0.55));
+        session.hint = format!("Waste toxin consumed {}!", card_type.label());
+        session.hint_timer = 2.0;
+    }
+
+    if session.focus <= 0.0 || session.toxins >= session.max_toxins_before_loss {
         session.game_over = true;
         session.victory = false;
-        session.end_reason = format!("{toxins} waste toxins overwhelmed the board");
-        session.status = "ECOSYSTEM COLLAPSED: Waste toxins ran wild!".into();
+        session.end_reason = "Toxic overflow".into();
+        session.status = "ECOSYSTEM COLLAPSED: Toxic overflow!".into();
+
+        // loss still records your best biodiversity before the collapse
+        if session.biodiversity > save.high_biodiversity {
+            save.high_biodiversity = session.biodiversity;
+        }
+        let _ = manager.save(&*save);
     }
 }
 
@@ -1429,6 +1524,7 @@ fn sync_hud(session: Res<GameSession>, bridge: Res<crate::menus::UiBridge>) {
         return;
     };
     ui.biodiversity = session.biodiversity;
+    ui.toxins = session.toxins;
     ui.focus = session.focus;
     ui.max_focus = session.max_focus;
     ui.status_line = if !session.status.is_empty() {
@@ -1477,10 +1573,12 @@ fn process_restart(
     mut flag: ResMut<RestartFlag>,
     mut commands: Commands,
     cleanup: Query<Entity, With<GameCleanup>>,
-    numbers: Query<Entity, With<game_utils_bevy::vfx::DamageNumber>>,
-    particles: Query<Entity, With<game_utils_bevy::juice::Particle>>,
+    numbers: Query<Entity, With<DamageNumber>>,
+    particles: Query<Entity, With<Particle>>,
+    trails: Query<Entity, With<TrailGhost>>,
     session: ResMut<GameSession>,
     save: ResMut<SaveData>,
+    manager: Res<SaveManager>,
     pending_spawn: ResMut<PendingSpawns>,
     pending_despawn: ResMut<PendingDespawns>,
     pending_passive: ResMut<PendingPassives>,
@@ -1491,13 +1589,19 @@ fn process_restart(
         return;
     }
     flag.0 = false;
-    for e in cleanup.iter().chain(numbers.iter()).chain(particles.iter()) {
+    for e in cleanup
+        .iter()
+        .chain(numbers.iter())
+        .chain(particles.iter())
+        .chain(trails.iter())
+    {
         commands.entity(e).despawn();
     }
     setup_game(
         commands,
         session,
         save,
+        manager,
         pending_spawn,
         pending_despawn,
         pending_passive,
@@ -1536,11 +1640,12 @@ mod tests {
         });
         app.insert_resource(ButtonInput::<MouseButton>::default());
         app.insert_resource(ButtonInput::<KeyCode>::default());
-        // screen-effects / game-feel resources consumed by apply_pending_fx
+        // screen-effects / game-feel resources consumed by apply_pending_fx + board_pressure
         app.insert_resource(game_utils_bevy::screen_effects::Trauma::default());
         app.insert_resource(FlashWhite::default());
         app.insert_resource(FreezeFrame::default());
         app.insert_resource(SlowMotion::default());
+        app.insert_resource(ChromaticAberration::default());
         app.add_plugins(bevy::app::TaskPoolPlugin::default());
         app.add_plugins(bevy::asset::AssetPlugin::default());
         app.init_asset::<Image>();
@@ -1901,7 +2006,8 @@ mod tests {
         let mut app = test_app();
         enter_game(&mut app);
 
-        for i in 0..MAX_TOXINS_BEFORE_COLLAPSE {
+        let threshold = app.world().resource::<GameSession>().max_toxins_before_loss;
+        for i in 0..threshold {
             spawn_at(
                 &mut app,
                 CardType::WasteToxin,
@@ -1910,15 +2016,27 @@ mod tests {
             );
         }
 
-        // one frame lets check_toxin_collapse + end_game_fx run
-        app.update();
+        // pressure ticks every 1.5s; loss fires on the first tick past the threshold
+        let mut collapsed = false;
+        for _ in 0..20 {
+            app.update();
+            if app.world().resource::<GameSession>().game_over {
+                collapsed = true;
+                break;
+            }
+        }
+        assert!(collapsed, "collapse triggers");
 
         let session = app.world().resource::<GameSession>();
-        assert!(session.game_over && !session.victory, "collapse triggers");
+        assert!(!session.victory, "collapse is a loss");
         assert!(
-            session.end_reason.contains("toxins"),
+            session.end_reason.contains("Toxic"),
             "end reason explains the loss"
         );
+        assert!(session.focus < 100.0, "toxins drained focus");
+        // loss still persists stats
+        let save = app.world().resource::<SaveData>();
+        assert!(save.times_played >= 1, "session stat persisted");
     }
 
     #[test]
@@ -1926,7 +2044,8 @@ mod tests {
         let mut app = test_app();
         enter_game(&mut app);
 
-        for i in 0..MAX_TOXINS_BEFORE_COLLAPSE {
+        let threshold = app.world().resource::<GameSession>().max_toxins_before_loss;
+        for i in 0..threshold {
             spawn_at(
                 &mut app,
                 CardType::WasteToxin,
@@ -1934,7 +2053,12 @@ mod tests {
                 false,
             );
         }
-        app.update();
+        for _ in 0..20 {
+            app.update();
+            if app.world().resource::<GameSession>().game_over {
+                break;
+            }
+        }
         assert!(app.world().resource::<GameSession>().game_over);
 
         // trigger restart via the same flag the UI/R key sets
