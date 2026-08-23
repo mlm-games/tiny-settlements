@@ -469,6 +469,17 @@ fn setup_camera(mut commands: Commands) {
     ));
 }
 
+#[derive(bevy::ecs::system::SystemParam)]
+struct SharedRunState<'w, 's> {
+    economy: Option<Res<'w, crate::game::RunEconomy>>,
+    discovery: Option<Res<'w, crate::game::DiscoveryState>>,
+    commissions: Option<Res<'w, crate::game::CommissionBoard>>,
+    bonuses: Option<Res<'w, crate::game::projects::InfrastructureBonuses>>,
+    blueprints_state: Option<Res<'w, crate::game::projects::BlueprintState>>,
+    rules: Option<Res<'w, crate::game::run_rules::RunRules>>,
+    _marker: std::marker::PhantomData<&'s ()>,
+}
+
 fn sync_shared_ui(
     state: Res<State<AppState>>,
     paused: Res<Paused>,
@@ -481,12 +492,7 @@ fn sync_shared_ui(
     mut channels: ResMut<AudioChannels>,
     loading: Option<Res<AssetsLoading>>,
     asset_server: Res<AssetServer>,
-    // Phase 1 optional resources (only present InGame, hence Option)
-    economy: Option<Res<crate::game::RunEconomy>>,
-    discovery: Option<Res<crate::game::DiscoveryState>>,
-    commissions: Option<Res<crate::game::CommissionBoard>>,
-    bonuses: Option<Res<crate::game::projects::InfrastructureBonuses>>,
-    blueprints_state: Option<Res<crate::game::projects::BlueprintState>>,
+    run: SharedRunState,
 ) {
     let Ok(mut ui) = bridge.shared.lock() else {
         return;
@@ -521,10 +527,10 @@ fn sync_shared_ui(
     channels.music = save.settings.music_volume;
 
     // Phase 1 HUD snapshot
-    if let Some(eco) = economy.as_deref() {
+    if let Some(eco) = run.economy.as_deref() {
         ui.dew = eco.dew;
     }
-    if let Some(disc) = discovery.as_deref() {
+    if let Some(disc) = run.discovery.as_deref() {
         ui.discoveries = disc.count() as u32;
         ui.total_discoveries = disc.total_possible();
         ui.discoveries_total = disc.total_possible();
@@ -547,7 +553,7 @@ fn sync_shared_ui(
         entries.sort_by(|a, b| b.discovered.cmp(&a.discovered));
         ui.journal = entries;
     }
-    if let Some(com) = commissions.as_deref() {
+    if let Some(com) = run.commissions.as_deref() {
         ui.commissions_done_run = com.total_completed;
         ui.total_commissions_completed = com.total_completed.max(save.total_commissions_completed);
         // Map to both legacy and new UI DTOs
@@ -577,22 +583,31 @@ fn sync_shared_ui(
     }
     // Packs rows (use helper or inline)
     {
-        let dew = economy.as_deref().map(|e| e.dew).unwrap_or(0);
-        let disc = discovery.as_deref().map(|d| d.count() as u32).unwrap_or(0);
-        let done = commissions
+        let dew = run.economy.as_deref().map(|e| e.dew).unwrap_or(0);
+        let disc = run.discovery.as_deref().map(|d| d.count() as u32).unwrap_or(0);
+        let done = run
+            .commissions
             .as_deref()
             .map(|c| c.total_completed)
             .unwrap_or(0)
             .max(save.total_commissions_completed);
-        let discount = bonuses.as_deref().map(|b| b.pack_discount).unwrap_or(0);
+        let discount = run.bonuses.as_deref().map(|b| b.pack_discount).unwrap_or(0);
         let mut packs_legacy: Vec<PackHud> = Vec::new();
         let mut packs_ui: Vec<PackUi> = Vec::new();
         for def in crate::game::PACKS {
-            let unlocked =
-                disc >= def.required_discoveries as u32 && done >= def.required_commissions as u32;
+            let allowed_by_rules = run
+                .rules
+                .as_deref()
+                .map(|r| r.allows_pack(def.id))
+                .unwrap_or(true);
+            let unlocked = allowed_by_rules
+                && disc >= def.required_discoveries as u32
+                && done >= def.required_commissions as u32;
             let eff_cost = def.cost.saturating_sub(discount).max(1);
             let affordable = dew >= eff_cost;
-            let locked_reason = if disc < def.required_discoveries as u32 {
+            let locked_reason = if !allowed_by_rules {
+                "Not available in this garden".to_string()
+            } else if disc < def.required_discoveries as u32 {
                 format!("Discover {} more", def.required_discoveries as u32 - disc)
             } else if done < def.required_commissions as u32 {
                 format!(
@@ -622,10 +637,15 @@ fn sync_shared_ui(
         ui.packs = packs_legacy;
         ui.packs_ui = packs_ui;
     }
-    // Blueprints (Field Notes) - available if blueprint state present
-    if let Some(bstate) = blueprints_state.as_deref() {
+    // Blueprints (Field Notes) - available if blueprint state present (filtered by garden rules)
+    if let Some(bstate) = run.blueprints_state.as_deref() {
         let mut bps = Vec::new();
         for def in crate::game::projects::BLUEPRINTS {
+            if let Some(r) = run.rules.as_deref() {
+                if !r.allows_blueprint(def.id) {
+                    continue;
+                }
+            }
             let unlocked = bstate.unlocked.contains(&def.id);
             let completed = bstate.completed_ids.contains(&def.id);
             let ingredients: Vec<String> = def
@@ -709,7 +729,8 @@ fn process_ui_actions(
     for action in q.drain(..) {
         match action {
             UiAction::StartGame => {
-                transition.begin_to_state(AppState::Loading);
+                // Alias for campaign entry: route through Garden Select instead of directly Loading
+                transition.begin_to_state(AppState::GardenSelect);
             }
             UiAction::OpenSettings => {
                 if let Ok(mut ui) = bridge.shared.lock() {
@@ -821,21 +842,48 @@ fn process_ui_actions(
             }
             UiAction::SelectGarden(ref id) => {
                 if let Some(garden) = crate::game::campaign::GardenId::from_stable_id(id) {
-                    *garden_run = crate::game::campaign::GardenRun::start(garden, 0);
+                    *garden_run = crate::game::campaign::GardenRun::start(garden, rand::random());
                     *run_mode = crate::game::campaign::RunMode::Campaign(garden);
+                    *run_rules = crate::game::run_rules::RunRules::for_garden(garden);
                     transition.begin_to_state(AppState::Loading);
                 }
             }
             UiAction::StartFreeGarden => {
-                *garden_run = crate::game::campaign::GardenRun::free(0);
+                *garden_run = crate::game::campaign::GardenRun::free(rand::random());
                 *run_mode = crate::game::campaign::RunMode::FreeGarden;
+                *run_rules = crate::game::run_rules::RunRules::free_garden();
                 transition.begin_to_state(AppState::Loading);
             }
             UiAction::ReplayGarden => {
+                let garden = garden_run.garden;
+                let seed = rand::random::<u64>();
+                *garden_run = match garden {
+                    Some(id) => crate::game::campaign::GardenRun::start(id, seed),
+                    None => crate::game::campaign::GardenRun::free(seed),
+                };
+                if let Some(id) = garden {
+                    *run_mode = crate::game::campaign::RunMode::Campaign(id);
+                    *run_rules = crate::game::run_rules::RunRules::for_garden(id);
+                } else {
+                    *run_mode = crate::game::campaign::RunMode::FreeGarden;
+                    *run_rules = crate::game::run_rules::RunRules::free_garden();
+                }
                 transition.begin_to_state(AppState::Loading);
             }
             UiAction::NextGarden => {
-                transition.begin_to_state(AppState::GardenSelect);
+                if let Some(current) = garden_run.garden {
+                    if let Some(next) = crate::game::campaign::next_garden(current) {
+                        let seed = rand::random::<u64>();
+                        *garden_run = crate::game::campaign::GardenRun::start(next, seed);
+                        *run_mode = crate::game::campaign::RunMode::Campaign(next);
+                        *run_rules = crate::game::run_rules::RunRules::for_garden(next);
+                        transition.begin_to_state(AppState::Loading);
+                    } else {
+                        transition.begin_to_state(AppState::GardenSelect);
+                    }
+                } else {
+                    transition.begin_to_state(AppState::GardenSelect);
+                }
             }
             UiAction::ReturnToGardenSelect => {
                 transition.begin_to_state(AppState::GardenSelect);

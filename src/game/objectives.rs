@@ -38,6 +38,10 @@ pub enum ObjectiveKind {
     ReachYear(u32),
     GrowCard(CardType),
     WinGenesisBloom,
+    AssignedNonFatiguedWorkersAndInstallations {
+        workers: u32,
+        installations: u32,
+    },
 }
 
 pub struct ObjectiveDef {
@@ -61,6 +65,7 @@ pub struct ObjectiveSnapshot {
     pub pollinations: u32,
     pub cleaned_toxins: u32,
     pub assigned_workers: u32,
+    pub assigned_non_fatigued_workers: u32,
     pub distinct_workers: u32,
     pub seasons_survived: u32,
     pub current_year: u32,
@@ -103,8 +108,21 @@ pub fn progress_for_objective(kind: ObjectiveKind, snap: &ObjectiveSnapshot) -> 
         ObjectiveKind::DistinctWorkers(n) => (snap.distinct_workers.min(n), n),
         ObjectiveKind::SurviveSeasons(n) => (snap.seasons_survived.min(n), n),
         ObjectiveKind::ReachYear(n) => ((snap.current_year >= n) as u32, 1),
-        ObjectiveKind::GrowCard(card) => ((snap.grown_cards.contains(&card) || snap.biodiversity > 0) as u32, 1), // simplified
+        ObjectiveKind::GrowCard(card) => ((snap.grown_cards.contains(&card)) as u32, 1),
         ObjectiveKind::WinGenesisBloom => ((snap.has_genesis) as u32, 1),
+        ObjectiveKind::AssignedNonFatiguedWorkersAndInstallations { workers, installations } => {
+            let cur_workers = snap.assigned_non_fatigued_workers.min(workers);
+            let cur_installs = snap.installations.min(installations);
+            // require both; progress is min of ratios mapped to single bar (use workers as gate + installations as secondary)
+            // Show combined requires: complete only when both satisfied
+            let cur = if snap.assigned_non_fatigued_workers >= workers && snap.installations >= installations { 1 } else { 0 };
+            let req = 1;
+            // For display we want current as number of satisfied sub-goals? But UI takes current/required directly from this fn.
+            // To show granular progress, return workers satisfied + installs satisfied weighted.
+            // Simpler: return 1/1 when complete else 0/1 (binary) but keep required fields updated via current check
+            let _ = (cur_workers, cur_installs);
+            (cur, req)
+        }
     };
     (current, required)
 }

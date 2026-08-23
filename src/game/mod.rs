@@ -207,6 +207,7 @@ pub enum FxEvent {
 pub struct RunCounters {
     pub produced: HashMap<CardType, u32>,
     pub pollinations: u32,
+    pub synergies_activated: u32,
     pub hatched: HashMap<CardType, u32>,
     pub cleaned_toxins: u32,
     pub created: HashMap<CardType, u32>,
@@ -434,19 +435,22 @@ fn setup_game(mut commands: Commands, mut run: RunSetup) {
             run.blueprint_state.unlocked.insert(id);
         }
     }
-    // ensure starting blueprints are unlocked
+    // ensure starting blueprints are unlocked (filtered by garden rules)
     for def in crate::game::projects::BLUEPRINTS {
-        if matches!(def.unlock, crate::game::projects::BlueprintUnlock::Starting) {
+        if run.run_rules.allows_blueprint(def.id)
+            && matches!(def.unlock, crate::game::projects::BlueprintUnlock::Starting)
+        {
             run.blueprint_state.unlocked.insert(def.id);
         }
     }
-    // also unlock any that satisfy conditions immediately
+    // also unlock any that satisfy conditions immediately (filtered by rules)
     {
         let mut tmp = PendingGameEvents::default();
-        crate::game::projects::refresh_blueprint_unlocks(
+        crate::game::projects::refresh_blueprint_unlocks_with_rules(
             &mut run.blueprint_state,
             &run.discovery,
             &run.board,
+            &run.run_rules,
             &mut tmp,
         );
         // push unlock events (to show toast) – they will be drained next frame
@@ -2229,6 +2233,7 @@ fn drain_game_events(
     mut blueprint_state: ResMut<crate::game::projects::BlueprintState>,
     board: Res<CommissionBoard>,
     bridge: Res<crate::menus::UiBridge>,
+    rules: Option<Res<crate::game::run_rules::RunRules>>,
 ) {
     if events.0.is_empty() {
         return;
@@ -2305,6 +2310,7 @@ fn drain_game_events(
             }
             GameEvent::Stacked { .. } => {}
             GameEvent::SynergyActivated { name, dew_bonus } => {
+                counters.synergies_activated = counters.synergies_activated.saturating_add(1);
                 if let Ok(mut ui) = bridge.shared.try_lock() {
                     ui.toast = format!("✦ {} (+{} Dew/tick)", name, dew_bonus);
                     ui.toast_timer = 3.0;
@@ -2458,15 +2464,25 @@ fn drain_game_events(
             }
         }
     }
-    // after processing, refresh blueprint unlocks based on new discovery/commissions
+    // after processing, refresh blueprint unlocks based on new discovery/commissions (filtered by garden rules)
     {
         let mut pending = PendingGameEvents::default();
-        crate::game::projects::refresh_blueprint_unlocks(
-            &mut blueprint_state,
-            &discovery,
-            &board,
-            &mut pending,
-        );
+        if let Some(rules) = rules.as_deref() {
+            crate::game::projects::refresh_blueprint_unlocks_with_rules(
+                &mut blueprint_state,
+                &discovery,
+                &board,
+                rules,
+                &mut pending,
+            );
+        } else {
+            crate::game::projects::refresh_blueprint_unlocks(
+                &mut blueprint_state,
+                &discovery,
+                &board,
+                &mut pending,
+            );
+        }
         if !pending.0.is_empty() {
             // push new unlock events back to queue and also handle save sync immediately
             for ev in pending.0.drain(..) {
@@ -2562,33 +2578,36 @@ fn build_objective_snapshot(
     habitats: &Query<&HabitatBase>,
     workers_q: &Query<&crate::game::workers::Worker>,
 ) -> crate::game::objectives::ObjectiveSnapshot {
-    let mut snap = crate::game::objectives::ObjectiveSnapshot {
+    let assigned_non_fatigued = habitats
+        .iter()
+        .filter_map(|h| h.worker)
+        .filter(|e| workers_q.get(*e).map(|w| !w.fatigued).unwrap_or(false))
+        .count() as u32;
+    let snap = crate::game::objectives::ObjectiveSnapshot {
         biodiversity: session.biodiversity,
         dew_earned: economy.total_earned,
         discoveries: discovery.count() as u32,
         projects_completed: counters.projects_completed,
         installations: counters.installations_installed,
         distinct_installations: counters.installed_types.len() as u32,
-        synergies_activated: counters.pollinations, // synergy count approximated via events; use pollinations fallback
+        synergies_activated: counters.synergies_activated,
         pollinations: counters.pollinations,
         cleaned_toxins: counters.cleaned_toxins,
         assigned_workers: habitats.iter().filter(|h| h.worker.is_some()).count() as u32,
+        assigned_non_fatigued_workers: assigned_non_fatigued,
         distinct_workers: counters.distinct_workers.len() as u32,
         seasons_survived: clock.seasons_survived,
         current_year: clock.current_year,
         has_genesis: session.victory && session.game_over,
         grown_cards: counters.created.keys().copied().collect(),
     };
-    // non-fatigued workers requirement handled at eval time; approximate assigned as all
-    let _ = workers_q;
-    snap.synergies_activated = counters.pollinations.max(snap.synergies_activated);
     snap
 }
 
 fn check_garden_completion(
     mut garden_run: ResMut<crate::game::campaign::GardenRun>,
-    rules: Res<crate::game::run_rules::RunRules>,
-    session: Res<GameSession>,
+    _rules: Res<crate::game::run_rules::RunRules>,
+    mut session: ResMut<GameSession>,
     economy: Res<RunEconomy>,
     discovery: Res<DiscoveryState>,
     counters: Res<RunCounters>,
@@ -2630,6 +2649,13 @@ fn check_garden_completion(
     garden_run.completed = true;
     garden_run.awarded_stars = garden_run.objectives.iter().filter(|o| o.complete).count().min(3) as u8;
     events.0.push(GameEvent::GardenCompleted { garden, stars: garden_run.awarded_stars });
+
+    // Also trigger victory overlay for campaign clears
+    let def_name = def.name.to_string();
+    session.game_over = true;
+    session.victory = true;
+    session.status = format!("{} restored!", def_name);
+    session.end_reason = format!("{}★ earned", garden_run.awarded_stars);
 
     // merge into save (preserve max stars / best values)
     let id_str = garden.stable_id().to_string();
@@ -2813,23 +2839,30 @@ fn tick_hint(time: Res<Time>, mut session: ResMut<GameSession>) {
     }
 }
 
+#[derive(bevy::ecs::system::SystemParam)]
+struct HudState<'w, 's> {
+    economy: Res<'w, RunEconomy>,
+    discovery: Res<'w, DiscoveryState>,
+    board: Res<'w, CommissionBoard>,
+    bonuses: Res<'w, crate::game::projects::InfrastructureBonuses>,
+    blueprint_state: Res<'w, crate::game::projects::BlueprintState>,
+    season_clock: Res<'w, crate::game::seasons::SeasonClock>,
+    active_weather: Res<'w, crate::game::seasons::ActiveWeather>,
+    eco: Res<'w, crate::game::seasons::EcoModifiers>,
+    garden_run: Res<'w, crate::game::campaign::GardenRun>,
+    run_rules: Option<Res<'w, crate::game::run_rules::RunRules>>,
+    _marker: std::marker::PhantomData<&'s ()>,
+}
+
 fn sync_hud(
     session: Res<GameSession>,
-    economy: Res<RunEconomy>,
-    discovery: Res<DiscoveryState>,
-    board: Res<CommissionBoard>,
     bridge: Res<crate::menus::UiBridge>,
     save: Res<SaveData>,
     _rng: Res<RunRng>,
     habitats: Query<(&HabitatBase, &HabitatSynergy)>,
     cards_q: Query<&Card>,
-    bonuses: Res<crate::game::projects::InfrastructureBonuses>,
-    blueprint_state: Res<crate::game::projects::BlueprintState>,
-    season_clock: Res<crate::game::seasons::SeasonClock>,
-    active_weather: Res<crate::game::seasons::ActiveWeather>,
-    eco: Res<crate::game::seasons::EcoModifiers>,
     workers_q: Query<&crate::game::workers::Worker>,
-    garden_run: Res<crate::game::campaign::GardenRun>,
+    hud: HudState,
 ) {
     let Ok(mut ui) = bridge.shared.lock() else {
         return;
@@ -2847,13 +2880,13 @@ fn sync_hud(
     ui.victory = session.victory;
     ui.end_reason = session.end_reason.clone();
     // Phase 1 economy & discovery (legacy)
-    ui.dew = economy.dew;
-    ui.discoveries = discovery.count() as u32;
+    ui.dew = hud.economy.dew;
+    ui.discoveries = hud.discovery.count() as u32;
     ui.total_discoveries = DiscoveryState::total_unique_cards();
     ui.discoveries_total = DiscoveryState::total_unique_cards();
-    ui.total_commissions_completed = save.total_commissions_completed.max(board.total_completed);
-    ui.commissions_done_run = board.total_completed;
-    ui.commissions = board
+    ui.total_commissions_completed = save.total_commissions_completed.max(hud.board.total_completed);
+    ui.commissions_done_run = hud.board.total_completed;
+    ui.commissions = hud.board
         .active
         .iter()
         .map(|a| crate::app::CommissionHud {
@@ -2864,7 +2897,7 @@ fn sync_hud(
         })
         .collect();
     // deep UI DTOs
-    ui.commissions_ui = board
+    ui.commissions_ui = hud.board
         .active
         .iter()
         .map(|a| crate::app::CommissionUi {
@@ -2877,15 +2910,20 @@ fn sync_hud(
             complete: a.completed,
         })
         .collect();
-    // pack HUD (legacy + deep)
-    let disc = discovery.count();
+    // pack HUD (legacy + deep) with RunRules filtering
+    let disc = hud.discovery.count();
     let comms = ui.total_commissions_completed as u16;
     let mut packs = Vec::new();
     let mut packs_ui = Vec::new();
     for def in PACKS {
-        let unlocked = is_pack_unlocked(def, disc, comms);
-        let eff_cost = crate::game::projects::effective_pack_cost(def.cost, &bonuses);
-        let can_afford = economy.can_afford(eff_cost);
+        let allowed_by_rules = hud
+            .run_rules
+            .as_deref()
+            .map(|r| r.allows_pack(def.id))
+            .unwrap_or(true);
+        let unlocked = allowed_by_rules && is_pack_unlocked(def, disc, comms);
+        let eff_cost = crate::game::projects::effective_pack_cost(def.cost, &hud.bonuses);
+        let can_afford = hud.economy.can_afford(eff_cost);
         packs.push(crate::app::PackHud {
             id: def.id,
             name: def.name.to_string(),
@@ -2893,13 +2931,15 @@ fn sync_hud(
             unlocked,
             can_afford,
         });
-        let locked_reason = if (disc as u32) < def.required_discoveries as u32 {
+        let locked_reason = if !allowed_by_rules {
+            "Not available in this garden".to_string()
+        } else if (disc as u32) < def.required_discoveries as u32 {
             format!("Discover {} more", def.required_discoveries as u32 - disc as u32)
-        } else if done_need(&*board, &*save, def) {
+        } else if done_need(&*hud.board, &*save, def) {
             // helper inline
             format!(
                 "Complete {} more commissions",
-                def.required_commissions as u32 - board.total_completed.max(save.total_commissions_completed)
+                def.required_commissions as u32 - hud.board.total_completed.max(save.total_commissions_completed)
             )
         } else {
             String::new()
@@ -2919,7 +2959,7 @@ fn sync_hud(
     // journal (mirror app sync, but ensure InGame updates)
     let mut journal: Vec<crate::app::JournalEntryUi> = Vec::new();
     for ctype in DiscoveryState::all_types() {
-        let discovered = discovery.contains(ctype);
+        let discovered = hud.discovery.contains(ctype);
         journal.push(crate::app::JournalEntryUi {
             id: ctype.stable_id().to_string(),
             name: ctype.label().to_string(),
@@ -2982,11 +3022,16 @@ fn sync_hud(
     }
     ui.fatigued_workers = fatigued;
     ui.workers_hired = cards_q.iter().filter(|c| c.card_type.is_worker()).count() as u32;
-    // Phase 3 blueprints DTO
+    // Phase 3 blueprints DTO (filtered by garden rules)
     let mut bps = Vec::new();
     for def in crate::game::projects::BLUEPRINTS {
-        let unlocked = blueprint_state.unlocked.contains(&def.id);
-        let completed = blueprint_state.completed_ids.contains(&def.id);
+        if let Some(r) = hud.run_rules.as_deref() {
+            if !r.allows_blueprint(def.id) {
+                continue;
+            }
+        }
+        let unlocked = hud.blueprint_state.unlocked.contains(&def.id);
+        let completed = hud.blueprint_state.completed_ids.contains(&def.id);
         let ingredients: Vec<String> = def
             .ingredients
             .iter()
@@ -3011,10 +3056,10 @@ fn sync_hud(
         .map(|s| format!("{}: {} + {} -> +{:.0}% +{} Dew", s.name, s.plant.label(), s.companion.label(), s.production_bonus*100.0, s.dew_per_tick))
         .collect();
     // Phase 4 seasons
-    ui.season_name = season_clock.current.label().to_string();
-    ui.season_year = season_clock.current_year;
-    ui.moon_in_season = season_clock.moons_into_season + 1;
-    if let Some(ev) = active_weather.event {
+    ui.season_name = hud.season_clock.current.label().to_string();
+    ui.season_year = hud.season_clock.current_year;
+    ui.moon_in_season = hud.season_clock.moons_into_season + 1;
+    if let Some(ev) = hud.active_weather.event {
         ui.weather_active = true;
         ui.weather_name = ev.label().to_string();
         ui.weather_description = ev.description().to_string();
@@ -3023,16 +3068,17 @@ fn sync_hud(
         ui.weather_name.clear();
         ui.weather_description.clear();
     }
-    ui.eco_growth_mult = eco.growth_mult;
-    ui.eco_production_mult = eco.production_mult;
+    ui.eco_growth_mult = hud.eco.growth_mult;
+    ui.eco_production_mult = hud.eco.production_mult;
     // Phase 6 campaign HUD
-    if let Some(id) = garden_run.garden {
+    if let Some(id) = hud.garden_run.garden {
         let def = crate::game::campaign::garden_def(id);
         ui.campaign_mode = true;
         ui.current_garden_name = def.name.to_string();
-        ui.run_completed = garden_run.completed;
-        ui.awarded_stars = garden_run.awarded_stars;
-        ui.objectives_ui = garden_run
+        ui.run_completed = hud.garden_run.completed;
+        ui.awarded_stars = hud.garden_run.awarded_stars;
+        ui.objectives_ui = hud
+            .garden_run
             .objectives
             .iter()
             .zip(def.objectives.iter())

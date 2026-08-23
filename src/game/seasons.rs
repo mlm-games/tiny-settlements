@@ -264,20 +264,18 @@ pub fn combined_modifiers(season: Season, weather: Option<WeatherEvent>) -> EcoM
 
 /// Pick weather deterministically from rng; None means no weather this season.
 pub fn pick_random_weather(rng: &mut StdRng) -> Option<WeatherEvent> {
-    // 55% chance to have weather, else None
+    pick_weather_from_deck(rng, &WeatherEvent::ALL)
+}
+
+pub fn pick_weather_from_deck(rng: &mut StdRng, deck: &[WeatherEvent]) -> Option<WeatherEvent> {
+    if deck.is_empty() {
+        return None;
+    }
     let roll: f32 = rng.random_range(0.0..1.0);
     if roll > 0.55 {
         return None;
     }
-    let wroll: u32 = rng.random_range(0..6);
-    Some(match wroll {
-        0 => WeatherEvent::Heatwave,
-        1 => WeatherEvent::HeavyRain,
-        2 => WeatherEvent::Blight,
-        3 => WeatherEvent::FrostSnap,
-        4 => WeatherEvent::PollinatorSurge,
-        _ => WeatherEvent::HarvestFair,
-    })
+    Some(deck[rng.random_range(0..deck.len())])
 }
 
 pub fn tick_season_clock(
@@ -357,6 +355,13 @@ pub fn tick_active_weather(
     clock: Res<SeasonClock>,
     rules: Option<Res<crate::game::run_rules::RunRules>>,
 ) {
+    let deck: &[WeatherEvent] = rules
+        .as_deref()
+        .map(|r| r.weather_deck.as_slice())
+        .unwrap_or(&WeatherEvent::ALL);
+    if deck.is_empty() {
+        return;
+    }
     if let Some(r) = rules.as_deref() {
         if !r.features.weather {
             return;
@@ -382,7 +387,7 @@ pub fn tick_active_weather(
     }
     // Cooldown finished, try to roll new weather (only if not every moon? tie to season)
     // For determinism, use rng
-    if let Some(ev) = pick_random_weather(&mut rng.0) {
+    if let Some(ev) = pick_weather_from_deck(&mut rng.0, deck) {
         weather.event = Some(ev);
         weather.timer = Timer::from_seconds(18.0, TimerMode::Once);
         events.0.push(GameEvent::WeatherStarted { weather: ev });

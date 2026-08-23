@@ -230,15 +230,19 @@ fn mk_button_sm(label: &str, on_click: impl Fn() + 'static) -> View {
     )
 }
 
-fn mk_button_wide(label: String, enabled_look: bool, on_click: impl Fn() + 'static) -> View {
-    let fg = if enabled_look {
+fn mk_button_wide(label: String, enabled: bool, on_click: impl Fn() + 'static) -> View {
+    let fg = if enabled {
         RColor::WHITE
     } else {
         col(140, 150, 140)
     };
     FilledTonalButton(
         Modifier::new().width(240.0).height(44.0).margin(4.0),
-        on_click,
+        move || {
+            if enabled {
+                on_click();
+            }
+        },
         ButtonConfig::default(),
         move || RText(label.clone()).size(15.0).color(fg),
     )
@@ -320,6 +324,7 @@ fn loading_ui(st: &SharedUi) -> View {
 
 fn title_ui(st: &SharedUi, actions: Arc<Mutex<Vec<UiAction>>>) -> View {
     let a1 = actions.clone();
+    let a_free = actions.clone();
     let a2 = actions.clone();
     let a3 = actions.clone();
     let a4 = actions.clone();
@@ -377,9 +382,14 @@ fn title_ui(st: &SharedUi, actions: Arc<Mutex<Vec<UiAction>>>) -> View {
         )))
         .child(spacer(22.0))
         .child(mk_button(
-            &t(tr, "start-game", "Start Garden"),
+            &t(tr, "campaign", "Campaign"),
             col(60, 130, 90),
-            move || push(&a1, UiAction::StartGame),
+            move || push(&a1, UiAction::OpenGardenSelect),
+        ))
+        .child(mk_button(
+            &t(tr, "free-garden", "Free Garden"),
+            col(70, 90, 120),
+            move || push(&a_free, UiAction::StartFreeGarden),
         ))
         .child(mk_button(&t(tr, "settings", "Settings"), col(70, 70, 90), move || {
             push(&a2, UiAction::OpenSettings)

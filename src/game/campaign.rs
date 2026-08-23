@@ -202,6 +202,38 @@ const BASE_CARDS: &[CardType] = &[
 const ALL_PACKS: &[PackId] = &[PackId::SoilAndSpore, PackId::Pollinator, PackId::Symbiosis, PackId::Specialist];
 const SOIL_PACK: &[PackId] = &[PackId::SoilAndSpore];
 const SOIL_POLL: &[PackId] = &[PackId::SoilAndSpore, PackId::Pollinator];
+const WETLAND_PACKS: &[PackId] = &[PackId::SoilAndSpore, PackId::Pollinator, PackId::Symbiosis];
+const WETLAND_CARDS: &[CardType] = &[
+    CardType::Gardener,
+    CardType::BioSubstrate,
+    CardType::SporePod,
+    CardType::NutrientSlime,
+    CardType::BasicFungi,
+    CardType::ProcessedNutrients,
+    CardType::VineSeed,
+    CardType::YoungVine,
+    CardType::MatureVine,
+    CardType::FlutterwingSpore,
+    CardType::FlutterwingLarva,
+    CardType::MatureFlutterwing,
+    CardType::FertilizedVinePod,
+    CardType::SymbioticAlgae,
+    CardType::LuminaCrystal,
+    CardType::GrazingSlugEgg,
+    CardType::GrazingSlug,
+    CardType::RichMulch,
+    CardType::FertileSubstrate,
+    CardType::WasteToxin,
+    CardType::ApexSpore,
+    CardType::GrowingApex,
+    CardType::GenesisBloom,
+    CardType::NurseryTray,
+    CardType::CompostCradle,
+    CardType::MyceliumBed,
+    CardType::PollinatorLodge,
+    CardType::DewBasin,
+    CardType::SeedArchive,
+];
 const ALL_BLUEPRINTS: &[BlueprintId] = &[
     BlueprintId::NurseryTray,
     BlueprintId::CompostCradle,
@@ -252,7 +284,7 @@ const CONSERVATORY_OBJS: [ObjectiveDef; 3] = [
 const WASTES_OBJS: [ObjectiveDef; 3] = [
     ObjectiveDef { id: ObjectiveId::WastesGenesis, title: "Genesis Restored", description: "Grow the Genesis Bloom", kind: ObjectiveKind::WinGenesisBloom, required_for_completion: true },
     ObjectiveDef { id: ObjectiveId::WastesBiodiversity, title: "Life Returns", description: "Reach biodiversity 8", kind: ObjectiveKind::BiodiversityAtLeast(8), required_for_completion: false },
-    ObjectiveDef { id: ObjectiveId::WastesResilience, title: "Resilient Settlement", description: "Finish with three non-fatigued workers and five installations", kind: ObjectiveKind::AssignedWorkers(3), required_for_completion: false },
+    ObjectiveDef { id: ObjectiveId::WastesResilience, title: "Resilient Settlement", description: "Finish with three non-fatigued workers and five installations", kind: ObjectiveKind::AssignedNonFatiguedWorkersAndInstallations { workers: 3, installations: 5 }, required_for_completion: false },
 ];
 
 pub const GARDENS: &[GardenDef] = &[
@@ -301,8 +333,8 @@ pub const GARDENS: &[GardenDef] = &[
         starting_dew: 4,
         starting_cards: WETLAND_START,
         features: FeatureRules { habitats: true, commissions: true, projects: true, installations: true, seasons: false, weather: true, workers: false, advanced_structures: false },
-        allowed_cards: ALL_CARDS,
-        allowed_packs: ALL_PACKS,
+        allowed_cards: WETLAND_CARDS,
+        allowed_packs: WETLAND_PACKS,
         allowed_blueprints: BASE_BLUEPRINTS,
         weather_deck: WETLAND_WEATHER,
         objectives: &WETLAND_OBJS,
@@ -407,6 +439,7 @@ impl GardenRun {
                 ObjectiveKind::ReachYear(n) => n,
                 ObjectiveKind::GrowCard(_) => 1,
                 ObjectiveKind::WinGenesisBloom => 1,
+                ObjectiveKind::AssignedNonFatiguedWorkersAndInstallations { .. } => 1,
             };
             ObjectiveProgress { id: o.id, current: 0, required, complete: false }
         }).collect();
