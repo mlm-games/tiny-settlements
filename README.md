@@ -1,4 +1,4 @@
-# Tiny Settlements
+# Tiny Settlements (on a hiatus for this project, is just a generated rewrite on a direction i want to go, is not ready for gameplay)
 
 A card-based ecosystem gardener: drag cards to combine species, direct your
 Gardener, and cultivate the **Genesis Bloom**. Bevy port of the Godot original,
