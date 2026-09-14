@@ -2599,7 +2599,7 @@ dependencies = [
 [[package]]
 name = "game-utils"
 version = "0.1.2"
-source = "git+https://github.com/mlm-games/game-utils#f2176b965cca0a1e38ef28db1e5ceb12f412d134"
+source = "git+https://github.com/mlm-games/game-utils?rev=f2176b965cca0a1e38ef28db1e5ceb12f412d134#f2176b965cca0a1e38ef28db1e5ceb12f412d134"
 dependencies = [
  "directories",
  "fluent-bundle",
@@ -2613,7 +2613,7 @@ dependencies = [
 [[package]]
 name = "game-utils-bevy"
 version = "0.1.2"
-source = "git+https://github.com/mlm-games/game-utils#f2176b965cca0a1e38ef28db1e5ceb12f412d134"
+source = "git+https://github.com/mlm-games/game-utils?rev=f2176b965cca0a1e38ef28db1e5ceb12f412d134#f2176b965cca0a1e38ef28db1e5ceb12f412d134"
 dependencies = [
  "bevy",
  "game-utils",
@@ -4731,9 +4731,9 @@ checksum = "19b30a45b0cd0bcca8037f3d0dc3421eaf95327a17cad11964fb8179b4fc4832"
 
 [[package]]
 name = "repose-app"
-version = "0.28.4"
+version = "0.28.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "9943d48dad1564d911ab9ea3e65470eface633a243837846cfef782d8177d9b9"
+checksum = "e5f158a66789be671a10f09282faa2b828603d5a3b4dc9c8b8a40c9c9a3fcd6e"
 dependencies = [
  "log",
  "repose-core",
@@ -4746,7 +4746,7 @@ dependencies = [
 [[package]]
 name = "repose-bevy"
 version = "0.2.0"
-source = "git+https://github.com/mlm-games/repose-bevy#cdd90f266bb385dbc26064751c4e399d40e1a524"
+source = "git+https://github.com/mlm-games/repose-bevy?rev=cdd90f266bb385dbc26064751c4e399d40e1a524#cdd90f266bb385dbc26064751c4e399d40e1a524"
 dependencies = [
  "anyhow",
  "bevy",
@@ -4764,9 +4764,9 @@ dependencies = [
 
 [[package]]
 name = "repose-canvas"
-version = "0.28.4"
+version = "0.28.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "ddfca8ebe5f9c97d9f547707a3f2ea39fd92cc8f68c59577c5846a5ad472cadc"
+checksum = "d6f679944e11d4685547548dffc5d50ef1a56c8252d3d480d19637845761f119"
 dependencies = [
  "repose-core",
  "repose-ui",
@@ -4774,9 +4774,9 @@ dependencies = [
 
 [[package]]
 name = "repose-core"
-version = "0.28.4"
+version = "0.28.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "da8f785866940ef5c7fc1d4b904b2e5eb059c0cc72fa81c2fe9e88f750ae24d6"
+checksum = "a56b3a19154f17f976cede628f538367f9937cd82ec25ce53be1e99e0a667ab3"
 dependencies = [
  "bitflags 2.13.1",
  "log",
@@ -4803,9 +4803,9 @@ dependencies = [
 
 [[package]]
 name = "repose-material"
-version = "0.28.4"
+version = "0.28.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "ae47d908548b299beb03ae212aa555813ade6954c1a161158deb8c485736c635"
+checksum = "d57c274ff22ef28764fc8b22b91e9bfc4662c3720a4be2dbf76d54f04aa740e9"
 dependencies = [
  "repose-core",
  "repose-text",
@@ -4815,9 +4815,9 @@ dependencies = [
 
 [[package]]
 name = "repose-render-wgpu"
-version = "0.28.4"
+version = "0.28.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "9e3a67578b737b65eb5907db17bfd884e5390c532ab268288071852d981fe185"
+checksum = "8382c5fddb6adaa7fa497920de826937b4b84405e040c487499cd3021d185222"
 dependencies = [
  "anyhow",
  "bytemuck",
@@ -4850,9 +4850,9 @@ dependencies = [
 
 [[package]]
 name = "repose-tree"
-version = "0.28.4"
+version = "0.28.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "ce4215ae385fe7ae4def2c6f71bd996f502b3afc62fc6d6868e5cee9a7539d1d"
+checksum = "c61f55fd43f547e8b593300886070d9eabdff61429b387852d77b866777bd415"
 dependencies = [
  "log",
  "rapidhash",
@@ -4864,9 +4864,9 @@ dependencies = [
 
 [[package]]
 name = "repose-ui"
-version = "0.28.4"
+version = "0.28.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "1e07af24b02d9a4effaba4d0e765574cd58a5cc016977f1afea42b4fdcc3af8d"
+checksum = "9efc3f854865608ae13a711971124ebc8fc194f5c7332c8e500f1eece02e24b5"
 dependencies = [
  "log",
  "repose-core",
@@ -5407,6 +5407,7 @@ dependencies = [
  "renamite-player",
  "renamite-render-bridge",
  "renamite-render-offscreen",
+ "repose-app",
  "repose-bevy",
  "repose-core",
  "repose-material",
