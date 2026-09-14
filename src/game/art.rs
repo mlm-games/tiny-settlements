@@ -39,10 +39,17 @@ pub fn load_card_art(mut commands: Commands, mut images: ResMut<Assets<Image>>) 
     commands.insert_resource(art);
 }
 fn load_ren(path: &str) -> anyhow::Result<RenFile> {
+    // WASM has no `std::fs` (panics instead of erroring): caller falls back
+    // to colored art via the `Err` path, same as a missing file.
+    #[cfg(target_arch = "wasm32")]
+    return Err(anyhow::anyhow!("ren disk reads unavailable on web"));
     // asset_path() is AssetServer-relative ("images/..."); raw fs reads need
     // the assets/ prefix
+    #[cfg(not(target_arch = "wasm32"))]
     let full = format!("assets/{path}");
+    #[cfg(not(target_arch = "wasm32"))]
     let text = std::fs::read_to_string(&full).map_err(|e| anyhow::anyhow!("read {full}: {e}"))?;
+    #[cfg(not(target_arch = "wasm32"))]
     Ok(renamite_io_ren::open(&text)?)
 }
 
