@@ -358,6 +358,12 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "f2032f911046de80f0a198e0901378627c33f59ea0ac00e363d481118bd70a53"
 
 [[package]]
+name = "base64"
+version = "0.22.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "72b3254f16251a8381aa12e40e3c4d2f0199f8c6508fbecb9d91f575e0fbb8c6"
+
+[[package]]
 name = "bevy"
 version = "0.20.0-dev"
 source = "git+https://github.com/bevyengine/bevy?rev=fb89a8649d9b359e53ffb6e5492ebb7c059ac8af#fb89a8649d9b359e53ffb6e5492ebb7c059ac8af"
@@ -1967,6 +1973,16 @@ dependencies = [
 ]
 
 [[package]]
+name = "continue"
+version = "0.1.4"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "aeb7d5ba153538272516337fbd3b02969c607b8ec646378f5f8f7ae0e850a515"
+dependencies = [
+ "atomic-waker",
+ "logwise",
+]
+
+[[package]]
 name = "convert_case"
 version = "0.10.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -2170,6 +2186,15 @@ name = "directories"
 version = "6.0.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "16f5094c54661b38d03bd7e50df373292118db60b585c08a411c6d840017fe7d"
+dependencies = [
+ "dirs-sys",
+]
+
+[[package]]
+name = "dirs"
+version = "6.0.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "c3e8aa94d75141228480295a7d0e7feb620b1a5ad9f12bc40be62411e38cce4e"
 dependencies = [
  "dirs-sys",
 ]
@@ -2598,28 +2623,52 @@ dependencies = [
 
 [[package]]
 name = "game-utils"
-version = "0.1.2"
-source = "git+https://github.com/mlm-games/game-utils?rev=f2176b965cca0a1e38ef28db1e5ceb12f412d134#f2176b965cca0a1e38ef28db1e5ceb12f412d134"
+version = "0.3.3"
+source = "git+https://github.com/mlm-games/game-utils?rev=3b097868f46243e6a806fffebca288b934fe22d0#3b097868f46243e6a806fffebca288b934fe22d0"
 dependencies = [
  "directories",
  "fluent-bundle",
+ "getrandom 0.4.3",
  "glam 0.33.5",
+ "js-sys",
  "rand",
  "ron",
+ "ropfs",
  "serde",
+ "serde_json",
  "unic-langid",
+ "wasm-bindgen",
+ "web-sys",
+ "web-time",
 ]
 
 [[package]]
 name = "game-utils-bevy"
-version = "0.1.2"
-source = "git+https://github.com/mlm-games/game-utils?rev=f2176b965cca0a1e38ef28db1e5ceb12f412d134#f2176b965cca0a1e38ef28db1e5ceb12f412d134"
+version = "0.3.3"
+source = "git+https://github.com/mlm-games/game-utils?rev=3b097868f46243e6a806fffebca288b934fe22d0#3b097868f46243e6a806fffebca288b934fe22d0"
 dependencies = [
- "bevy",
+ "bevy_app",
+ "bevy_asset",
+ "bevy_audio",
+ "bevy_camera",
+ "bevy_color",
+ "bevy_core_pipeline",
+ "bevy_ecs",
+ "bevy_input",
+ "bevy_log",
+ "bevy_math",
+ "bevy_render",
+ "bevy_shader",
+ "bevy_sprite",
+ "bevy_state",
+ "bevy_text",
+ "bevy_time",
+ "bevy_transform",
+ "bevy_ui",
  "game-utils",
  "rand",
- "repose-core",
  "serde",
+ "web-time",
 ]
 
 [[package]]
@@ -3182,6 +3231,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "0e0c1080212aad755ea003d18543e8768dd432c48819efd73a7bf1e39b7a5a3a"
 dependencies = [
  "cfg-if",
+ "futures-core",
  "futures-util",
  "wasm-bindgen",
 ]
@@ -3336,6 +3386,12 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "0ceec5bc11778974d1bcb055b18002eba7f4b3518b6a0081b3af5f21666da9ad"
 
 [[package]]
+name = "logwise"
+version = "0.7.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "1d0a645dd3c34c9063618c998a69d948a4c2556ece88aba9708bb2f9416cf3cb"
+
+[[package]]
 name = "lyon_geom"
 version = "1.0.19"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -3408,6 +3464,16 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "d1219ed1b7f229ee7104d281dd01d6802fe28bb6e95d292942c4daacdeb798c0"
 dependencies = [
  "libc",
+]
+
+[[package]]
+name = "minicov"
+version = "0.3.9"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "c3aa3aa12b448ac225b3102217d1ac5cc717908f02722926524b0599c933c7a0"
+dependencies = [
+ "cc",
+ "walkdir",
 ]
 
 [[package]]
@@ -4731,9 +4797,9 @@ checksum = "19b30a45b0cd0bcca8037f3d0dc3421eaf95327a17cad11964fb8179b4fc4832"
 
 [[package]]
 name = "repose-app"
-version = "0.28.1"
+version = "0.28.20"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "e5f158a66789be671a10f09282faa2b828603d5a3b4dc9c8b8a40c9c9a3fcd6e"
+checksum = "aae03471a9541eee7b42ced60853adaa37fc90e21abfb938f8007eb9c111ae8f"
 dependencies = [
  "log",
  "repose-core",
@@ -4746,7 +4812,7 @@ dependencies = [
 [[package]]
 name = "repose-bevy"
 version = "0.2.0"
-source = "git+https://github.com/mlm-games/repose-bevy?rev=cdd90f266bb385dbc26064751c4e399d40e1a524#cdd90f266bb385dbc26064751c4e399d40e1a524"
+source = "git+https://github.com/mlm-games/repose-bevy?rev=7ac0e39940fd46f0f0ec099f38beaa8cf7e03395#7ac0e39940fd46f0f0ec099f38beaa8cf7e03395"
 dependencies = [
  "anyhow",
  "bevy",
@@ -4774,9 +4840,9 @@ dependencies = [
 
 [[package]]
 name = "repose-core"
-version = "0.28.1"
+version = "0.28.20"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "a56b3a19154f17f976cede628f538367f9937cd82ec25ce53be1e99e0a667ab3"
+checksum = "a0e7e97be512b097edbeb0b20f29c4a7898b9ae5162010c628c6503c9448e573"
 dependencies = [
  "bitflags 2.13.1",
  "log",
@@ -4792,9 +4858,9 @@ dependencies = [
 
 [[package]]
 name = "repose-macros"
-version = "0.28.4"
+version = "0.28.20"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "41aea678ba54e444fd9ee2c05819b26095018d6303b259dfeced6e6e4bc9c924"
+checksum = "86eac0ff26ffede6d21eed50e15c4e4deab8ea03acf6ab472ccd4a3fe0c42102"
 dependencies = [
  "proc-macro2",
  "quote",
@@ -4803,21 +4869,22 @@ dependencies = [
 
 [[package]]
 name = "repose-material"
-version = "0.28.1"
+version = "0.28.20"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "d57c274ff22ef28764fc8b22b91e9bfc4662c3720a4be2dbf76d54f04aa740e9"
+checksum = "4bb7b2ab6e709d7b5c3f82a68a1e9085e94beb6a6d91272962692e1eb3d31629"
 dependencies = [
  "repose-core",
  "repose-text",
+ "repose-tree",
  "repose-ui",
  "web-time",
 ]
 
 [[package]]
 name = "repose-render-wgpu"
-version = "0.28.1"
+version = "0.28.20"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "8382c5fddb6adaa7fa497920de826937b4b84405e040c487499cd3021d185222"
+checksum = "958d5e1d83d47fe9752929cb0409c7bd0a0e60599468b50285e8eb5a2901da13"
 dependencies = [
  "anyhow",
  "bytemuck",
@@ -4828,17 +4895,19 @@ dependencies = [
  "pollster",
  "repose-core",
  "repose-text",
+ "web-workers",
  "wgpu",
  "winit",
 ]
 
 [[package]]
 name = "repose-text"
-version = "0.28.4"
+version = "0.28.20"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "7443eb4bb836dab401cbf4091aefbf1b3bcee91be598cbaa71b8555957ce301d"
+checksum = "ef5c157960eda1df570ce050ecdf3fcf9a9836fd61b67363854da729a4909f6d"
 dependencies = [
  "font-awl",
+ "js-sys",
  "log",
  "once_cell",
  "parley",
@@ -4846,13 +4915,16 @@ dependencies = [
  "skrifa",
  "swash",
  "unicode-segmentation",
+ "wasm-bindgen",
+ "wasm-bindgen-futures",
+ "web-sys",
 ]
 
 [[package]]
 name = "repose-tree"
-version = "0.28.1"
+version = "0.28.20"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "c61f55fd43f547e8b593300886070d9eabdff61429b387852d77b866777bd415"
+checksum = "e3885acb3fbcd060ee23b1cba770c350bf40d356cc5a9eee0ece9d70b9048230"
 dependencies = [
  "log",
  "rapidhash",
@@ -4864,9 +4936,9 @@ dependencies = [
 
 [[package]]
 name = "repose-ui"
-version = "0.28.1"
+version = "0.28.20"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "9efc3f854865608ae13a711971124ebc8fc194f5c7332c8e500f1eece02e24b5"
+checksum = "ac3edfda174757e44bb49d344e46f074eee81763ae77be1c09c794ad01d3ece3"
 dependencies = [
  "log",
  "repose-core",
@@ -4912,6 +4984,26 @@ dependencies = [
  "serde_derive",
  "typeid",
  "unicode-ident",
+]
+
+[[package]]
+name = "ropfs"
+version = "0.4.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "5bc4b4c0e1dff5077c9e844d84b91317f1fcaa865eaaf372e026e764215d4538"
+dependencies = [
+ "base64",
+ "directories",
+ "dirs",
+ "futures-core",
+ "futures-util",
+ "js-sys",
+ "tempfile",
+ "tokio",
+ "wasm-bindgen",
+ "wasm-bindgen-futures",
+ "web-sys",
+ "web-time",
 ]
 
 [[package]]
@@ -5333,6 +5425,19 @@ dependencies = [
 ]
 
 [[package]]
+name = "tempfile"
+version = "3.27.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "32497e9a4c7b38532efcdebeef879707aa9f794296a4f0244f6f69e9bc8574bd"
+dependencies = [
+ "fastrand",
+ "getrandom 0.4.3",
+ "once_cell",
+ "rustix 1.1.4",
+ "windows-sys 0.61.2",
+]
+
+[[package]]
 name = "termcolor"
 version = "1.4.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -5468,6 +5573,16 @@ name = "tinyvec_macros"
 version = "0.1.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "1f3ccbac311fea05f86f61904b462b55fb3df8837a366dfc601a0161d0532f20"
+
+[[package]]
+name = "tokio"
+version = "1.53.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "202caea871b69668250d242070849eb495be178ed697a3e98aebce5bc81a0bed"
+dependencies = [
+ "bytes",
+ "pin-project-lite",
+]
 
 [[package]]
 name = "toml_datetime"
@@ -5946,6 +6061,36 @@ checksum = "5a6580f308b1fad9207618087a65c04e7a10bc77e02c8e84e9b00dd4b12fa0bb"
 dependencies = [
  "js-sys",
  "wasm-bindgen",
+]
+
+[[package]]
+name = "web-workers"
+version = "0.3.6"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "4606593135f49a636c98f948be9b986525a05ea44a5181d12253df7084f5ac59"
+dependencies = [
+ "atomic-waker",
+ "continue",
+ "js-sys",
+ "minicov",
+ "pin-project",
+ "pollster",
+ "wasm-bindgen",
+ "wasm-bindgen-futures",
+ "web-sys",
+ "web-time",
+ "web-workers-derive",
+]
+
+[[package]]
+name = "web-workers-derive"
+version = "0.1.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "4bc7d5d2a8d6b2347fdf1af4a1c01c4cb78366e94dfa1f3765dc4731fa7001e9"
+dependencies = [
+ "proc-macro2",
+ "quote",
+ "syn 3.0.3",
 ]
 
 [[package]]

@@ -68,17 +68,17 @@ bevy = { git = "https://github.com/bevyengine/bevy", rev = "fb89a8649d9b359e53ff
     "webgl2",
     "android-native-activity",
 ] }
-repose-bevy = { git = "https://github.com/mlm-games/repose-bevy", rev = "cdd90f266bb385dbc26064751c4e399d40e1a524", default-features = false, features = [
+repose-bevy = { git = "https://github.com/mlm-games/repose-bevy", rev = "7ac0e39940fd46f0f0ec099f38beaa8cf7e03395", default-features = false, features = [
     "shared-device",
 ] }
 wgpu = { version = "30", features = ["webgpu", "webgl"] }
-repose-core = "=0.28.1"
-repose-ui = "=0.28.1"
-repose-app = "=0.28.1"
-repose-material = "=0.28.1"
-repose-render-wgpu = "=0.28.1"
-game-utils = { git = "https://github.com/mlm-games/game-utils", rev = "f2176b965cca0a1e38ef28db1e5ceb12f412d134" }
-game-utils-bevy = { git = "https://github.com/mlm-games/game-utils", rev = "f2176b965cca0a1e38ef28db1e5ceb12f412d134" }
+repose-core = "=0.28.20"
+repose-ui = "=0.28.20"
+repose-app = "=0.28.20"
+repose-material = "=0.28.20"
+repose-render-wgpu = "=0.28.20"
+game-utils = { git = "https://github.com/mlm-games/game-utils", rev = "3b097868f46243e6a806fffebca288b934fe22d0" }
+game-utils-bevy = { git = "https://github.com/mlm-games/game-utils", rev = "3b097868f46243e6a806fffebca288b934fe22d0", features = ["render"] }
 anyhow = "1"
 renamite-io-ren = { git = "https://github.com/mlm-games/renamite", rev = "a98ec7cf0e8977e7a9c25166cc559dd882725329" }
 renamite-player = { git = "https://github.com/mlm-games/renamite", rev = "a98ec7cf0e8977e7a9c25166cc559dd882725329" }
